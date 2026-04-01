@@ -10,35 +10,28 @@ const io = new Server(server, {
     cors: { origin: "*" } 
 });
 
-app.use(express.static(__dirname));
+// ГЛАВНЫЙ ФИКС: Явно указываем, где лежат файлы
+const root = path.resolve(__dirname);
+app.use(express.static(root));
 
-// Принудительные маршруты для Render
-app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
-app.get('/host.html', (req, res) => res.sendFile(path.resolve(__dirname, 'host.html')));
-app.get('/player.html', (req, res) => res.sendFile(path.resolve(__dirname, 'player.html')));
+// Принудительная отдача файлов по прямым путям
+app.get('/', (req, res) => res.sendFile(path.join(root, 'index.html')));
+app.get('/host.html', (req, res) => res.sendFile(path.join(root, 'host.html')));
+app.get('/player.html', (req, res) => res.sendFile(path.join(root, 'player.html')));
 
 const prompts = {
     classic: [
         "Почему vangavgav лысый?", 
         "Почему Дима Moderass каждый раз д#оч#т на vangavgav?",
         "Самое странное название для туалетной бумаги?", 
-        "Что на самом деле шепчут кошки, когда мы спим?", 
-        "Лучший подарок для злейшего врага?", 
-        "Девиз школы магии для очень ленивых.",
-        "Что Ванга скрывает под своей кепкой?", 
-        "Худшая фраза, которую можно услышать от хирурга перед сном."
+        "Что на самом деле шепчут кошки?", 
+        "Лучший подарок для врага?", 
+        "Девиз школы магии для ленивых.",
+        "Что Ванга скрывает под кепкой?", 
+        "Худшая фраза от хирурга перед сном."
     ],
-    text: [
-        "Напиши отзыв на товар: Ржавый гвоздь", 
-        "Заголовок газеты из 2077 года", 
-        "Жалоба в небесную канцелярию на: Солнечный свет"
-    ],
-    draw: [
-        "Нарисуй: Грустный чебурек", 
-        "Нарисуй: Ванга Фiйко", 
-        "Нарисуй: Танцующий стул", 
-        "Нарисуй: Пьяный робот"
-    ]
+    text: ["Напиши отзыв на товар: Ржавый гвоздь", "Заголовок газеты из 2077 года", "Жалоба на: Солнечный свет"],
+    draw: ["Нарисуй: Грустный чебурек", "Нарисуй: Ванга Фiйко", "Нарисуй: Танцующий стул", "Нарисуй: Пьяный робот"]
 };
 
 const rooms = {};
@@ -81,7 +74,6 @@ io.on('connection', (socket) => {
 
     function sendPair(code) {
         const room = rooms[code];
-        if (!room) return;
         const pair = room.pairs[room.currentPairIndex];
         if (!pair) return io.to(code).emit('final-results', { players: room.players });
         io.to(code).emit('round-started', { mode: room.mode, q: pair.q, p1_id: pair.p1.id, p2_id: pair.p2 ? pair.p2.id : null });
@@ -92,12 +84,9 @@ io.on('connection', (socket) => {
         const pair = room.pairs[room.currentPairIndex];
         if (pair.p1.name === name) pair.ans1 = answer;
         if (pair.p2 && pair.p2.name === name) pair.ans2 = answer;
-
         if (pair.ans1 && (!pair.p2 || pair.ans2)) {
             io.to(code).emit('show-voting', { type: room.mode, ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2 });
-            if (!pair.p2) { // Если соло, ждем 8 сек и идем дальше
-                setTimeout(() => finishPair(code), 8000);
-            }
+            if (!pair.p2) setTimeout(() => finishPair(code), 8000);
         }
     });
 
@@ -126,4 +115,6 @@ io.on('connection', (socket) => {
     socket.on('kick-all', (code) => io.to(code).emit('go-to-menu'));
 });
 
-server.listen(process.env.PORT || 3000);
+// Слушаем порт
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log('Сервер запущен на порту ' + PORT));
