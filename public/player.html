@@ -3,30 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ИГРОК</title>
+    <title>ИГРОК | ГРЕХО-СМЕХ</title>
     <style>
-        body { font-family: sans-serif; background: #1a1a2e; color: white; text-align: center; margin: 0; touch-action: none; }
+        body { font-family: sans-serif; background: #1a1a2e; color: white; text-align: center; margin: 0; touch-action: none; overflow: hidden; }
+        .top-info { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; font-size: 14px; }
         .btn { background: #e94560; color: white; width: 90%; padding: 15px; margin: 10px; border: none; border-radius: 12px; font-weight: bold; font-size: 18px; }
-        #canvas { background: white; border: 5px solid #e94560; border-radius: 10px; margin: 10px; }
+        #canvas { background: white; border: 5px solid #e94560; border-radius: 10px; margin: 10px; touch-action: none; }
         .hidden { display: none; }
-        input { width: 85%; padding: 12px; margin: 5px; border-radius: 10px; border: none; font-size: 16px; }
+        input { width: 85%; padding: 12px; margin: 5px; border-radius: 10px; border: none; }
     </style>
 </head>
 <body>
+    <div id="room-code-tag" class="top-info">КОД: ...</div>
     <div id="status" style="padding:20px; font-size:20px;">Подключение...</div>
 
     <div id="answer-ui" class="hidden">
         <div id="qText" style="background:#e94560; padding:15px; margin:10px; border-radius:10px; font-weight:bold;"></div>
-        <div id="text-inputs"></div>
-        <div id="draw-inputs" class="hidden">
-            <canvas id="canvas" width="300" height="300"></canvas><br>
-            <button class="btn" onclick="clearCanvas()" style="background:#888; width:40%;">Стереть</button>
-        </div>
+        <div id="inputs-area"></div>
         <button class="btn" onclick="sendAns()" style="background:#27ae60">ОТПРАВИТЬ</button>
     </div>
 
     <div id="vote-ui" class="hidden">
-        <h3>КТО СМЕШНЕЕ?</h3>
+        <h3 id="vote-title">КТО СМЕШНЕЕ?</h3>
         <button id="b1" class="btn" onclick="vote(1)"></button>
         <button id="b2" class="btn" onclick="vote(2)" style="background:#3498db"></button>
     </div>
@@ -35,38 +33,47 @@
     <script>
         const socket = io();
         const params = new URLSearchParams(window.location.search);
-        const name = params.get('name'), code = params.get('code').toUpperCase(), emoji = params.get('emoji');
-        let canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d'), drawing = false, mode = 'classic';
+        const name = params.get('name'), emoji = params.get('emoji');
+        let code = params.get('code').toUpperCase();
+        let mode = 'classic', myTurn = false;
 
-        canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', stop);
-        canvas.addEventListener('touchstart', e => start(e.touches[0])); canvas.addEventListener('touchmove', e => { draw(e.touches[0]); e.preventDefault(); }); canvas.addEventListener('touchend', stop);
+        document.getElementById('room-code-tag').innerText = "КОД: " + code;
 
+        socket.emit('join-room', { code, name, emoji });
+        socket.on('joined-success', c => { code = c; document.getElementById('status').innerText = "Жди начала..."; });
+
+        // Рисовалка
+        let canvas, ctx, drawing = false;
+        function initCanvas() {
+            canvas = document.getElementById('canvas');
+            if(!canvas) return;
+            ctx = canvas.getContext('2d');
+            canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', stop);
+            canvas.addEventListener('touchstart', e => start(e.touches[0])); canvas.addEventListener('touchmove', e => { draw(e.touches[0]); e.preventDefault(); }); canvas.addEventListener('touchend', stop);
+        }
         function start(e) { drawing = true; ctx.beginPath(); ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop); }
         function draw(e) { if(!drawing) return; ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop); ctx.lineWidth=4; ctx.lineCap='round'; ctx.stroke(); }
         function stop() { drawing = false; }
-        function clearCanvas() { ctx.clearRect(0,0,300,300); }
-
-        socket.emit('join-room', { code, name, emoji });
-        socket.on('joined-success', () => { document.getElementById('status').innerText = "Жди начала..."; });
 
         socket.on('round-started', data => {
-            mode = data.mode;
-            let myTurn = (socket.id === data.p1_id || socket.id === data.p2_id);
+            mode = data.mode; myTurn = (socket.id === data.p1_id || socket.id === data.p2_id);
             document.getElementById('status').classList.toggle('hidden', myTurn);
             document.getElementById('answer-ui').classList.toggle('hidden', !myTurn);
             document.getElementById('vote-ui').classList.add('hidden');
             if(myTurn) {
                 document.getElementById('qText').innerText = data.q;
-                document.getElementById('draw-inputs').classList.toggle('hidden', mode !== 'draw');
-                const ti = document.getElementById('text-inputs');
-                ti.innerHTML = (mode === 'text') ? '<input id="a1" placeholder="Кто?"><input id="a2" placeholder="Где?"><input id="a3" placeholder="Что делал?">' : (mode === 'classic' ? '<input id="ansVal" placeholder="Твой ответ...">' : '');
+                const area = document.getElementById('inputs-area');
+                if(mode === 'draw') area.innerHTML = '<canvas id="canvas" width="280" height="280"></canvas><br><button onclick="ctx.clearRect(0,0,280,280)" style="color:black">Стереть</button>';
+                else if(mode === 'text') area.innerHTML = '<input id="a1" placeholder="Кто?"><input id="a2" placeholder="Где?"><input id="a3" placeholder="Что делал?">';
+                else area.innerHTML = '<input id="ansVal" placeholder="Твой ответ...">';
+                if(mode === 'draw') initCanvas();
             }
         });
 
         function sendAns() {
             let answer;
             if(mode === 'draw') answer = canvas.toDataURL();
-            else if(mode === 'text') answer = [document.getElementById('a1').value, document.getElementById('a2').value, document.getElementById('a3').value].join(" ");
+            else if(mode === 'text') answer = document.getElementById('a1').value + " " + document.getElementById('a2').value + " " + document.getElementById('a3').value;
             else answer = document.getElementById('ansVal').value;
             socket.emit('submit-answer', { code, name, answer });
             document.getElementById('answer-ui').classList.add('hidden');
@@ -75,14 +82,19 @@
         }
 
         socket.on('show-voting', d => {
+            if (myTurn) {
+                document.getElementById('status').innerText = "Твой ответ на экране!";
+                return;
+            }
             document.getElementById('status').classList.add('hidden');
-            document.getElementById('vote-ui').classList.toggle('hidden', d.isSolo);
-            document.getElementById('b1').innerText = d.type==='draw' ? "ЛЕВО" : d.ans1;
-            document.getElementById('b2').innerText = d.type==='draw' ? "ПРАВО" : d.ans2;
-            if(d.isSolo) document.getElementById('status').innerText = "Одиночное выступление на экране!";
+            document.getElementById('vote-ui').classList.remove('hidden');
+            document.getElementById('b1').innerText = d.isSolo ? "ЭТО ШЕДЕВР! (ЛАЙК)" : (d.type==='draw' ? "ЛЕВО" : d.ans1);
+            document.getElementById('b2').classList.toggle('hidden', d.isSolo);
+            if(!d.isSolo) document.getElementById('b2').innerText = d.type==='draw' ? "ПРАВО" : d.ans2;
+            document.getElementById('vote-title').innerText = d.isSolo ? "КАК ВАМ?" : "КТО СМЕШНЕЕ?";
         });
 
-        function vote(n) { socket.emit('cast-vote', {code, voteNum: n, voterName: name}); document.getElementById('vote-ui').classList.add('hidden'); }
+        function vote(n) { socket.emit('cast-vote', {code, voteNum: n, voterName: name}); document.getElementById('vote-ui').classList.add('hidden'); document.getElementById('status').classList.remove('hidden'); }
         socket.on('go-to-menu', () => location.href = 'index.html');
     </script>
 </body>
