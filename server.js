@@ -5,35 +5,31 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
+
+// Настройка Socket.io с запасом для рисунков
 const io = new Server(server, { 
-    maxHttpBufferSize: 1e7, 
-    cors: { origin: "*" } 
+    maxHttpBufferSize: 1e7,
+    cors: { origin: "*" }
 });
 
-// 1. Настройка папок (Ищем везде)
+// Распознавание файлов в корне
 app.use(express.static(__dirname));
-app.use(express.static(path.join(__dirname, 'public')));
 
-// 2. ЯВНЫЕ МАРШРУТЫ (Чтобы "Cannot GET" никогда не появлялось)
-app.get('/', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'index.html'));
-});
+// Прямые маршруты для надежности
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/host.html', (req, res) => res.sendFile(path.join(__dirname, 'host.html')));
+app.get('/player.html', (req, res) => res.sendFile(path.join(__dirname, 'player.html')));
 
-app.get('/host.html', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'host.html'));
-});
-
-app.get('/player.html', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'player.html'));
-});
-
-// 3. ВОПРОСЫ
 const prompts = {
     classic: [
-        "Почему vangavgav лысый?", "Почему Дима Moderass каждый раз д#оч#т на vangavgav?",
-        "Самое странное название для туалетной бумаги?", "Что на самом деле шепчут кошки?", 
-        "Лучший подарок для врага?", "Девиз школы магии для ленивых.",
-        "Что Ванга скрывает под кепкой?", "Худшая фраза от хирурга перед сном."
+        "Почему vangavgav лысый?", 
+        "Почему Дима Moderass каждый раз д#оч#т на vangavgav?",
+        "Самое странное название для туалетной бумаги?", 
+        "Что на самом деле шепчут кошки?", 
+        "Лучший подарок для врага?", 
+        "Девиз школы магии для ленивых.",
+        "Что Ванга скрывает под кепкой?", 
+        "Худшая фраза от хирурга перед сном."
     ],
     text: ["Напиши отзыв на товар: Ржавый гвоздь", "Заголовок газеты из 2077 года", "Жалоба на: Солнечный свет"],
     draw: ["Нарисуй: Грустный чебурек", "Нарисуй: Ванга Фiйко", "Нарисуй: Танцующий стул", "Нарисуй: Пьяный робот"]
@@ -42,11 +38,14 @@ const prompts = {
 const rooms = {};
 
 io.on('connection', (socket) => {
+    console.log('Новое подключение:', socket.id);
+
     socket.on('create-room', () => {
         const code = Math.random().toString(36).substring(2, 6).toUpperCase();
         rooms[code] = { host: socket.id, players: [], mode: 'classic', currentPairIndex: 0, pairs: [] };
         socket.join(code);
         socket.emit('room-created', code);
+        console.log('Комната создана:', code);
     });
 
     socket.on('join-room', ({ code, name, emoji }) => {
@@ -95,7 +94,7 @@ io.on('connection', (socket) => {
         if (pair.ans1 && (!pair.p2 || pair.ans2)) {
             io.to(code).emit('show-voting', { type: room.mode, ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2 });
             if (!pair.p2) {
-                setTimeout(() => { if (rooms[code]) finishPair(code); }, 8000);
+                setTimeout(() => finishPair(code), 8000);
             }
         }
     });
@@ -105,10 +104,9 @@ io.on('connection', (socket) => {
         if (!room) return;
         const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return;
-        
         pair.votes.push({ voter: voterName, voteNum });
         const participants = pair.p2 ? 2 : 1;
-        if (pair.votes.length >= (room.players.length - participants) || !pair.p2) {
+        if (pair.votes.length >= (room.players.length - participants)) {
             finishPair(code);
         }
     });
@@ -118,18 +116,11 @@ io.on('connection', (socket) => {
         const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return;
         pair.finished = true;
-
         let v1 = pair.votes.filter(v => v.voteNum === 1).length;
         let v2 = pair.votes.filter(v => v.voteNum === 2).length;
         pair.p1.score += v1 * 100;
         if (pair.p2) pair.p2.score += v2 * 100;
-
-        io.to(code).emit('voting-results', { 
-            p1_name: pair.p1.name, p1_emoji: pair.p1.emoji,
-            p2_name: pair.p2 ? pair.p2.name : null, p2_emoji: pair.p2 ? pair.p2.emoji : null,
-            isSolo: !pair.p2, v1, v2
-        });
-
+        io.to(code).emit('voting-results', { p1_name: pair.p1.name, p1_emoji: pair.p1.emoji, p2_name: pair.p2 ? pair.p2.name : null, p2_emoji: pair.p2 ? pair.p2.emoji : null, isSolo: !pair.p2, v1, v2 });
         setTimeout(() => {
             if (rooms[code]) {
                 rooms[code].currentPairIndex++;
@@ -141,5 +132,8 @@ io.on('connection', (socket) => {
     socket.on('kick-all', (code) => { io.to(code).emit('go-to-menu'); });
 });
 
+// Использование порта от Render
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => { console.log(`Сервер готов!`); });
+server.listen(PORT, () => {
+    console.log(`--- ГРЕХО-СМЕХ ЗАПУЩЕН НА ПОРТУ ${PORT} ---`);
+});
