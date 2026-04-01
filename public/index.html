@@ -2,39 +2,178 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ГРЕХО-СМЕХ | ВАНГА</title>
+    <title>ГРЕХО-СМЕХ | ВАНГА ПЕРФОРАТОР</title>
+    <!-- Иконка геймпада во вкладке -->
+    <link rel="icon" href="https://fav.farm/🎮" />
     <style>
-        body { font-family: 'Arial Black', sans-serif; background: #1a1a2e; color: white; text-align: center; padding-top: 50px; margin: 0; }
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
         
-        .vanga-container { position: absolute; top: 10px; right: 20px; display: flex; flex-direction: column; align-items: center; text-decoration: none; }
-        .vanga-label { color: #f1c40f; font-size: 24px; text-transform: uppercase; text-shadow: 2px 2px 0 #000; margin-bottom: 5px; }
-        .vanga-avatar { width: 100px; height: 100px; border-radius: 50%; border: 4px solid #e94560; background: url('vanga.jpg') center/cover; box-shadow: 0 0 20px #e94560; }
-        
-        .card { background: #16213e; padding: 30px; display: inline-block; border-radius: 25px; border: 4px solid #e94560; width: 380px; }
-        h1 { font-size: 45px; color: #e94560; margin: 10px; text-transform: uppercase; }
-        input { width: 85%; padding: 15px; margin: 10px; border-radius: 12px; border: none; font-size: 18px; }
-        .btn { width: 90%; padding: 15px; border-radius: 12px; border: none; background: #e94560; color: white; font-weight: bold; font-size: 20px; cursor: pointer; transition: 0.2s; }
-        .btn:hover { background: #ff4d6d; }
-        
-        #emoji-picker { display: flex; justify-content: center; gap: 10px; margin: 20px; }
-        .emoji-btn { 
-            font-size: 40px; width: 75px; height: 75px; background: #0f3460; 
-            border: 3px solid transparent; border-radius: 15px; 
-            display: flex; align-items: center; justify-content: center; /* ЦЕНТРУЕМ ЭМОДЗИ */
-            cursor: pointer; overflow: hidden; padding: 0;
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: #1a1a2e; 
+            color: white; 
+            text-align: center; 
+            padding-top: 60px; 
+            margin: 0; 
+            overflow-x: hidden;
         }
-        .emoji-btn.active { border-color: #e94560; background: #1a1a2e; transform: scale(1.1); }
+
+        /* ГИГАНТСКИЙ БЛОК ВАНГИ В УГЛУ */
+        .vanga-container { 
+            position: absolute; 
+            top: 20px; 
+            right: 30px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            text-decoration: none; 
+            z-index: 1000;
+            transition: 0.3s;
+        }
+
+        .vanga-label { 
+            color: #f1c40f; 
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900; 
+            font-size: 28px; /* ОГРОМНЫЙ ТЕКСТ */
+            text-transform: uppercase; 
+            text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .vanga-avatar { 
+            width: 130px; 
+            height: 130px; 
+            border-radius: 50%; 
+            border: 6px solid #e94560; 
+            background: #000 url('vanga.jpg') center/cover no-repeat; 
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.7); 
+            transition: 0.4s;
+        }
+
+        .vanga-container:hover { transform: scale(1.05); }
+        .vanga-container:hover .vanga-avatar { border-color: #f1c40f; transform: rotate(5deg); }
+
+        /* КАРТОЧКА МЕНЮ */
+        .card { 
+            background: #16213e; 
+            padding: 40px; 
+            display: inline-block; 
+            border-radius: 30px; 
+            border: 4px solid #e94560; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            width: 90%;
+            max-width: 420px;
+            margin-top: 20px;
+        }
+
+        h1 { 
+            font-family: 'Montserrat', sans-serif;
+            font-size: 55px; 
+            color: #e94560; 
+            margin: 0 0 20px 0; 
+            text-transform: uppercase;
+            filter: drop-shadow(0 0 10px rgba(233, 69, 96, 0.4));
+        }
+
+        input { 
+            display: block; 
+            width: 100%; 
+            padding: 18px; 
+            margin: 12px 0; 
+            border-radius: 15px; 
+            border: none; 
+            font-size: 20px; 
+            background: #0f3460; 
+            color: white; 
+            box-sizing: border-box;
+            outline: none;
+            border: 2px solid transparent;
+            transition: 0.3s;
+        }
+
+        input:focus { border-color: #e94560; }
+
+        .btn { 
+            width: 100%; 
+            padding: 18px; 
+            border-radius: 15px; 
+            border: none; 
+            background: #e94560; 
+            color: white; 
+            font-weight: bold; 
+            font-size: 22px; 
+            cursor: pointer; 
+            transition: 0.2s;
+            box-shadow: 0 5px 0 #950740;
+            text-transform: uppercase;
+        }
+
+        .btn:hover { background: #ff4d6d; transform: translateY(-2px); }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #950740; }
+
+        /* ВЫБОР ЭМОДЗИ (ПЕРСОНАЖЕЙ) */
+        .emoji-title { 
+            font-weight: bold; 
+            color: #f1c40f; 
+            margin-bottom: 10px; 
+            font-size: 18px; 
+            text-transform: uppercase;
+        }
+
+        #emoji-picker { 
+            display: flex; 
+            justify-content: center; 
+            gap: 12px; 
+            margin-bottom: 25px; 
+            flex-wrap: wrap; 
+        }
+
+        .emoji-btn { 
+            font-size: 40px; 
+            background: #0f3460; 
+            border: 4px solid transparent; 
+            cursor: pointer; 
+            width: 75px; 
+            height: 75px; 
+            border-radius: 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; /* ЭМОДЗИ РОВНО ПО ЦЕНТРУ */
+            padding: 0;
+            transition: 0.3s;
+            line-height: 1;
+        }
+
+        .emoji-btn.active { 
+            border-color: #e94560; 
+            background: #1a1a2e; 
+            transform: scale(1.15); 
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.5);
+        }
+
+        hr { border: 0; height: 2px; background: #0f3460; margin: 25px 0; }
     </style>
 </head>
 <body>
+
+    <!-- БЛОК ВАНГИ -->
     <a href="https://www.twitch.tv/vangavgav" target="_blank" class="vanga-container">
         <span class="vanga-label">Ванга Фiйко Перфоратор</span>
         <div class="vanga-avatar"></div>
     </a>
+
     <div class="card">
         <h1>ГРЕХО-СМЕХ</h1>
-        <button class="btn" onclick="location.href='host.html'" style="background:#27ae60">СОЗДАТЬ ИГРУ</button>
-        <hr style="margin:20px; border:1px solid #0f3460;">
+        
+        <button class="btn" onclick="location.href='host.html'" style="background:#27ae60; box-shadow: 0 5px 0 #1e8449;">
+            СОЗДАТЬ ИГРУ (ХОСТ)
+        </button>
+
+        <hr>
+
+        <div class="emoji-title">Выбери персонажа:</div>
         <div id="emoji-picker">
             <div class="emoji-btn active" onclick="setEmoji('🤡', this)">🤡</div>
             <div class="emoji-btn" onclick="setEmoji('👻', this)">👻</div>
@@ -42,22 +181,41 @@
             <div class="emoji-btn" onclick="setEmoji('🤖', this)">🤖</div>
             <div class="emoji-btn" onclick="setEmoji('🐙', this)">🐙</div>
         </div>
-        <input type="text" id="name" placeholder="Твое Имя">
-        <input type="text" id="code" placeholder="Код Комнаты">
-        <button class="btn" onclick="join()">ВОЙТИ</button>
+
+        <input type="text" id="name" placeholder="Твоё Имя" maxlength="12">
+        <input type="text" id="code" placeholder="Код Комнаты" maxlength="4">
+        
+        <button class="btn" onclick="join()">ВОЙТИ В ИГРУ</button>
     </div>
+
     <script>
         let selectedEmoji = "🤡";
+
+        // Выбор эмодзи
         function setEmoji(e, btn) {
             selectedEmoji = e;
             document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
+
+        // Вход в игру
         function join() {
-            const n = document.getElementById('name').value;
-            const c = document.getElementById('code').value.toUpperCase();
-            if(n && c) location.href = `player.html?name=${encodeURIComponent(n)}&code=${encodeURIComponent(c)}&emoji=${encodeURIComponent(selectedEmoji)}`;
+            const nameInput = document.getElementById('name').value.trim();
+            const codeInput = document.getElementById('code').value.trim().toUpperCase();
+
+            if (!nameInput) return alert("Введите имя!");
+            if (!codeInput) return alert("Введите код комнаты!");
+
+            // Переход на страницу игрока с данными в ссылке
+            location.href = `player.html?name=${encodeURIComponent(nameInput)}&code=${encodeURIComponent(codeInput)}&emoji=${encodeURIComponent(selectedEmoji)}`;
         }
+
+        // Чтобы кнопка "Enter" тоже работала для входа
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                join();
+            }
+        });
     </script>
 </body>
 </html>
