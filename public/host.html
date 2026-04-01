@@ -1,0 +1,33 @@
+/* Внутри host.html найди функцию speak и замени её: */
+function speak(text) {
+    window.speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+    
+    // Ищем мужской голос (Pavel, Male, Microsoft David и т.д.)
+    let maleVoice = voices.find(v => v.name.includes('Pavel') || v.name.includes('Male') || v.name.includes('Dmitry'));
+    if (!maleVoice) maleVoice = voices.find(v => v.lang.includes('ru'));
+    
+    msg.voice = maleVoice;
+    msg.pitch = 0.5; // ПОНИЖАЕМ ТОН (делаем мужским)
+    msg.rate = 0.85; // Чуть медленнее для важности
+    window.speechSynthesis.speak(msg);
+}
+
+// В блоке socket.on('round-started') теперь не показываем имена:
+socket.on('round-started', data => {
+    document.getElementById('lobby').style.display = "none";
+    document.getElementById('game').style.display = "block";
+    document.getElementById('voting').style.display = "none";
+    document.getElementById('roundName').innerText = "РАУНД " + data.round;
+    document.getElementById('qText').innerText = data.q;
+    speak(data.q);
+});
+
+// Добавь отображение результатов с эмодзи:
+socket.on('voting-results', data => {
+    speak("Результаты голосования");
+    // Тут можно добавить анимацию появления имен:
+    document.getElementById('ans1').innerHTML += `<br><small>${data.p1_emoji} ${data.p1_name} (+${data.v1 * 100})</small>`;
+    document.getElementById('ans2').innerHTML += `<br><small>${data.p2_emoji} ${data.p2_name} (+${data.v2 * 100})</small>`;
+});

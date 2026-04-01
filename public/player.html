@@ -1,0 +1,22 @@
+<!-- В <head> добавь иконку -->
+<link rel="icon" href="https://fav.farm/🎮" />
+
+<!-- В <script> обнови логику входа -->
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const name = params.get('name');
+    const code = params.get('code').toUpperCase();
+    const emoji = params.get('emoji'); // Берем эмодзи из ссылки
+    let isSpectator = false;
+
+    socket.emit('join-room', { code, name, emoji });
+
+    socket.on('joined-spectator', () => {
+        isSpectator = true;
+        document.getElementById('status').innerText = "Ты ЗРИТЕЛЬ. Наслаждайся шоу и голосуй!";
+        document.getElementById('status').style.background = "#3498db";
+    });
+
+    // В функции vote() и sendAns() все остается почти так же, 
+    // но зрители видят только блок голосования.
+</script>
