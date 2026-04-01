@@ -7,14 +7,25 @@
         body { font-family: 'Montserrat', sans-serif; background: #1a1a2e; color: white; text-align: center; margin: 0; overflow: hidden; }
         #lobby, #game, #final { display: none; padding: 20px; }
         #lobby { display: block; }
+        
+        /* КОД В УГЛУ */
+        .top-info { position: absolute; top: 20px; right: 20px; background: rgba(233, 69, 96, 0.8); padding: 10px 20px; border-radius: 10px; font-weight: bold; border: 2px solid white; z-index: 100; font-family: monospace; font-size: 24px; }
+
         .logo { font-size: 60px; color: #e94560; margin: 20px; font-weight: bold; }
-        .ans-card { background: #0f3460; padding: 25px; border-radius: 20px; width: 42%; border: 5px solid #e94560; font-size: 28px; min-height: 200px; display: inline-block; vertical-align: top; margin: 10px; }
-        .ans-card.solo { background: #444; border-color: #888; width: 80%; }
-        img { max-width: 100%; border-radius: 10px; background: white; }
+        
+        /* КАРТОЧКИ ОТВЕТОВ */
+        .ans-card { background: #0f3460; padding: 20px; border-radius: 20px; width: 45%; border: 5px solid #e94560; font-size: 32px; min-height: 300px; display: inline-block; vertical-align: top; margin: 10px; box-sizing: border-box; }
+        .ans-card.solo { width: 70%; background: #444; border-color: #f1c40f; }
+        
+        /* БОЛЬШОЙ РИСУНОК */
+        img.drawing { width: 100%; height: auto; max-height: 400px; object-fit: contain; border-radius: 10px; background: white; border: 3px solid #ccc; }
+
         .player-chip { background:#e94560; padding:10px 20px; border-radius:50px; margin:5px; display: inline-block; font-weight: bold; }
     </style>
 </head>
-<body onclick="startAudioContext()"> <!-- Клик в любом месте включит звук, если он заблокирован -->
+<body onclick="startAudioContext()">
+
+<div id="room-info-display" class="top-info" style="display:none;">КОД: ...</div>
 
 <div id="lobby">
     <div class="logo">ГРЕХО-СМЕХ</div>
@@ -29,24 +40,22 @@
 </div>
 
 <div id="game">
-    <h2 id="qText" style="font-size: 40px; margin: 30px;"></h2>
-    <div id="voting" style="display:none;">
+    <h2 id="qText" style="font-size: 44px; margin: 20px;"></h2>
+    <div id="voting" style="display:none; width: 100%;">
         <div id="card1" class="ans-card"></div>
         <div id="card2" class="ans-card" style="border-color:#3498db"></div>
     </div>
 </div>
 
 <div id="final">
-    <h1>🏆 ПОБЕДИТЕЛЬ: <br><span id="winner" style="color:#f1c40f; font-size: 60px;"></span></h1>
-    <button onclick="location.reload()" style="padding:20px; background:#e94560; color:white; border-radius:15px; border:none; cursor:pointer;">В МЕНЮ</button>
+    <h1>🏆 ПОБЕДИТЕЛЬ: <br><span id="winner" style="color:#f1c40f; font-size: 70px;"></span></h1>
+    <button onclick="location.reload()" style="padding:20px 40px; background:#e94560; color:white; border-radius:15px; border:none; cursor:pointer; font-size: 20px;">В МЕНЮ</button>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
     let audioStarted = false;
-
-    // ССЫЛКИ НА МУЗЫКУ
     const music = {
         lobby: new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_f5f69f2001.mp3'), 
         game: new Audio('https://cdn.pixabay.com/audio/2022/01/18/audio_d19d678d8a.mp3'),
@@ -55,20 +64,27 @@
 
     function playMusic(track) {
         Object.values(music).forEach(m => { m.pause(); m.currentTime = 0; });
-        music[track].loop = true;
-        music[track].volume = 0.3;
-        music[track].play().catch(() => { console.log("Ждем клика для звука..."); });
+        music[track].loop = true; music[track].volume = 0.3;
+        music[track].play().catch(() => {});
     }
 
-    function startAudioContext() {
-        if (!audioStarted) {
-            playMusic('lobby');
-            audioStarted = true;
-        }
-    }
+    function startAudioContext() { if (!audioStarted) { playMusic('lobby'); audioStarted = true; } }
 
-    // Авто-попытка при загрузке
-    window.onload = () => { playMusic('lobby'); };
+    socket.emit('create-room');
+    socket.on('room-created', c => { 
+        document.getElementById('roomCode').innerText = "КОД: " + c; 
+        document.getElementById('room-info-display').innerText = "КОД: " + c;
+    });
+
+    socket.on('player-joined', d => { 
+        document.getElementById('playerList').innerHTML += `<div class="player-chip">${d.emoji} ${d.name}</div>`; 
+    });
+
+    function startGame() { 
+        playMusic('game');
+        document.getElementById('room-info-display').style.display = 'block';
+        socket.emit('start-game', { code: document.getElementById('roomCode').innerText.replace("КОД: ", ""), mode: document.getElementById('gameMode').value }); 
+    }
 
     function speak(text, callback) {
         window.speechSynthesis.cancel();
@@ -76,17 +92,6 @@
         msg.pitch = 0.4; msg.rate = 0.9;
         msg.onend = callback;
         window.speechSynthesis.speak(msg);
-    }
-
-    socket.emit('create-room');
-    socket.on('room-created', c => { document.getElementById('roomCode').innerText = "КОД: " + c; });
-    socket.on('player-joined', d => { 
-        document.getElementById('playerList').innerHTML += `<div class="player-chip">${d.emoji} ${d.name}</div>`; 
-    });
-
-    function startGame() { 
-        playMusic('game');
-        socket.emit('start-game', { code: document.getElementById('roomCode').innerText.replace("КОД: ", ""), mode: document.getElementById('gameMode').value }); 
     }
 
     socket.on('round-started', data => {
@@ -104,23 +109,23 @@
         c1.className = data.isSolo ? "ans-card solo" : "ans-card";
         c2.style.display = data.isSolo ? "none" : "inline-block";
         
-        c1.innerHTML = data.type === 'draw' ? `<img src="${data.ans1}">` : data.ans1;
-        if (!data.isSolo) c2.innerHTML = data.type === 'draw' ? `<img src="${data.ans2}">` : data.ans2;
+        c1.innerHTML = data.type === 'draw' ? `<img src="${data.ans1}" class="drawing">` : data.ans1;
+        if (!data.isSolo) c2.innerHTML = data.type === 'draw' ? `<img src="${data.ans2}" class="drawing">` : data.ans2;
 
         if (data.isSolo) {
-            speak("Вариант игрока:", () => { if(data.type !== 'draw') speak(data.ans1); });
+            speak("Одиночное выступление. Оцените работу!", () => { if(data.type !== 'draw') speak(data.ans1); });
         } else {
-            speak("Первый вариант...", () => {
+            speak("Чьи старания лучше?", () => {
                 if(data.type !== 'draw') speak(data.ans1, () => {
-                    setTimeout(() => speak("Второй вариант...", () => { if(data.type !== 'draw') speak(data.ans2); }), 800);
+                    setTimeout(() => speak(data.ans2), 1000);
                 });
             });
         }
     });
 
     socket.on('voting-results', data => {
-        document.getElementById('card1').innerHTML += `<br><small style="color:#f1c40f">${data.p1_emoji} ${data.p1_name}</small>`;
-        if(!data.isSolo) document.getElementById('card2').innerHTML += `<br><small style="color:#3498db">${data.p2_emoji} ${data.p2_name}</small>`;
+        document.getElementById('card1').innerHTML += `<br><small style="color:#f1c40f">${data.p1_emoji} ${data.p1_name} (Голосов: ${data.v1})</small>`;
+        if(!data.isSolo) document.getElementById('card2').innerHTML += `<br><small style="color:#3498db">${data.p2_emoji} ${data.p2_name} (Голосов: ${data.v2})</small>`;
     });
 
     socket.on('final-results', data => {
@@ -128,7 +133,6 @@
         document.getElementById('game').style.display = "none";
         document.getElementById('final').style.display = "block";
         document.getElementById('winner').innerText = data.players[0].emoji + " " + data.players[0].name;
-        speak("Победил " + data.players[0].name);
     });
 </script>
 </body>
