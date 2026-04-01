@@ -5,11 +5,29 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 1e7, cors: { origin: "*" } });
+const io = new Server(server, { 
+    maxHttpBufferSize: 1e7, 
+    cors: { origin: "*" } 
+});
 
+// 1. Настройка папок (Ищем везде)
 app.use(express.static(__dirname));
-app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
+app.use(express.static(path.join(__dirname, 'public')));
 
+// 2. ЯВНЫЕ МАРШРУТЫ (Чтобы "Cannot GET" никогда не появлялось)
+app.get('/', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'index.html'));
+});
+
+app.get('/host.html', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'host.html'));
+});
+
+app.get('/player.html', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'player.html'));
+});
+
+// 3. ВОПРОСЫ
 const prompts = {
     classic: [
         "Почему vangavgav лысый?", "Почему Дима Moderass каждый раз д#оч#т на vangavgav?",
@@ -76,14 +94,8 @@ io.on('connection', (socket) => {
 
         if (pair.ans1 && (!pair.p2 || pair.ans2)) {
             io.to(code).emit('show-voting', { type: room.mode, ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2 });
-            
-            // ЕСЛИ ЭТО СОЛО - запускаем авто-переход через 8 секунд, чтобы не висело
             if (!pair.p2) {
-                setTimeout(() => {
-                    if (rooms[code] && rooms[code].pairs[rooms[code].currentPairIndex] === pair) {
-                        finishPair(code);
-                    }
-                }, 8000);
+                setTimeout(() => { if (rooms[code]) finishPair(code); }, 8000);
             }
         }
     });
@@ -92,12 +104,9 @@ io.on('connection', (socket) => {
         const room = rooms[code];
         if (!room) return;
         const pair = room.pairs[room.currentPairIndex];
-        if (!pair) return;
+        if (!pair || pair.finished) return;
         
-        if (pair.votes.find(v => v.voter === voterName)) return;
         pair.votes.push({ voter: voterName, voteNum });
-        
-        // Если проголосовали все (кроме участников пары) или это соло и кто-то лайкнул
         const participants = pair.p2 ? 2 : 1;
         if (pair.votes.length >= (room.players.length - participants) || !pair.p2) {
             finishPair(code);
@@ -114,7 +123,6 @@ io.on('connection', (socket) => {
         let v2 = pair.votes.filter(v => v.voteNum === 2).length;
         pair.p1.score += v1 * 100;
         if (pair.p2) pair.p2.score += v2 * 100;
-        else if (v1 > 0) pair.p1.score += 150; // Бонус за соло-лайки
 
         io.to(code).emit('voting-results', { 
             p1_name: pair.p1.name, p1_emoji: pair.p1.emoji,
@@ -133,4 +141,5 @@ io.on('connection', (socket) => {
     socket.on('kick-all', (code) => { io.to(code).emit('go-to-menu'); });
 });
 
-server.listen(process.env.PORT || 3000);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => { console.log(`Сервер готов!`); });
