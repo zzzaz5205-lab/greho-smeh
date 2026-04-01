@@ -4,52 +4,87 @@
     <meta charset="UTF-8">
     <title>ЭКРАН ХОСТА | ГРЕХО-СМЕХ</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
         body { font-family: 'Montserrat', sans-serif; background: #1a1a2e; color: white; text-align: center; margin: 0; overflow: hidden; }
+        
+        /* ГИГАНТСКИЙ КОД В УГЛУ (В 3 РАЗА БОЛЬШЕ) */
+        .top-info { 
+            position: absolute; 
+            top: 20px; 
+            right: 20px; 
+            background: #e94560; 
+            padding: 15px 40px; 
+            border-radius: 20px; 
+            font-weight: 900; 
+            border: 4px solid white; 
+            z-index: 1000; 
+            font-family: monospace; 
+            font-size: 75px; /* БЫЛО 24px */
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.8);
+            letter-spacing: 5px;
+        }
+
         #lobby, #game, #final { display: none; padding: 20px; }
         #lobby { display: block; }
         
-        /* КОД В УГЛУ */
-        .top-info { position: absolute; top: 20px; right: 20px; background: rgba(233, 69, 96, 0.8); padding: 10px 20px; border-radius: 10px; font-weight: bold; border: 2px solid white; z-index: 100; font-family: monospace; font-size: 24px; }
-
-        .logo { font-size: 60px; color: #e94560; margin: 20px; font-weight: bold; }
+        .logo { font-size: 70px; color: #e94560; margin: 20px; font-weight: bold; text-transform: uppercase; }
         
-        /* КАРТОЧКИ ОТВЕТОВ */
-        .ans-card { background: #0f3460; padding: 20px; border-radius: 20px; width: 45%; border: 5px solid #e94560; font-size: 32px; min-height: 300px; display: inline-block; vertical-align: top; margin: 10px; box-sizing: border-box; }
-        .ans-card.solo { width: 70%; background: #444; border-color: #f1c40f; }
-        
-        /* БОЛЬШОЙ РИСУНОК */
-        img.drawing { width: 100%; height: auto; max-height: 400px; object-fit: contain; border-radius: 10px; background: white; border: 3px solid #ccc; }
+        /* ГИГАНТСКИЙ КОД В ЛОББИ */
+        #roomCode { 
+            background: #0f3460; 
+            padding: 30px 80px; 
+            border: 6px solid #e94560; 
+            display: inline-block; 
+            border-radius: 30px; 
+            font-size: 120px; /* БЫЛО 40px */
+            font-family: monospace;
+            color: #f1c40f;
+            text-shadow: 5px 5px 0 #000;
+            margin-top: 40px;
+        }
 
-        .player-chip { background:#e94560; padding:10px 20px; border-radius:50px; margin:5px; display: inline-block; font-weight: bold; }
+        .ans-card { background: #0f3460; padding: 25px; border-radius: 20px; width: 45%; border: 5px solid #e94560; font-size: 32px; min-height: 350px; display: inline-block; vertical-align: top; margin: 10px; }
+        .ans-card.solo { width: 75%; background: #444; border-color: #f1c40f; }
+        img.drawing { width: 100%; height: auto; max-height: 450px; object-fit: contain; border-radius: 10px; background: white; }
+        .player-chip { background:#e94560; padding:15px 30px; border-radius:50px; margin:10px; display: inline-block; font-weight: bold; font-size: 24px; }
+        .main-btn { padding: 25px 60px; background: #27ae60; color: white; border-radius: 60px; font-size: 30px; font-weight: bold; cursor: pointer; border: none; margin-top: 30px; }
     </style>
 </head>
 <body onclick="startAudioContext()">
 
-<div id="room-info-display" class="top-info" style="display:none;">КОД: ...</div>
+<div id="room-info-display" class="top-info" style="display:none;">...</div>
 
 <div id="lobby">
     <div class="logo">ГРЕХО-СМЕХ</div>
-    <h1 id="roomCode" style="background:#0f3460; padding:15px; border:3px solid #e94560; display:inline-block; border-radius:15px;">КОД: ...</h1><br>
-    <select id="gameMode" style="padding:15px; font-size:20px; border-radius:10px; margin:20px;">
-        <option value="classic">Грехо-Смех</option>
-        <option value="text">Смехо-Текст</option>
-        <option value="draw">Рисовалка</option>
-    </select><br>
-    <div id="playerList"></div><br>
-    <button onclick="startGame()" style="padding:20px 50px; background:#e94560; color:white; border-radius:50px; font-size:24px; font-weight:bold; cursor:pointer;">НАЧАТЬ</button>
+    <div style="color: #ccc; font-size: 24px;">Заходи на сайт и вводи код:</div>
+    <h1 id="roomCode">...</h1><br>
+    
+    <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px; display: inline-block; margin-top: 20px;">
+        <span style="font-size: 20px;">Выбери режим:</span>
+        <select id="gameMode" style="padding:15px; font-size:24px; border-radius:10px; background:#1a1a2e; color:white; border:2px solid #e94560;">
+            <option value="classic">Грехо-Смех</option>
+            <option value="text">Смехо-Текст</option>
+            <option value="draw">Рисовалка</option>
+        </select>
+    </div>
+    
+    <div id="playerList" style="margin: 30px;"></div>
+    <button class="main-btn" onclick="startGame()">НАЧАТЬ ИГРУ</button>
 </div>
 
 <div id="game">
-    <h2 id="qText" style="font-size: 44px; margin: 20px;"></h2>
-    <div id="voting" style="display:none; width: 100%;">
+    <h2 id="qText" style="font-size: 48px; margin-bottom: 30px;"></h2>
+    <div id="voting" style="display:none;">
         <div id="card1" class="ans-card"></div>
         <div id="card2" class="ans-card" style="border-color:#3498db"></div>
     </div>
 </div>
 
 <div id="final">
-    <h1>🏆 ПОБЕДИТЕЛЬ: <br><span id="winner" style="color:#f1c40f; font-size: 70px;"></span></h1>
-    <button onclick="location.reload()" style="padding:20px 40px; background:#e94560; color:white; border-radius:15px; border:none; cursor:pointer; font-size: 20px;">В МЕНЮ</button>
+    <h1 style="font-size: 50px;">🏆 ПОБЕДИТЕЛЬ:</h1>
+    <div id="winner" style="color:#f1c40f; font-size: 100px; font-weight: 900;"></div>
+    <br>
+    <button onclick="location.reload()" style="padding:20px 50px; background:#e94560; color:white; border-radius:20px; font-size:25px; cursor:pointer; border:none;">В МЕНЮ</button>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -72,8 +107,8 @@
 
     socket.emit('create-room');
     socket.on('room-created', c => { 
-        document.getElementById('roomCode').innerText = "КОД: " + c; 
-        document.getElementById('room-info-display').innerText = "КОД: " + c;
+        document.getElementById('roomCode').innerText = c; 
+        document.getElementById('room-info-display').innerText = c;
     });
 
     socket.on('player-joined', d => { 
@@ -83,7 +118,7 @@
     function startGame() { 
         playMusic('game');
         document.getElementById('room-info-display').style.display = 'block';
-        socket.emit('start-game', { code: document.getElementById('roomCode').innerText.replace("КОД: ", ""), mode: document.getElementById('gameMode').value }); 
+        socket.emit('start-game', { code: document.getElementById('roomCode').innerText, mode: document.getElementById('gameMode').value }); 
     }
 
     function speak(text, callback) {
@@ -108,14 +143,13 @@
         const c2 = document.getElementById('card2');
         c1.className = data.isSolo ? "ans-card solo" : "ans-card";
         c2.style.display = data.isSolo ? "none" : "inline-block";
-        
         c1.innerHTML = data.type === 'draw' ? `<img src="${data.ans1}" class="drawing">` : data.ans1;
         if (!data.isSolo) c2.innerHTML = data.type === 'draw' ? `<img src="${data.ans2}" class="drawing">` : data.ans2;
 
         if (data.isSolo) {
-            speak("Одиночное выступление. Оцените работу!", () => { if(data.type !== 'draw') speak(data.ans1); });
+            speak("Одиночный ответ. Оцените!", () => { if(data.type !== 'draw') speak(data.ans1); });
         } else {
-            speak("Чьи старания лучше?", () => {
+            speak("Кто смешнее?", () => {
                 if(data.type !== 'draw') speak(data.ans1, () => {
                     setTimeout(() => speak(data.ans2), 1000);
                 });
@@ -124,8 +158,8 @@
     });
 
     socket.on('voting-results', data => {
-        document.getElementById('card1').innerHTML += `<br><small style="color:#f1c40f">${data.p1_emoji} ${data.p1_name} (Голосов: ${data.v1})</small>`;
-        if(!data.isSolo) document.getElementById('card2').innerHTML += `<br><small style="color:#3498db">${data.p2_emoji} ${data.p2_name} (Голосов: ${data.v2})</small>`;
+        document.getElementById('card1').innerHTML += `<br><span style="color:#f1c40f; font-size:24px;">${data.p1_emoji} ${data.p1_name}</span>`;
+        if(!data.isSolo) document.getElementById('card2').innerHTML += `<br><span style="color:#3498db; font-size:24px;">${data.p2_emoji} ${data.p2_name}</span>`;
     });
 
     socket.on('final-results', data => {
