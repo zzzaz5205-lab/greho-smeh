@@ -2,26 +2,23 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ГРЕХО-СМЕХ - ВХОД</title>
+    <title>ГРЕХО-СМЕХ | ВАНГА ПЕРФОРАТОР</title>
     <link rel="icon" href="https://fav.farm/🎮" />
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: white; text-align: center; padding-top: 50px; margin: 0; }
-        .vanga-container { position: absolute; top: 20px; right: 30px; display: flex; flex-direction: column; align-items: center; text-decoration: none; z-index: 100; }
-        .vanga-label { color: #f1c40f; font-weight: 900; font-size: 18px; text-transform: uppercase; text-shadow: 2px 2px 0 #000; margin-bottom: 5px; }
-        .vanga-avatar { width: 100px; height: 100px; border-radius: 50%; border: 4px solid #e94560; background: #000 url('vanga.jpg') center/cover no-repeat; box-shadow: 0 0 20px rgba(233, 69, 96, 0.6); }
-
-        .card { background: #16213e; padding: 40px; display: inline-block; border-radius: 20px; border: 3px solid #e94560; box-shadow: 0 0 20px rgba(0,0,0,0.5); width: 90%; max-width: 450px; }
-        h1 { color: #e94560; font-size: 45px; margin-bottom: 20px; }
-        input { display: block; width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: none; font-size: 18px; background: #0f3460; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border-radius: 12px; border: none; background: #e94560; color: white; font-weight: bold; font-size: 20px; cursor: pointer; transition: 0.2s; }
-        button:hover { background: #ff4d6d; }
+        body { font-family: 'Arial Black', sans-serif; background: #1a1a2e; color: white; text-align: center; padding-top: 50px; margin: 0; }
+        .vanga-container { position: absolute; top: 10px; right: 20px; display: flex; flex-direction: column; align-items: center; text-decoration: none; }
+        .vanga-label { color: #f1c40f; font-weight: 900; font-size: 26px; text-transform: uppercase; text-shadow: 3px 3px 0 #000; margin-bottom: 5px; }
+        .vanga-avatar { width: 110px; height: 110px; border-radius: 50%; border: 5px solid #e94560; background: #000 url('vanga.jpg') center/cover; box-shadow: 0 0 25px #e94560; }
         
-        #emoji-picker { margin: 20px 0; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .card { background: #16213e; padding: 30px; display: inline-block; border-radius: 25px; border: 4px solid #e94560; width: 400px; }
+        h1 { font-size: 50px; color: #e94560; margin: 10px; }
+        input { width: 90%; padding: 15px; margin: 10px; border-radius: 12px; border: none; font-size: 18px; }
+        .btn { width: 95%; padding: 15px; border-radius: 12px; border: none; background: #e94560; color: white; font-weight: bold; font-size: 20px; cursor: pointer; }
+        
+        #emoji-picker { display: flex; justify-content: center; gap: 10px; margin: 20px; }
         .emoji-btn { 
-            font-size: 35px; background: #0f3460; border: 3px solid transparent; 
-            cursor: pointer; width: 65px; height: 65px; border-radius: 15px;
-            display: flex; align-items: center; justify-content: center; /* ЦЕНТРОВКА */
-            padding: 0; line-height: 1; transition: 0.2s;
+            font-size: 40px; width: 70px; height: 70px; background: #0f3460; border: 3px solid transparent; 
+            border-radius: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
         .emoji-btn.active { border-color: #e94560; background: #1a1a2e; transform: scale(1.1); }
     </style>
@@ -31,24 +28,20 @@
         <span class="vanga-label">Ванга Фiйко Перфоратор</span>
         <div class="vanga-avatar"></div>
     </a>
-
     <div class="card">
         <h1>ГРЕХО-СМЕХ</h1>
-        <button onclick="location.href='host.html'" style="background:#27ae60; margin-bottom: 20px;">СОЗДАТЬ ИГРУ</button>
-        <hr><br>
-        <p style="font-weight: bold; color: #f1c40f;">ВЫБЕРИ ПЕРСОНАЖА:</p>
+        <button class="btn" onclick="location.href='host.html'" style="background:#27ae60">СОЗДАТЬ ИГРУ</button>
+        <hr style="margin:20px; border:1px solid #0f3460;">
         <div id="emoji-picker">
-            <button class="emoji-btn active" onclick="setEmoji('🤡', this)">🤡</button>
-            <button class="emoji-btn" onclick="setEmoji('👻', this)">👻</button>
-            <button class="emoji-btn" onclick="setEmoji('👽', this)">👽</button>
-            <button class="emoji-btn" onclick="setEmoji('🤖', this)">🤖</button>
-            <button class="emoji-btn" onclick="setEmoji('🐙', this)">🐙</button>
+            <div class="emoji-btn active" onclick="setEmoji('🤡', this)">🤡</div>
+            <div class="emoji-btn" onclick="setEmoji('👻', this)">👻</div>
+            <div class="emoji-btn" onclick="setEmoji('👽', this)">👽</div>
+            <div class="emoji-btn" onclick="setEmoji('🤖', this)">🤖</div>
         </div>
         <input type="text" id="name" placeholder="Твое Имя">
         <input type="text" id="code" placeholder="Код Комнаты">
-        <button onclick="join()">ВОЙТИ</button>
+        <button class="btn" onclick="join()">ВОЙТИ</button>
     </div>
-
     <script>
         let selectedEmoji = "🤡";
         function setEmoji(e, btn) {
