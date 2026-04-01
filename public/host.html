@@ -2,92 +2,102 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ГРЕХО-СМЕХ | ЭКРАН ХОСТА</title>
-    <link rel="icon" href="https://fav.farm/🎮" />
+    <title>ЭКРАН ХОСТА</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
-        body { font-family: 'Montserrat', sans-serif; background: #1a1a2e; color: #fff; text-align: center; margin: 0; overflow: hidden; }
-        #lobby, #game, #final, #credits { display: none; padding: 20px; }
+        body { font-family: sans-serif; background: #1a1a2e; color: white; text-align: center; margin: 0; overflow: hidden; }
+        #lobby, #game, #final { display: none; padding: 20px; }
         #lobby { display: block; }
-        .logo { font-size: 70px; color: #e94560; margin-top: 20px; text-transform: uppercase; }
-        .main-btn { background: #e94560; color: white; padding: 15px 40px; font-size: 22px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin: 10px; }
-        .mode-select { background: #0f3460; padding: 20px; border-radius: 20px; border: 3px solid #e94560; display: inline-block; margin: 20px; }
-        select { padding: 10px; border-radius: 10px; font-size: 20px; background: #1a1a2e; color: white; border: 2px solid #e94560; }
-        .ans-card { background: #0f3460; padding: 20px; border-radius: 20px; width: 45%; border: 4px solid #e94560; font-size: 24px; }
-        img.drawing { max-width: 100%; border-radius: 10px; background: white; }
-        .player-chip { background:#e94560; padding:10px 20px; border-radius:50px; margin:5px; display: inline-block; font-weight: bold; }
+        .logo { font-size: 60px; color: #e94560; margin: 20px; font-weight: bold; }
+        .ans-card { background: #0f3460; padding: 25px; border-radius: 20px; width: 42%; border: 5px solid #e94560; font-size: 28px; min-height: 200px; display: inline-block; vertical-align: top; margin: 10px; }
+        .ans-card.solo { background: #444; border-color: #888; width: 80%; }
+        img { max-width: 100%; border-radius: 10px; background: white; }
     </style>
 </head>
 <body>
-
 <div id="lobby">
     <div class="logo">ГРЕХО-СМЕХ</div>
-    <h1 id="roomCode" style="background: #0f3460; padding: 10px 30px; border-radius: 15px; border: 3px solid #e94560; display: inline-block;">КОД: ...</h1>
-    
-    <div class="mode-select">
-        <h3>РЕЖИМ ИГРЫ:</h3>
-        <select id="gameMode">
-            <option value="classic">Классика (Грехо-Смех)</option>
-            <option value="text">Смехо-Текст (Отзывы)</option>
-            <option value="draw">Рисовалка (Шедевры)</option>
-        </select>
-    </div>
-
-    <div id="playerList" style="margin: 20px;"></div>
-    <button class="main-btn" onclick="startGame()">НАЧАТЬ ПАРТИЮ</button>
+    <h1 id="roomCode" style="background:#0f3460; padding:15px; border:3px solid #e94560; display:inline-block; border-radius:15px;">КОД: ...</h1><br>
+    <select id="gameMode" style="padding:15px; font-size:20px; border-radius:10px; margin:20px;">
+        <option value="classic">Режим: Грехо-Смех</option>
+        <option value="text">Режим: Смехо-Текст</option>
+        <option value="draw">Режим: Рисовалка</option>
+    </select><br>
+    <div id="playerList"></div><br>
+    <button onclick="startGame()" style="padding:20px 50px; background:#e94560; color:white; border:none; border-radius:50px; font-size:24px; font-weight:bold; cursor:pointer;">НАЧАТЬ</button>
 </div>
 
 <div id="game">
-    <h1 id="roundInfo" style="color: #e94560;">РАУНД 1</h1>
     <h2 id="qText" style="font-size: 40px; margin: 30px;"></h2>
-    <div id="voting" style="display:none; justify-content: space-around;">
+    <div id="voting" style="display:none;">
         <div id="card1" class="ans-card"></div>
-        <div id="card2" class="ans-card" style="background:#1a1a2e; border-color:#3498db"></div>
+        <div id="card2" class="ans-card" style="border-color:#3498db"></div>
     </div>
 </div>
 
-<!-- Сюда добавь финальный блок и титры как были раньше -->
+<div id="final">
+    <h1 style="font-size: 80px;">🏆 ПОБЕДИТЕЛЬ: <br><span id="winner" style="color:#f1c40f"></span></h1>
+    <button onclick="location.reload()" style="padding:20px; background:#e94560; color:white; border-radius:15px; border:none;">В МЕНЮ</button>
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
     let code = "";
 
+    function speak(text, callback) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.pitch = 0.5; msg.rate = 0.9;
+        msg.onend = callback;
+        window.speechSynthesis.speak(msg);
+    }
+
     socket.emit('create-room');
     socket.on('room-created', c => { code = c; document.getElementById('roomCode').innerText = "КОД: " + c; });
-    socket.on('player-joined', data => { 
-        document.getElementById('playerList').innerHTML += `<div class="player-chip">${data.emoji} ${data.name}</div>`; 
-    });
+    socket.on('player-joined', d => { document.getElementById('playerList').innerHTML += `<div style="display:inline-block; background:#e94560; padding:10px; margin:5px; border-radius:20px;">${d.emoji} ${d.name}</div>`; });
 
-    function startGame() { 
-        const mode = document.getElementById('gameMode').value;
-        socket.emit('start-game', { code, mode }); 
-    }
+    function startGame() { socket.emit('start-game', { code, mode: document.getElementById('gameMode').value }); }
 
     socket.on('round-started', data => {
         document.getElementById('lobby').style.display = "none";
         document.getElementById('game').style.display = "block";
         document.getElementById('voting').style.display = "none";
         document.getElementById('qText').innerText = data.q;
+        speak(data.q);
     });
 
     socket.on('show-voting', data => {
-        document.getElementById('voting').style.display = "flex";
+        document.getElementById('voting').style.display = "block";
         const c1 = document.getElementById('card1');
         const c2 = document.getElementById('card2');
-        
-        if (data.type === 'draw') {
-            c1.innerHTML = `<img src="${data.ans1}" class="drawing">`;
-            c2.innerHTML = `<img src="${data.ans2}" class="drawing">`;
+        c1.className = data.isSolo ? "ans-card solo" : "ans-card";
+        c2.style.display = data.isSolo ? "none" : "inline-block";
+
+        c1.innerHTML = data.type === 'draw' ? `<img src="${data.ans1}">` : data.ans1;
+        if (!data.isSolo) c2.innerHTML = data.type === 'draw' ? `<img src="${data.ans2}">` : data.ans2;
+
+        if (data.isSolo) {
+            speak("Одиночное выступление. Вариант игрока:", () => { if(data.type !== 'draw') speak(data.ans1); });
         } else {
-            c1.innerText = data.ans1;
-            c2.innerText = data.ans2;
+            speak("Первый вариант...", () => {
+                if(data.type !== 'draw') speak(data.ans1, () => {
+                    setTimeout(() => speak("Второй вариант...", () => { if(data.type !== 'draw') speak(data.ans2); }), 1000);
+                });
+            });
         }
     });
 
     socket.on('voting-results', data => {
-        document.getElementById('card1').innerHTML += `<br><small style="color:#f1c40f">${data.p1_emoji} ${data.p1_name}</small>`;
-        document.getElementById('card2').innerHTML += `<br><small style="color:#3498db">${data.p2_emoji} ${data.p2_name}</small>`;
+        document.getElementById('card1').innerHTML += `<br><small>${data.p1_emoji} ${data.p1_name}</small>`;
+        if(!data.isSolo) document.getElementById('card2').innerHTML += `<br><small>${data.p2_emoji} ${data.p2_name}</small>`;
+    });
+
+    socket.on('final-results', data => {
+        document.getElementById('game').style.display = "none";
+        document.getElementById('final').style.display = "block";
+        document.getElementById('winner').innerText = data.players[0].emoji + " " + data.players[0].name;
+        speak("Победил " + data.players[0].name);
+        setTimeout(() => socket.emit('kick-all', code), 10000);
     });
 </script>
 </body>
