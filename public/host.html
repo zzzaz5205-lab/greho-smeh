@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <!-- ИЗМЕНЯЕМ НАЗВАНИЕ ВКЛАДКИ -->
+    <title>ГРЕХО-СМЕХ | ЭКРАН ИГРЫ</title>
+    <!-- ИЗМЕНЯЕМ ИКОНКУ (🎮) -->
+    <link rel="icon" href="https://fav.farm/🎮" />
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
+        
+        body { font-family: 'Montserrat', sans-serif; background: #1a1a2e; color: #fff; overflow: hidden; text-align: center; margin: 0; }
+        
+        .logo { font-size: 80px; text-transform: uppercase; background: linear-gradient(to bottom, #e94560 0%, #950740 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 20px rgba(233, 69, 96, 0.5)); margin-top: 20px; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .ans-card { background: #0f3460; padding: 30px; border-radius: 20px; width: 42%; font-size: 30px; border: 4px solid #e94560; opacity: 0; transform: scale(0.8); animation: pop 0.5s forwards; }
+        @keyframes pop { to { opacity: 1; transform: scale(1); } }
+        
+        .main-btn { background: #e94560; color: white; padding: 20px 60px; font-size: 25px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; }
+        
+        /* ЧЕРНЫЙ ФОН ДЛЯ ТИТРОВ */
+        #credits { 
+            position: fixed; top: 100%; left: 0; width: 100%; height: 500%; 
+            background: #000; /* Глубокий черный */
+            z-index: 999; 
+            animation: scrollUp 30s linear forwards; display: none; 
+        }
+        @keyframes scrollUp { from { top: 100%; } to { top: -450%; } }
+
+        .credit-item { font-size: 40px; margin: 60px; color: #f1c40f; }
+        .best-ans { background: #16213e; padding: 30px; border-radius: 20px; margin: 20px auto; width: 60%; border-left: 10px solid #e94560; font-size: 26px; text-align: left; }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <div class="logo">ГРЕХО-СМЕХ</div>
+    
+    <div id="lobby">
+        <h1 id="roomCode" style="background: #0f3460; display: inline-block; padding: 10px 40px; border-radius: 15px; border: 3px solid #e94560; font-family: 'Roboto Mono';">Создание...</h1>
+        <div id="playerList" style="margin-top: 30px; display: flex; justify-content: center; flex-wrap: wrap;"></div>
+        <br><br>
+        <button class="main-btn" onclick="startGame()">НАЧАТЬ ИГРУ</button>
+    </div>
+
+    <div id="game" style="display:none;">
+        <h1 id="roundName" style="color: #e94560; font-size: 40px;">РАУНД 1</h1>
+        <h2 id="qText" style="font-size: 45px; margin: 40px; text-shadow: 0 5px 15px #000;"></h2>
+        <div id="voting" style="display:none; justify-content: space-around; padding: 20px;">
+            <div id="ans1" class="ans-card"></div>
+            <div id="ans2" class="ans-card" style="background:#1a1a2e; border-color: #3498db;"></div>
+        </div>
+    </div>
+
+    <div id="final" style="display:none;">
+        <h1 style="font-size: 70px; margin-top: 150px;">🏆 ПОБЕДИТЕЛЬ: <br><span id="winner" style="color:#f1c40f;"></span></h1>
+    </div>
+</div>
+
+<div id="credits">
+    <br><br><br><br>
+    <h1 style="font-size: 100px; color: #e94560;">ГРЕХО-СМЕХ</h1>
+    <div class="credit-item">ЛУЧШИЕ МОМЕНТЫ ПАРТИИ:</div>
+    <div id="top-jokes-list"></div>
+    
+    <div class="credit-item">РАЗРАБОТКА И КОД:</div>
+    <div style="font-size: 50px; color:#fff;">ГРЕХА И ИИ-ШКА</div>
+    
+    <div class="credit-item">ГОЛОС ВЕДУЩЕГО:</div>
+    <div style="font-size: 35px; color:#fff;">СИНТЕЗАТОР РОБО-ПАВЕЛ</div>
+    
+    <br><br><br><br>
+    <h1 style="font-size: 60px; color: #e94560;">СПАСИБО ЗА ИГРУ!</h1>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    let code = "";
+
+    function speak(text) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        const voices = window.speechSynthesis.getVoices();
+        msg.voice = voices.find(v => v.lang.includes('ru')) || voices[0];
+        msg.pitch = 0.7; 
+        msg.rate = 0.9;
+        window.speechSynthesis.speak(msg);
+    }
+
+    socket.emit('create-room');
+    socket.on('room-created', c => { code = c; document.getElementById('roomCode').innerText = "КОД: " + c; });
+    socket.on('player-joined', n => { document.getElementById('playerList').innerHTML += `<div style="background:#e94560; padding:15px 25px; border-radius:50px; margin:10px; font-weight:bold; font-size:20px;">👤 ${n}</div>`; });
+
+    function startGame() { socket.emit('start-game', code); }
+
+    socket.on('round-started', data => {
+        document.getElementById('lobby').style.display = "none";
+        document.getElementById('game').style.display = "block";
+        document.getElementById('voting').style.display = "none";
+        document.getElementById('roundName').innerText = "РАУНД " + data.round;
+        document.getElementById('qText').innerText = data.q;
+        speak(data.q);
+    });
+
+    socket.on('show-voting', data => {
+        document.getElementById('voting').style.display = "flex";
+        document.getElementById('ans1').innerText = data.ans1.join(", ");
+        document.getElementById('ans2').innerText = data.ans2.join(", ");
+        speak("Чей ответ смешнее?");
+    });
+
+    socket.on('final-results', data => {
+        document.getElementById('game').style.display = "none";
+        document.getElementById('final').style.display = "block";
+        document.getElementById('winner').innerText = data.players[0].name;
+        speak("Игра окончена. Победил " + data.players[0].name);
+
+        setTimeout(() => {
+            document.getElementById('ui-layer').style.display = "none";
+            document.getElementById('credits').style.display = "block";
+            const list = document.getElementById('top-jokes-list');
+            data.topAnswers.forEach(ans => {
+                list.innerHTML += `<div class="best-ans">"${ans.text}" <br> <small style="color:#f1c40f">Автор: ${ans.author}</small></div>`;
+            });
+            speak("А теперь — титры. Спасибо всем за игру!");
+        }, 6000);
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ГРЕХО-СМЕХ - PLAYER</title>
+    <style>
+        body { font-family: sans-serif; background: #e94560; color: white; text-align: center; padding: 15px; margin: 0; }
+        .btn { background: #16213e; color: white; width: 100%; padding: 20px; margin: 10px 0; border: none; border-radius: 15px; font-size: 20px; font-weight: bold; box-shadow: 0 5px 0 #000; }
+        .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+        input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: none; font-size: 18px; box-sizing: border-box; }
+        .hidden { display: none; }
+        #status { font-size: 20px; margin-top: 50px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 15px; }
+    </style>
+</head>
+<body>
+    <div id="status">Подключение...</div>
+
+    <div id="answer-ui" class="hidden">
+        <h3 id="qText" style="background:#16213e; padding:15px; border-radius:10px;"></h3>
+        <div id="inputs"></div>
+        <button class="btn" onclick="sendAns()" style="background:#27ae60">ОТПРАВИТЬ</button>
+    </div>
+
+    <div id="vote-ui" class="hidden">
+        <h3 style="color:#16213e">КТО СМЕШНЕЕ?</h3>
+        <button id="b1" class="btn" onclick="vote(1)"></button>
+        <button id="b2" class="btn" onclick="vote(2)" style="background:#3498db"></button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const params = new URLSearchParams(window.location.search);
+        const name = params.get('name');
+        const code = params.get('code').toUpperCase();
+        let myTurn = false;
+
+        socket.emit('join-room', { code, name });
+        socket.on('joined-success', () => { document.getElementById('status').innerText = "Ты в лобби! Жди начала игры."; });
+
+        socket.on('round-started', data => {
+            myTurn = (name === data.p1_name || name === data.p2_name);
+            document.getElementById('status').className = myTurn ? "hidden" : "";
+            document.getElementById('status').innerText = "Смотри на большой экран!";
+            document.getElementById('answer-ui').className = myTurn ? "" : "hidden";
+            document.getElementById('vote-ui').className = "hidden";
+            
+            if(myTurn) {
+                document.getElementById('qText').innerText = data.q;
+                const inp = document.getElementById('inputs');
+                inp.innerHTML = '<input type="text" class="ain" placeholder="Твой ответ...">';
+                if(data.round === 3) inp.innerHTML += '<input type="text" class="ain" placeholder="Второй ответ..."><input type="text" class="ain" placeholder="Третий ответ...">';
+            }
+        });
+
+        function sendAns() {
+            const ans = Array.from(document.querySelectorAll('.ain')).map(i => i.value).filter(v => v);
+            if(ans.length === 0) return alert("Напиши что-нибудь!");
+            socket.emit('submit-answer', { code, name, answers: ans });
+            document.getElementById('answer-ui').className = "hidden";
+            document.getElementById('status').className = "";
+            document.getElementById('status').innerText = "Принято! Ждем остальных.";
+        }
+
+        socket.on('show-voting', data => {
+            if(!myTurn) {
+                document.getElementById('status').className = "hidden";
+                document.getElementById('vote-ui').className = "";
+                document.getElementById('b1').innerText = data.ans1.join(" / ");
+                document.getElementById('b2').innerText = data.ans2.join(" / ");
+            } else {
+                document.getElementById('status').innerText = "Ты соревнуешься! Не голосуй.";
+            }
+        });
+
+        function vote(n) {
+            socket.emit('cast-vote', { code, voteNum: n, voterName: name });
+            document.getElementById('vote-ui').className = "hidden";
+            document.getElementById('status').className = "";
+            document.getElementById('status').innerText = "Голос учтен!";
+        }
+    </script>
+</body>
+</html>
