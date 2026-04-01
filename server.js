@@ -1,12 +1,25 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const path = require('path'); // Добавили системный модуль путей
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(__dirname)); // Берем файлы из корня
+// Настройка: Сервер ищет файлы и в корне, и в папке public (на всякий случай)
+app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ПРЯМОЙ МАРШРУТ: Если человек зашел по ссылке, принудительно шлем ему index.html
+app.get('/', (req, res) => {
+    // Сначала пробуем найти в корне, если нет — в папке public
+    res.sendFile(path.join(__dirname, 'index.html'), (err) => {
+        if (err) {
+            res.sendFile(path.join(__dirname, 'public', 'index.html'));
+        }
+    });
+});
 
 const questions = [
     "Самое странное название для туалетной бумаги?",
@@ -67,7 +80,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('start-game', (code) => {
-        if (rooms[code]) { rooms[code].gameStarted = true; setupRound(code, 1); }
+        if (rooms[code]) { 
+            rooms[code].gameStarted = true; 
+            setupRound(code, 1); 
+        }
     });
 
     function setupRound(code, roundNum) {
@@ -95,7 +111,12 @@ io.on('connection', (socket) => {
             else finishGame(code);
             return;
         }
-        io.to(code).emit('round-started', { round: room.round, q: pair.q, p1_id: pair.p1.id, p2_id: pair.p2 ? pair.p2.id : null });
+        io.to(code).emit('round-started', { 
+            round: room.round, 
+            q: pair.q, 
+            p1_id: pair.p1.id, 
+            p2_id: pair.p2 ? pair.p2.id : null 
+        });
     }
 
     socket.on('submit-answer', ({ code, name, answers }) => {
@@ -125,7 +146,10 @@ io.on('connection', (socket) => {
             pair.p1.score += v1 * m; pair.p2.score += v2 * m;
             room.bestAnswers.push({ text: pair.ans1.join(", "), author: pair.p1.emoji + " " + pair.p1.name, votes: v1 });
             room.bestAnswers.push({ text: pair.ans2.join(", "), author: pair.p2.emoji + " " + pair.p2.name, votes: v2 });
-            io.to(code).emit('voting-results', { p1_name: pair.p1.name, p1_emoji: pair.p1.emoji, p2_name: pair.p2.name, p2_emoji: pair.p2.emoji, v1, v2 });
+            io.to(code).emit('voting-results', { 
+                p1_name: pair.p1.name, p1_emoji: pair.p1.emoji, 
+                p2_name: pair.p2.name, p2_emoji: pair.p2.emoji, v1, v2 
+            });
             setTimeout(() => { room.currentPairIndex++; startNextPair(code); }, 4000);
         }
     });
@@ -143,4 +167,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => { console.log(`Порт: ${PORT}`); });
+server.listen(PORT, () => { console.log(`Игра запущена на порту ${PORT}`); });
