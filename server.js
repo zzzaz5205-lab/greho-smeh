@@ -5,14 +5,42 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 1e7 });
+const io = new Server(server, { 
+    maxHttpBufferSize: 1e7, // Для передачи рисунков
+    cors: { origin: "*" }
+});
 
+// ПРИНУДИТЕЛЬНАЯ НАСТРОЙКА ПУТЕЙ (Защита от "Cannot GET /")
 app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// СПИСОК ВОПРОСОВ (Добавил твои варианты в classic)
 const prompts = {
-    classic: ["Самое странное название для туалетной бумаги?", "Что на самом деле шепчут кошки?", "Лучший подарок для врага?", "Девиз школы магии для ленивых."],
-    text: ["Напиши отзыв на товар: Ржавый гвоздь", "Придумай заголовок газеты из 2077 года", "Напиши жалобу на: Солнечный свет"],
-    draw: ["Нарисуй: Грустный чебурек", "Нарисуй: Ванга Фiйко", "Нарисуй: Танцующий стул", "Нарисуй: Пьяный робот"]
+    classic: [
+        "Самое странное название для туалетной бумаги?", 
+        "Что на самом деле шепчут кошки?", 
+        "Лучший подарок для врага?", 
+        "Девиз школы магии для ленивых.",
+        "Почему vangavgav лысый?", 
+        "Почему Дима Moderass каждый раз д#оч#т на vangavgav?",
+        "Что Ванга скрывает под кепкой?",
+        "Худшая фраза, которую можно услышать от хирурга перед сном."
+    ],
+    text: [
+        "Напиши отзыв на товар: Ржавый гвоздь", 
+        "Придумай заголовок газеты из 2077 года", 
+        "Напиши жалобу на: Солнечный свет"
+    ],
+    draw: [
+        "Нарисуй: Грустный чебурек", 
+        "Нарисуй: Ванга Фiйко", 
+        "Нарисуй: Танцующий стул", 
+        "Нарисуй: Пьяный робот"
+    ]
 };
 
 const rooms = {};
@@ -44,7 +72,7 @@ io.on('connection', (socket) => {
         let shuffled = [...room.players].sort(() => 0.5 - Math.random());
         
         for (let i = 0; i < shuffled.length; i += 2) {
-            let qList = prompts[mode];
+            let qList = prompts[room.mode];
             room.pairs.push({
                 p1: shuffled[i], p2: shuffled[i+1] || null,
                 q: qList[Math.floor(Math.random() * qList.length)],
@@ -59,7 +87,7 @@ io.on('connection', (socket) => {
         const pair = room.pairs[room.currentPairIndex];
         if (!pair) {
             room.players.sort((a,b) => b.score - a.score);
-            return io.to(code).emit('final-results', { players: room.players, topAnswers: room.bestAnswers.slice(0,5) });
+            return io.to(code).emit('final-results', { players: room.players });
         }
         io.to(code).emit('round-started', { mode: room.mode, q: pair.q, p1_id: pair.p1.id, p2_id: pair.p2 ? pair.p2.id : null });
     }
@@ -80,24 +108,26 @@ io.on('connection', (socket) => {
         const pair = room.pairs[room.currentPairIndex];
         pair.votes.push({ voter: voterName, voteNum });
         
-        if (pair.votes.length >= (room.players.length > 1 ? 1 : 0)) {
+        if (pair.votes.length >= 1) {
             let v1 = pair.votes.filter(v => v.voteNum === 1).length;
             let v2 = pair.votes.filter(v => v.voteNum === 2).length;
             pair.p1.score += v1 * 100;
             if (pair.p2) pair.p2.score += v2 * 100;
-            
-            room.bestAnswers.push({ text: room.mode === 'draw' ? "[Рисунок]" : pair.ans1, author: pair.p1.name, votes: v1 });
             
             io.to(code).emit('voting-results', { 
                 p1_name: pair.p1.name, p1_emoji: pair.p1.emoji,
                 p2_name: pair.p2 ? pair.p2.name : null, p2_emoji: pair.p2 ? pair.p2.emoji : null,
                 isSolo: !pair.p2
             });
-            setTimeout(() => { room.currentPairIndex++; sendPair(code); }, 5000);
+            setTimeout(() => { 
+                room.currentPairIndex++; 
+                sendPair(code); 
+            }, 5000);
         }
     });
 
     socket.on('kick-all', (code) => { io.to(code).emit('go-to-menu'); });
 });
 
-server.listen(process.env.PORT || 3000);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => { console.log(`Сервер запущен на порту ${PORT}`); });
