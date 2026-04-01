@@ -1,22 +1,103 @@
-<!-- В <head> добавь иконку -->
-<link rel="icon" href="https://fav.farm/🎮" />
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ГРЕХО-СМЕХ | PLAYER</title>
+    <link rel="icon" href="https://fav.farm/🎮" />
+    <style>
+        body { font-family: sans-serif; background: #1a1a2e; color: white; text-align: center; padding: 15px; margin: 0; }
+        .btn { background: #e94560; color: white; width: 100%; padding: 20px; margin: 10px 0; border: none; border-radius: 15px; font-size: 20px; font-weight: bold; box-shadow: 0 5px 0 #000; cursor: pointer; }
+        .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+        input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: none; font-size: 18px; box-sizing: border-box; background: #16213e; color: white; }
+        .hidden { display: none; }
+        #status { font-size: 20px; margin-top: 50px; background: rgba(233, 69, 96, 0.2); padding: 20px; border-radius: 15px; border: 2px solid #e94560; }
+        .q-box { background: #e94560; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="status">Подключение...</div>
 
-<!-- В <script> обнови логику входа -->
-<script>
-    const params = new URLSearchParams(window.location.search);
-    const name = params.get('name');
-    const code = params.get('code').toUpperCase();
-    const emoji = params.get('emoji'); // Берем эмодзи из ссылки
-    let isSpectator = false;
+    <div id="answer-ui" class="hidden">
+        <div id="qText" class="q-box"></div>
+        <div id="inputs"></div>
+        <button class="btn" onclick="sendAns()" style="background:#27ae60">ОТПРАВИТЬ</button>
+    </div>
 
-    socket.emit('join-room', { code, name, emoji });
+    <div id="vote-ui" class="hidden">
+        <h3 style="color:#e94560">КТО СМЕШНЕЕ?</h3>
+        <button id="b1" class="btn"></button>
+        <button id="b2" class="btn" style="background:#3498db"></button>
+    </div>
 
-    socket.on('joined-spectator', () => {
-        isSpectator = true;
-        document.getElementById('status').innerText = "Ты ЗРИТЕЛЬ. Наслаждайся шоу и голосуй!";
-        document.getElementById('status').style.background = "#3498db";
-    });
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const params = new URLSearchParams(window.location.search);
+        const name = params.get('name');
+        const code = params.get('code').toUpperCase();
+        const emoji = params.get('emoji');
+        let myTurn = false;
 
-    // В функции vote() и sendAns() все остается почти так же, 
-    // но зрители видят только блок голосования.
-</script>
+        socket.emit('join-room', { code, name, emoji });
+
+        socket.on('joined-success', () => { 
+            document.getElementById('status').innerText = "Ты в игре! Жди начала."; 
+        });
+
+        socket.on('joined-spectator', () => {
+            document.getElementById('status').innerText = "Ты ЗРИТЕЛЬ. Можешь голосовать!";
+            document.getElementById('status').style.borderColor = "#3498db";
+        });
+
+        socket.on('round-started', data => {
+            myTurn = (socket.id === data.p1_id || socket.id === data.p2_id);
+            document.getElementById('status').classList.remove('hidden');
+            document.getElementById('status').innerText = "Смотри на экран!";
+            document.getElementById('answer-ui').classList.add('hidden');
+            document.getElementById('vote-ui').classList.add('hidden');
+            
+            if(myTurn) {
+                document.getElementById('status').classList.add('hidden');
+                document.getElementById('answer-ui').classList.remove('hidden');
+                document.getElementById('qText').innerText = data.q;
+                const inp = document.getElementById('inputs');
+                inp.innerHTML = '<input type="text" class="ain" placeholder="Твой смешной ответ...">';
+                if(data.round === 3) {
+                    inp.innerHTML += '<input type="text" class="ain" placeholder="Второй ответ...">';
+                    inp.innerHTML += '<input type="text" class="ain" placeholder="Третий ответ...">';
+                }
+            }
+        });
+
+        function sendAns() {
+            const ans = Array.from(document.querySelectorAll('.ain')).map(i => i.value).filter(v => v);
+            if(ans.length === 0) return alert("Напиши хоть что-нибудь!");
+            socket.emit('submit-answer', { code, name, answers: ans });
+            document.getElementById('answer-ui').classList.add('hidden');
+            document.getElementById('status').classList.remove('hidden');
+            document.getElementById('status').innerText = "Принято! Ждем остальных.";
+        }
+
+        socket.on('show-voting', data => {
+            if(!myTurn) {
+                document.getElementById('status').classList.add('hidden');
+                document.getElementById('vote-ui').classList.remove('hidden');
+                document.getElementById('b1').innerText = data.ans1.join(" / ");
+                document.getElementById('b1').onclick = () => vote(1);
+                document.getElementById('b2').innerText = data.ans2.join(" / ");
+                document.getElementById('b2').onclick = () => vote(2);
+            } else {
+                document.getElementById('status').innerText = "Твоя пара на экране! Голосовать нельзя.";
+            }
+        });
+
+        function vote(n) {
+            socket.emit('cast-vote', { code, voteNum: n, voterName: name });
+            document.getElementById('vote-ui').classList.add('hidden');
+            document.getElementById('status').classList.remove('hidden');
+            document.getElementById('status').innerText = "Голос учтен!";
+        }
+    </script>
+</body>
+</html>
