@@ -5,35 +5,16 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { 
-    maxHttpBufferSize: 1e7, 
-    cors: { origin: "*" } 
-});
+const io = new Server(server, { maxHttpBufferSize: 1e7, cors: { origin: "*" } });
 
-// 1. ПЕРВАЯ ЗАЩИТА: Указываем серверу искать файлы во всех возможных папках
 app.use(express.static(__dirname));
-app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
-// 2. ВТОРАЯ ЗАЩИТА: Прямой маршрут. Если кто-то зашел на сайт — отдаем index.html
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'), (err) => {
-        if (err) {
-            // Если в корне нет, пробуем в папке public
-            res.sendFile(path.join(__dirname, 'public', 'index.html'), (err2) => {
-                if (err2) {
-                    res.status(404).send("Файл index.html не найден ни в корне, ни в public! Проверь GitHub.");
-                }
-            });
-        }
-    });
-});
-
-// ВОПРОСЫ
 const prompts = {
     classic: [
+        "Почему vangavgav лысый?", "Почему Дима Moderass каждый раз д#оч#т на vangavgav?",
         "Самое странное название для туалетной бумаги?", "Что на самом деле шепчут кошки?", 
         "Лучший подарок для врага?", "Девиз школы магии для ленивых.",
-        "Почему vangavgav лысый?", "Почему Дима Moderass каждый раз д#оч#т на vangavgav?",
         "Что Ванга скрывает под кепкой?", "Худшая фраза от хирурга перед сном."
     ],
     text: ["Напиши отзыв на товар: Ржавый гвоздь", "Заголовок газеты из 2077 года", "Жалоба на: Солнечный свет"],
@@ -45,7 +26,7 @@ const rooms = {};
 io.on('connection', (socket) => {
     socket.on('create-room', () => {
         const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-        rooms[code] = { host: socket.id, players: [], mode: 'classic', currentPairIndex: 0, pairs: [], bestAnswers: [] };
+        rooms[code] = { host: socket.id, players: [], mode: 'classic', currentPairIndex: 0, pairs: [] };
         socket.join(code);
         socket.emit('room-created', code);
     });
@@ -82,10 +63,7 @@ io.on('connection', (socket) => {
         const room = rooms[code];
         if (!room) return;
         const pair = room.pairs[room.currentPairIndex];
-        if (!pair) {
-            room.players.sort((a,b) => b.score - a.score);
-            return io.to(code).emit('final-results', { players: room.players });
-        }
+        if (!pair) return io.to(code).emit('final-results', { players: room.players });
         io.to(code).emit('round-started', { mode: room.mode, q: pair.q, p1_id: pair.p1.id, p2_id: pair.p2 ? pair.p2.id : null });
     }
 
@@ -104,6 +82,7 @@ io.on('connection', (socket) => {
         const pair = room.pairs[room.currentPairIndex];
         if (!pair) return;
         pair.votes.push({ voter: voterName, voteNum });
+        
         if (pair.votes.length >= 1 || !pair.p2) {
             let v1 = pair.votes.filter(v => v.voteNum === 1).length;
             let v2 = pair.votes.filter(v => v.voteNum === 2).length;
@@ -128,5 +107,4 @@ io.on('connection', (socket) => {
     socket.on('kick-all', (code) => { io.to(code).emit('go-to-menu'); });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => { console.log(`Сервер запущен!`); });
+server.listen(process.env.PORT || 3000);
