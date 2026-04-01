@@ -5,42 +5,20 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { 
-    maxHttpBufferSize: 1e7, // Для передачи рисунков
-    cors: { origin: "*" }
-});
+const io = new Server(server, { maxHttpBufferSize: 1e7, cors: { origin: "*" } });
 
-// ПРИНУДИТЕЛЬНАЯ НАСТРОЙКА ПУТЕЙ (Защита от "Cannot GET /")
 app.use(express.static(__dirname));
-app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// СПИСОК ВОПРОСОВ (Добавил твои варианты в classic)
 const prompts = {
     classic: [
-        "Самое странное название для туалетной бумаги?", 
-        "Что на самом деле шепчут кошки?", 
-        "Лучший подарок для врага?", 
-        "Девиз школы магии для ленивых.",
-        "Почему vangavgav лысый?", 
-        "Почему Дима Moderass каждый раз д#оч#т на vangavgav?",
-        "Что Ванга скрывает под кепкой?",
-        "Худшая фраза, которую можно услышать от хирурга перед сном."
+        "Самое странное название для туалетной бумаги?", "Что на самом деле шепчут кошки?", 
+        "Лучший подарок для врага?", "Девиз школы магии для ленивых.",
+        "Почему vangavgav лысый?", "Почему Дима Moderass каждый раз д#оч#т на vangavgav?",
+        "Что Ванга скрывает под кепкой?", "Худшая фраза от хирурга перед сном."
     ],
-    text: [
-        "Напиши отзыв на товар: Ржавый гвоздь", 
-        "Придумай заголовок газеты из 2077 года", 
-        "Напиши жалобу на: Солнечный свет"
-    ],
-    draw: [
-        "Нарисуй: Грустный чебурек", 
-        "Нарисуй: Ванга Фiйко", 
-        "Нарисуй: Танцующий стул", 
-        "Нарисуй: Пьяный робот"
-    ]
+    text: ["Напиши отзыв на товар: Ржавый гвоздь", "Заголовок газеты из 2077 года", "Жалоба на: Солнечный свет"],
+    draw: ["Нарисуй: Грустный чебурек", "Нарисуй: Ванга Фiйко", "Нарисуй: Танцующий стул", "Нарисуй: Пьяный робот"]
 };
 
 const rooms = {};
@@ -70,7 +48,6 @@ io.on('connection', (socket) => {
         room.currentPairIndex = 0;
         room.pairs = [];
         let shuffled = [...room.players].sort(() => 0.5 - Math.random());
-        
         for (let i = 0; i < shuffled.length; i += 2) {
             let qList = prompts[room.mode];
             room.pairs.push({
@@ -84,6 +61,7 @@ io.on('connection', (socket) => {
 
     function sendPair(code) {
         const room = rooms[code];
+        if (!room) return;
         const pair = room.pairs[room.currentPairIndex];
         if (!pair) {
             room.players.sort((a,b) => b.score - a.score);
@@ -97,7 +75,6 @@ io.on('connection', (socket) => {
         const pair = room.pairs[room.currentPairIndex];
         if (pair.p1.name === name) pair.ans1 = answer;
         if (pair.p2 && pair.p2.name === name) pair.ans2 = answer;
-        
         if (pair.ans1 && (!pair.p2 || pair.ans2)) {
             io.to(code).emit('show-voting', { type: room.mode, ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2 });
         }
@@ -106,9 +83,11 @@ io.on('connection', (socket) => {
     socket.on('cast-vote', ({ code, voteNum, voterName }) => {
         const room = rooms[code];
         const pair = room.pairs[room.currentPairIndex];
+        if (!pair) return;
         pair.votes.push({ voter: voterName, voteNum });
         
-        if (pair.votes.length >= 1) {
+        // Для одиночки переходим дальше после 1-го же голоса или через 3 сек
+        if (pair.votes.length >= 1 || !pair.p2) {
             let v1 = pair.votes.filter(v => v.voteNum === 1).length;
             let v2 = pair.votes.filter(v => v.voteNum === 2).length;
             pair.p1.score += v1 * 100;
@@ -119,9 +98,13 @@ io.on('connection', (socket) => {
                 p2_name: pair.p2 ? pair.p2.name : null, p2_emoji: pair.p2 ? pair.p2.emoji : null,
                 isSolo: !pair.p2
             });
+
+            // ТАЙМЕР ПЕРЕХОДА:
             setTimeout(() => { 
-                room.currentPairIndex++; 
-                sendPair(code); 
+                if (rooms[code]) {
+                    rooms[code].currentPairIndex++; 
+                    sendPair(code); 
+                }
             }, 5000);
         }
     });
@@ -129,5 +112,4 @@ io.on('connection', (socket) => {
     socket.on('kick-all', (code) => { io.to(code).emit('go-to-menu'); });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => { console.log(`Сервер запущен на порту ${PORT}`); });
+server.listen(process.env.PORT || 3000);
