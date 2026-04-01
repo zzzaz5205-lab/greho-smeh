@@ -2,28 +2,37 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ЭКРАН ХОСТА</title>
+    <title>ЭКРАН ХОСТА | ГРЕХО-СМЕХ</title>
     <style>
-        body { font-family: sans-serif; background: #1a1a2e; color: white; text-align: center; margin: 0; overflow: hidden; }
+        body { font-family: 'Montserrat', sans-serif; background: #1a1a2e; color: white; text-align: center; margin: 0; overflow: hidden; }
         #lobby, #game, #final { display: none; padding: 20px; }
         #lobby { display: block; }
         .logo { font-size: 60px; color: #e94560; margin: 20px; font-weight: bold; }
-        .ans-card { background: #0f3460; padding: 25px; border-radius: 20px; width: 42%; border: 5px solid #e94560; font-size: 28px; min-height: 200px; display: inline-block; vertical-align: top; margin: 10px; }
+        .ans-card { background: #0f3460; padding: 25px; border-radius: 20px; width: 42%; border: 5px solid #e94560; font-size: 28px; min-height: 200px; display: inline-block; vertical-align: top; margin: 10px; transition: 0.5s; }
         .ans-card.solo { background: #444; border-color: #888; width: 80%; }
         img { max-width: 100%; border-radius: 10px; background: white; }
+        
+        /* Кнопка включения звука */
+        #audio-unlock { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        .unlock-btn { padding: 30px 60px; font-size: 30px; background: #e94560; color: white; border: none; border-radius: 50px; cursor: pointer; }
     </style>
 </head>
 <body>
+
+<div id="audio-unlock">
+    <button class="unlock-btn" onclick="unlockAudio()">ВКЛЮЧИТЬ ЗВУК И ИГРУ</button>
+</div>
+
 <div id="lobby">
     <div class="logo">ГРЕХО-СМЕХ</div>
     <h1 id="roomCode" style="background:#0f3460; padding:15px; border:3px solid #e94560; display:inline-block; border-radius:15px;">КОД: ...</h1><br>
     <select id="gameMode" style="padding:15px; font-size:20px; border-radius:10px; margin:20px;">
-        <option value="classic">Режим: Грехо-Смех</option>
-        <option value="text">Режим: Смехо-Текст</option>
-        <option value="draw">Режим: Рисовалка</option>
+        <option value="classic">Грехо-Смех</option>
+        <option value="text">Смехо-Текст</option>
+        <option value="draw">Рисовалка</option>
     </select><br>
     <div id="playerList"></div><br>
-    <button onclick="startGame()" style="padding:20px 50px; background:#e94560; color:white; border:none; border-radius:50px; font-size:24px; font-weight:bold; cursor:pointer;">НАЧАТЬ</button>
+    <button onclick="startGame()" style="padding:20px 50px; background:#e94560; color:white; border-radius:50px; font-size:24px; font-weight:bold; cursor:pointer;">НАЧАТЬ</button>
 </div>
 
 <div id="game">
@@ -35,28 +44,53 @@
 </div>
 
 <div id="final">
-    <h1 style="font-size: 80px;">🏆 ПОБЕДИТЕЛЬ: <br><span id="winner" style="color:#f1c40f"></span></h1>
-    <button onclick="location.reload()" style="padding:20px; background:#e94560; color:white; border-radius:15px; border:none;">В МЕНЮ</button>
+    <h1>🏆 ПОБЕДИТЕЛЬ: <br><span id="winner" style="color:#f1c40f; font-size: 60px;"></span></h1>
+    <button onclick="location.reload()" style="padding:20px; background:#e94560; color:white; border-radius:15px; border:none; cursor:pointer;">В МЕНЮ</button>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
     let code = "";
+    
+    // АУДИО ТРЕКИ
+    const music = {
+        lobby: new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_7838634125.mp3'), // Chill
+        game: new Audio('https://cdn.pixabay.com/audio/2021/11/23/audio_0398d89304.mp3'), // Thinking
+        final: new Audio('https://cdn.pixabay.com/audio/2021/08/04/audio_c363842422.mp3') // Win
+    };
+
+    function playMusic(track) {
+        Object.values(music).forEach(m => { m.pause(); m.currentTime = 0; });
+        music[track].loop = true;
+        music[track].volume = 0.4;
+        music[track].play();
+    }
+
+    function unlockAudio() {
+        document.getElementById('audio-unlock').style.display = 'none';
+        playMusic('lobby');
+    }
 
     function speak(text, callback) {
         window.speechSynthesis.cancel();
         const msg = new SpeechSynthesisUtterance(text);
-        msg.pitch = 0.5; msg.rate = 0.9;
+        msg.pitch = 0.4; msg.rate = 0.9;
         msg.onend = callback;
         window.speechSynthesis.speak(msg);
     }
 
     socket.emit('create-room');
     socket.on('room-created', c => { code = c; document.getElementById('roomCode').innerText = "КОД: " + c; });
-    socket.on('player-joined', d => { document.getElementById('playerList').innerHTML += `<div style="display:inline-block; background:#e94560; padding:10px; margin:5px; border-radius:20px;">${d.emoji} ${d.name}</div>`; });
+    
+    socket.on('player-joined', d => { 
+        document.getElementById('playerList').innerHTML += `<div style="display:inline-block; background:#e94560; padding:10px; margin:5px; border-radius:20px;">${d.emoji} ${d.name}</div>`; 
+    });
 
-    function startGame() { socket.emit('start-game', { code, mode: document.getElementById('gameMode').value }); }
+    function startGame() { 
+        playMusic('game');
+        socket.emit('start-game', { code, mode: document.getElementById('gameMode').value }); 
+    }
 
     socket.on('round-started', data => {
         document.getElementById('lobby').style.display = "none";
@@ -70,9 +104,10 @@
         document.getElementById('voting').style.display = "block";
         const c1 = document.getElementById('card1');
         const c2 = document.getElementById('card2');
+        
         c1.className = data.isSolo ? "ans-card solo" : "ans-card";
         c2.style.display = data.isSolo ? "none" : "inline-block";
-
+        
         c1.innerHTML = data.type === 'draw' ? `<img src="${data.ans1}">` : data.ans1;
         if (!data.isSolo) c2.innerHTML = data.type === 'draw' ? `<img src="${data.ans2}">` : data.ans2;
 
@@ -81,23 +116,23 @@
         } else {
             speak("Первый вариант...", () => {
                 if(data.type !== 'draw') speak(data.ans1, () => {
-                    setTimeout(() => speak("Второй вариант...", () => { if(data.type !== 'draw') speak(data.ans2); }), 1000);
+                    setTimeout(() => speak("Второй вариант...", () => { if(data.type !== 'draw') speak(data.ans2); }), 800);
                 });
             });
         }
     });
 
     socket.on('voting-results', data => {
-        document.getElementById('card1').innerHTML += `<br><small>${data.p1_emoji} ${data.p1_name}</small>`;
-        if(!data.isSolo) document.getElementById('card2').innerHTML += `<br><small>${data.p2_emoji} ${data.p2_name}</small>`;
+        document.getElementById('card1').innerHTML += `<br><small style="color:#f1c40f">${data.p1_emoji} ${data.p1_name}</small>`;
+        if(!data.isSolo) document.getElementById('card2').innerHTML += `<br><small style="color:#3498db">${data.p2_emoji} ${data.p2_name}</small>`;
     });
 
     socket.on('final-results', data => {
+        playMusic('final');
         document.getElementById('game').style.display = "none";
         document.getElementById('final').style.display = "block";
         document.getElementById('winner').innerText = data.players[0].emoji + " " + data.players[0].name;
         speak("Победил " + data.players[0].name);
-        setTimeout(() => socket.emit('kick-all', code), 10000);
     });
 </script>
 </body>
