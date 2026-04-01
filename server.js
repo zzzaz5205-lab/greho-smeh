@@ -5,11 +5,30 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 1e7, cors: { origin: "*" } });
+const io = new Server(server, { 
+    maxHttpBufferSize: 1e7, 
+    cors: { origin: "*" } 
+});
 
+// 1. ПЕРВАЯ ЗАЩИТА: Указываем серверу искать файлы во всех возможных папках
 app.use(express.static(__dirname));
-app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
+app.use(express.static(path.join(__dirname, 'public')));
 
+// 2. ВТОРАЯ ЗАЩИТА: Прямой маршрут. Если кто-то зашел на сайт — отдаем index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'), (err) => {
+        if (err) {
+            // Если в корне нет, пробуем в папке public
+            res.sendFile(path.join(__dirname, 'public', 'index.html'), (err2) => {
+                if (err2) {
+                    res.status(404).send("Файл index.html не найден ни в корне, ни в public! Проверь GitHub.");
+                }
+            });
+        }
+    });
+});
+
+// ВОПРОСЫ
 const prompts = {
     classic: [
         "Самое странное название для туалетной бумаги?", "Что на самом деле шепчут кошки?", 
@@ -85,8 +104,6 @@ io.on('connection', (socket) => {
         const pair = room.pairs[room.currentPairIndex];
         if (!pair) return;
         pair.votes.push({ voter: voterName, voteNum });
-        
-        // Для одиночки переходим дальше после 1-го же голоса или через 3 сек
         if (pair.votes.length >= 1 || !pair.p2) {
             let v1 = pair.votes.filter(v => v.voteNum === 1).length;
             let v2 = pair.votes.filter(v => v.voteNum === 2).length;
@@ -99,7 +116,6 @@ io.on('connection', (socket) => {
                 isSolo: !pair.p2
             });
 
-            // ТАЙМЕР ПЕРЕХОДА:
             setTimeout(() => { 
                 if (rooms[code]) {
                     rooms[code].currentPairIndex++; 
@@ -112,4 +128,5 @@ io.on('connection', (socket) => {
     socket.on('kick-all', (code) => { io.to(code).emit('go-to-menu'); });
 });
 
-server.listen(process.env.PORT || 3000);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => { console.log(`Сервер запущен!`); });
