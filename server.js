@@ -10,14 +10,11 @@ const io = new Server(server, {
     cors: { origin: "*" } 
 });
 
-// ГЛАВНЫЙ ФИКС: Явно указываем, где лежат файлы
-const root = path.resolve(__dirname);
-app.use(express.static(root));
-
-// Принудительная отдача файлов по прямым путям
-app.get('/', (req, res) => res.sendFile(path.join(root, 'index.html')));
-app.get('/host.html', (req, res) => res.sendFile(path.join(root, 'host.html')));
-app.get('/player.html', (req, res) => res.sendFile(path.join(root, 'player.html')));
+// ПРЯМЫЕ ПУТИ ДЛЯ RENDER (Ищет в корне)
+app.use(express.static(__dirname));
+app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
+app.get('/host.html', (req, res) => res.sendFile(path.resolve(__dirname, 'host.html')));
+app.get('/player.html', (req, res) => res.sendFile(path.resolve(__dirname, 'player.html')));
 
 const prompts = {
     classic: [
@@ -25,13 +22,13 @@ const prompts = {
         "Почему Дима Moderass каждый раз д#оч#т на vangavgav?",
         "Самое странное название для туалетной бумаги?", 
         "Что на самом деле шепчут кошки?", 
-        "Лучший подарок для врага?", 
-        "Девиз школы магии для ленивых.",
+        "Лучший подарок для злейшего врага?", 
+        "Девиз школы магии для очень ленивых.",
         "Что Ванга скрывает под кепкой?", 
         "Худшая фраза от хирурга перед сном."
     ],
-    text: ["Напиши отзыв на товар: Ржавый гвоздь", "Заголовок газеты из 2077 года", "Жалоба на: Солнечный свет"],
-    draw: ["Нарисуй: Грустный чебурек", "Нарисуй: Ванга Фiйко", "Нарисуй: Танцующий стул", "Нарисуй: Пьяный робот"]
+    text: ["Напиши отзыв на: Пылесос для кошек", "Заголовок газеты из 2077 года", "Жалоба на: Слишком яркое солнце"],
+    draw: ["Нарисуй: Пьяный кактус", "Нарисуй: Ванга Фiйко", "Нарисуй: Танцующий стул", "Нарисуй: Грустный чебурек"]
 };
 
 const rooms = {};
@@ -86,7 +83,7 @@ io.on('connection', (socket) => {
         if (pair.p2 && pair.p2.name === name) pair.ans2 = answer;
         if (pair.ans1 && (!pair.p2 || pair.ans2)) {
             io.to(code).emit('show-voting', { type: room.mode, ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2 });
-            if (!pair.p2) setTimeout(() => finishPair(code), 8000);
+            if (!pair.p2) setTimeout(() => { if(rooms[code]) finishPair(code); }, 8000);
         }
     });
 
@@ -115,6 +112,5 @@ io.on('connection', (socket) => {
     socket.on('kick-all', (code) => io.to(code).emit('go-to-menu'));
 });
 
-// Слушаем порт
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Сервер запущен на порту ' + PORT));
+server.listen(PORT, () => console.log('Live on ' + PORT));
