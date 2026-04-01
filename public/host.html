@@ -1,33 +1,109 @@
-/* Внутри host.html найди функцию speak и замени её: */
-function speak(text) {
-    window.speechSynthesis.cancel();
-    const msg = new SpeechSynthesisUtterance(text);
-    const voices = window.speechSynthesis.getVoices();
-    
-    // Ищем мужской голос (Pavel, Male, Microsoft David и т.д.)
-    let maleVoice = voices.find(v => v.name.includes('Pavel') || v.name.includes('Male') || v.name.includes('Dmitry'));
-    if (!maleVoice) maleVoice = voices.find(v => v.lang.includes('ru'));
-    
-    msg.voice = maleVoice;
-    msg.pitch = 0.5; // ПОНИЖАЕМ ТОН (делаем мужским)
-    msg.rate = 0.85; // Чуть медленнее для важности
-    window.speechSynthesis.speak(msg);
-}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>ГРЕХО-СМЕХ | ЭКРАН ИГРЫ</title>
+    <link rel="icon" href="https://fav.farm/🎮" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
+        body { font-family: 'Montserrat', sans-serif; background: #1a1a2e; color: #fff; overflow: hidden; text-align: center; margin: 0; }
+        .logo { font-size: 80px; text-transform: uppercase; background: linear-gradient(to bottom, #e94560 0%, #950740 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 20px rgba(233, 69, 96, 0.5)); margin-top: 20px; }
+        .ans-card { background: #0f3460; padding: 30px; border-radius: 20px; width: 42%; font-size: 30px; border: 4px solid #e94560; position: relative; }
+        .author-reveal { font-size: 24px; color: #f1c40f; margin-top: 15px; display: none; }
+        .main-btn { background: #e94560; color: white; padding: 20px 60px; font-size: 25px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; }
+        #playerList div { background:#e94560; padding:15px 25px; border-radius:50px; margin:10px; font-weight:bold; font-size:20px; display: inline-block; }
+    </style>
+</head>
+<body>
 
-// В блоке socket.on('round-started') теперь не показываем имена:
-socket.on('round-started', data => {
-    document.getElementById('lobby').style.display = "none";
-    document.getElementById('game').style.display = "block";
-    document.getElementById('voting').style.display = "none";
-    document.getElementById('roundName').innerText = "РАУНД " + data.round;
-    document.getElementById('qText').innerText = data.q;
-    speak(data.q);
-});
+<div id="ui-layer">
+    <div class="logo">ГРЕХО-СМЕХ</div>
+    
+    <div id="lobby">
+        <h1 id="roomCode" style="background: #0f3460; display: inline-block; padding: 10px 40px; border-radius: 15px; border: 3px solid #e94560; font-family: 'Roboto Mono';">Создание...</h1>
+        <div id="playerList" style="margin-top: 30px;"></div>
+        <br><br>
+        <button class="main-btn" onclick="startGame()">НАЧАТЬ ИГРУ</button>
+    </div>
 
-// Добавь отображение результатов с эмодзи:
-socket.on('voting-results', data => {
-    speak("Результаты голосования");
-    // Тут можно добавить анимацию появления имен:
-    document.getElementById('ans1').innerHTML += `<br><small>${data.p1_emoji} ${data.p1_name} (+${data.v1 * 100})</small>`;
-    document.getElementById('ans2').innerHTML += `<br><small>${data.p2_emoji} ${data.p2_name} (+${data.v2 * 100})</small>`;
-});
+    <div id="game" style="display:none;">
+        <h1 id="roundName" style="color: #e94560; font-size: 40px;">РАУНД 1</h1>
+        <h2 id="qText" style="font-size: 45px; margin: 40px;"></h2>
+        <div id="voting" style="display:none; justify-content: space-around; padding: 20px;">
+            <div class="ans-card">
+                <div id="ans1"></div>
+                <div id="author1" class="author-reveal"></div>
+            </div>
+            <div class="ans-card" style="background:#1a1a2e; border-color: #3498db;">
+                <div id="ans2"></div>
+                <div id="author2" class="author-reveal"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="final" style="display:none;">
+        <h1 style="font-size: 70px; margin-top: 150px;">🏆 ПОБЕДИТЕЛЬ: <br><span id="winner" style="color:#f1c40f;"></span></h1>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    let code = "";
+
+    function speak(text) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        const voices = window.speechSynthesis.getVoices();
+        // Пытаемся найти мужской бас
+        let v = voices.find(v => v.name.includes('Pavel') || v.name.includes('Dmitry') || v.name.includes('Google русский'));
+        msg.voice = v || voices[0];
+        msg.pitch = 0.4; // Низкий голос
+        msg.rate = 0.9;
+        window.speechSynthesis.speak(msg);
+    }
+
+    socket.emit('create-room');
+    socket.on('room-created', c => { code = c; document.getElementById('roomCode').innerText = "КОД: " + c; });
+    
+    socket.on('player-joined', data => { 
+        document.getElementById('playerList').innerHTML += `<div>${data.emoji} ${data.name}</div>`; 
+    });
+
+    function startGame() { socket.emit('start-game', code); }
+
+    socket.on('round-started', data => {
+        document.getElementById('lobby').style.display = "none";
+        document.getElementById('game').style.display = "block";
+        document.getElementById('voting').style.display = "none";
+        document.getElementById('author1').style.display = "none";
+        document.getElementById('author2').style.display = "none";
+        document.getElementById('roundName').innerText = "РАУНД " + data.round;
+        document.getElementById('qText').innerText = data.q;
+        speak(data.q);
+    });
+
+    socket.on('show-voting', data => {
+        document.getElementById('voting').style.display = "flex";
+        document.getElementById('ans1').innerText = data.ans1.join(", ");
+        document.getElementById('ans2').innerText = data.ans2.join(", ");
+        speak("Чей ответ смешнее?");
+    });
+
+    socket.on('voting-results', data => {
+        document.getElementById('author1').innerText = `${data.p1_emoji} ${data.p1_name} (+${data.v1 * 100})`;
+        document.getElementById('author2').innerText = `${data.p2_emoji} ${data.p2_name} (+${data.v2 * 100})`;
+        document.getElementById('author1').style.display = "block";
+        document.getElementById('author2').style.display = "block";
+        speak("Результаты на экране");
+    });
+
+    socket.on('final-results', data => {
+        document.getElementById('game').style.display = "none";
+        document.getElementById('final').style.display = "block";
+        document.getElementById('winner').innerText = data.players[0].emoji + " " + data.players[0].name;
+        speak("Игра окончена. Победил " + data.players[0].name);
+    });
+</script>
+</body>
+</html>
