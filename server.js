@@ -5,52 +5,20 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { 
-    maxHttpBufferSize: 1e7, 
-    cors: { origin: "*" } 
-});
+const io = new Server(server, { maxHttpBufferSize: 1e7, cors: { origin: "*" } });
 
-// ПРОВЕРКА ПУТЕЙ: Ищем статические файлы (html, js, картинки) везде
-app.use(express.static(path.join(__dirname))); 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
+app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
-// ГЛАВНЫЙ МАРШРУТ: Принудительно отдаем index.html
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'), (err) => {
-        if (err) {
-            // Если в корне нет, пробуем отправить из папки public
-            res.sendFile(path.join(__dirname, 'public', 'index.html'), (err2) => {
-                if (err2) {
-                    res.status(404).send("<h1>ОШИБКА: Файл index.html не найден!</h1><p>Убедись, что файл называется index.html (маленькими буквами) и лежит в корне твоего репозитория на GitHub.</p>");
-                }
-            });
-        }
-    });
-});
-
-// ВОПРОСЫ (Включая твои коронные)
 const prompts = {
     classic: [
-        "Почему vangavgav лысый?", 
-        "Почему Дима Moderass каждый раз д#оч#т на vangavgav?",
-        "Самое странное название для туалетной бумаги?", 
-        "Что на самом деле шепчут кошки?", 
-        "Лучший подарок для врага?", 
-        "Девиз школы магии для ленивых.",
-        "Что Ванга скрывает под кепкой?", 
-        "Худшая фраза от хирурга перед сном."
+        "Почему vangavgav лысый?", "Почему Дима Moderass каждый раз д#оч#т на vangavgav?",
+        "Самое странное название для туалетной бумаги?", "Что на самом деле шепчут кошки?", 
+        "Лучший подарок для врага?", "Девиз школы магии для ленивых.",
+        "Что Ванга скрывает под кепкой?", "Худшая фраза от хирурга перед сном."
     ],
-    text: [
-        "Напиши отзыв на товар: Ржавый гвоздь", 
-        "Заголовок газеты из 2077 года", 
-        "Жалоба на: Солнечный свет"
-    ],
-    draw: [
-        "Нарисуй: Грустный чебурек", 
-        "Нарисуй: Ванга Фiйко", 
-        "Нарисуй: Танцующий стул", 
-        "Нарисуй: Пьяный робот"
-    ]
+    text: ["Напиши отзыв на товар: Ржавый гвоздь", "Заголовок газеты из 2077 года", "Жалоба на: Солнечный свет"],
+    draw: ["Нарисуй: Грустный чебурек", "Нарисуй: Ванга Фiйко", "Нарисуй: Танцующий стул", "Нарисуй: Пьяный робот"]
 };
 
 const rooms = {};
@@ -69,7 +37,7 @@ io.on('connection', (socket) => {
             socket.join(code);
             room.players.push({ id: socket.id, name, emoji, score: 0 });
             io.to(room.host).emit('player-joined', { name, emoji });
-            socket.emit('joined-success');
+            socket.emit('joined-success', code);
         }
     });
 
@@ -101,31 +69,68 @@ io.on('connection', (socket) => {
 
     socket.on('submit-answer', ({ code, name, answer }) => {
         const room = rooms[code];
+        if (!room) return;
         const pair = room.pairs[room.currentPairIndex];
         if (pair.p1.name === name) pair.ans1 = answer;
         if (pair.p2 && pair.p2.name === name) pair.ans2 = answer;
+
         if (pair.ans1 && (!pair.p2 || pair.ans2)) {
             io.to(code).emit('show-voting', { type: room.mode, ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2 });
+            
+            // ЕСЛИ ЭТО СОЛО - запускаем авто-переход через 8 секунд, чтобы не висело
+            if (!pair.p2) {
+                setTimeout(() => {
+                    if (rooms[code] && rooms[code].pairs[rooms[code].currentPairIndex] === pair) {
+                        finishPair(code);
+                    }
+                }, 8000);
+            }
         }
     });
 
     socket.on('cast-vote', ({ code, voteNum, voterName }) => {
         const room = rooms[code];
+        if (!room) return;
         const pair = room.pairs[room.currentPairIndex];
         if (!pair) return;
+        
+        if (pair.votes.find(v => v.voter === voterName)) return;
         pair.votes.push({ voter: voterName, voteNum });
-        if (pair.votes.length >= 1 || !pair.p2) {
-            let v1 = pair.votes.filter(v => v.voteNum === 1).length;
-            let v2 = pair.votes.filter(v => v.voteNum === 2).length;
-            pair.p1.score += v1 * 100;
-            if (pair.p2) pair.p2.score += v2 * 100;
-            io.to(code).emit('voting-results', { p1_name: pair.p1.name, p1_emoji: pair.p1.emoji, p2_name: pair.p2 ? pair.p2.name : null, p2_emoji: pair.p2 ? pair.p2.emoji : null, isSolo: !pair.p2 });
-            setTimeout(() => { if (rooms[code]) { rooms[code].currentPairIndex++; sendPair(code); } }, 5000);
+        
+        // Если проголосовали все (кроме участников пары) или это соло и кто-то лайкнул
+        const participants = pair.p2 ? 2 : 1;
+        if (pair.votes.length >= (room.players.length - participants) || !pair.p2) {
+            finishPair(code);
         }
     });
+
+    function finishPair(code) {
+        const room = rooms[code];
+        const pair = room.pairs[room.currentPairIndex];
+        if (!pair || pair.finished) return;
+        pair.finished = true;
+
+        let v1 = pair.votes.filter(v => v.voteNum === 1).length;
+        let v2 = pair.votes.filter(v => v.voteNum === 2).length;
+        pair.p1.score += v1 * 100;
+        if (pair.p2) pair.p2.score += v2 * 100;
+        else if (v1 > 0) pair.p1.score += 150; // Бонус за соло-лайки
+
+        io.to(code).emit('voting-results', { 
+            p1_name: pair.p1.name, p1_emoji: pair.p1.emoji,
+            p2_name: pair.p2 ? pair.p2.name : null, p2_emoji: pair.p2 ? pair.p2.emoji : null,
+            isSolo: !pair.p2, v1, v2
+        });
+
+        setTimeout(() => {
+            if (rooms[code]) {
+                rooms[code].currentPairIndex++;
+                sendPair(code);
+            }
+        }, 5000);
+    }
 
     socket.on('kick-all', (code) => { io.to(code).emit('go-to-menu'); });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => { console.log(`Сервер онлайн!`); });
+server.listen(process.env.PORT || 3000);
