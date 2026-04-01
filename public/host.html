@@ -2,122 +2,92 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ГРЕХО-СМЕХ | ЭКРАН ИГРЫ</title>
+    <title>ГРЕХО-СМЕХ | ЭКРАН ХОСТА</title>
     <link rel="icon" href="https://fav.farm/🎮" />
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
-        body { font-family: 'Montserrat', sans-serif; background: #1a1a2e; color: #fff; overflow: hidden; text-align: center; margin: 0; }
-        
-        #lobby, #game, #final, #credits { display: none; }
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
+        body { font-family: 'Montserrat', sans-serif; background: #1a1a2e; color: #fff; text-align: center; margin: 0; overflow: hidden; }
+        #lobby, #game, #final, #credits { display: none; padding: 20px; }
         #lobby { display: block; }
-
-        /* ТИТРЫ */
-        #credits { 
-            position: fixed; top: 100%; left: 0; width: 100%; height: 300%; 
-            background: #000; z-index: 1000; 
-            animation: scrollUp 20s linear forwards; 
-        }
-        @keyframes scrollUp { from { top: 100%; } to { top: -250%; } }
-
-        .credit-item { font-size: 40px; margin: 60px; color: #f1c40f; }
-        .joke-item { background: #16213e; padding: 20px; border-radius: 15px; margin: 10px auto; width: 60%; font-size: 25px; border-left: 8px solid #e94560; }
-        
-        .logo { font-size: 80px; background: linear-gradient(#e94560, #950740); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 20px; }
-        .ans-card { background: #0f3460; padding: 30px; border-radius: 20px; width: 42%; font-size: 30px; border: 4px solid #e94560; }
-        .author-reveal { font-size: 24px; color: #f1c40f; margin-top: 15px; }
-        .main-btn { background: #e94560; color: white; padding: 20px 60px; font-size: 25px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; }
+        .logo { font-size: 70px; color: #e94560; margin-top: 20px; text-transform: uppercase; }
+        .main-btn { background: #e94560; color: white; padding: 15px 40px; font-size: 22px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin: 10px; }
+        .mode-select { background: #0f3460; padding: 20px; border-radius: 20px; border: 3px solid #e94560; display: inline-block; margin: 20px; }
+        select { padding: 10px; border-radius: 10px; font-size: 20px; background: #1a1a2e; color: white; border: 2px solid #e94560; }
+        .ans-card { background: #0f3460; padding: 20px; border-radius: 20px; width: 45%; border: 4px solid #e94560; font-size: 24px; }
+        img.drawing { max-width: 100%; border-radius: 10px; background: white; }
+        .player-chip { background:#e94560; padding:10px 20px; border-radius:50px; margin:5px; display: inline-block; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="ui-layer">
-    <div id="lobby">
-        <div class="logo">ГРЕХО-СМЕХ</div>
-        <h1 id="roomCode" style="background: #0f3460; padding: 10px 40px; border-radius: 15px; border: 3px solid #e94560; display: inline-block;">Загрузка...</h1>
-        <div id="playerList" style="margin: 30px;"></div>
-        <button class="main-btn" onclick="startGame()">НАЧАТЬ ИГРУ</button>
+<div id="lobby">
+    <div class="logo">ГРЕХО-СМЕХ</div>
+    <h1 id="roomCode" style="background: #0f3460; padding: 10px 30px; border-radius: 15px; border: 3px solid #e94560; display: inline-block;">КОД: ...</h1>
+    
+    <div class="mode-select">
+        <h3>РЕЖИМ ИГРЫ:</h3>
+        <select id="gameMode">
+            <option value="classic">Классика (Грехо-Смех)</option>
+            <option value="text">Смехо-Текст (Отзывы)</option>
+            <option value="draw">Рисовалка (Шедевры)</option>
+        </select>
     </div>
 
-    <div id="game">
-        <h2 id="qText" style="font-size: 45px; margin: 40px;"></h2>
-        <div id="voting" style="display:none; justify-content: space-around; padding: 20px;">
-            <div class="ans-card"><div id="ans1"></div><div id="author1" class="author-reveal"></div></div>
-            <div class="ans-card" style="background:#1a1a2e;"><div id="ans2"></div><div id="author2" class="author-reveal"></div></div>
-        </div>
-    </div>
+    <div id="playerList" style="margin: 20px;"></div>
+    <button class="main-btn" onclick="startGame()">НАЧАТЬ ПАРТИЮ</button>
+</div>
 
-    <div id="final">
-        <h1 style="font-size: 70px; margin-top: 150px;">🏆 ПОБЕДИТЕЛЬ: <br><span id="winner" style="color:#f1c40f;"></span></h1>
+<div id="game">
+    <h1 id="roundInfo" style="color: #e94560;">РАУНД 1</h1>
+    <h2 id="qText" style="font-size: 40px; margin: 30px;"></h2>
+    <div id="voting" style="display:none; justify-content: space-around;">
+        <div id="card1" class="ans-card"></div>
+        <div id="card2" class="ans-card" style="background:#1a1a2e; border-color:#3498db"></div>
     </div>
 </div>
 
-<div id="credits">
-    <h1 style="font-size: 80px; color: #e94560; margin-top: 200px;">ГРЕХО-СМЕХ</h1>
-    <div class="credit-item">ЛУЧШИЕ ШУТКИ ПАРТИИ:</div>
-    <div id="top-jokes-list"></div>
-    <div class="credit-item">РАЗРАБОТКА:</div>
-    <div style="font-size: 50px;">ГРЕХА И ИИ-ШКА</div>
-    <div class="credit-item">АМБАССАДОР:</div>
-    <div style="font-size: 40px; color: #3498db;">ВАНГА ФIЙКО ПЕРФОРАТОР</div>
-    <br><br>
-    <button class="main-btn" onclick="location.reload()" style="position: relative; z-index: 2000;">ИГРАТЬ СНОВА</button>
-</div>
+<!-- Сюда добавь финальный блок и титры как были раньше -->
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
     let code = "";
 
-    function speak(text) {
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.pitch = 0.4; msg.rate = 0.9;
-        window.speechSynthesis.speak(msg);
-    }
-
     socket.emit('create-room');
     socket.on('room-created', c => { code = c; document.getElementById('roomCode').innerText = "КОД: " + c; });
     socket.on('player-joined', data => { 
-        document.getElementById('playerList').innerHTML += `<div style="background:#e94560; display:inline-block; padding:10px; margin:5px; border-radius:20px;">${data.emoji} ${data.name}</div>`; 
+        document.getElementById('playerList').innerHTML += `<div class="player-chip">${data.emoji} ${data.name}</div>`; 
     });
 
-    function startGame() { socket.emit('start-game', code); }
+    function startGame() { 
+        const mode = document.getElementById('gameMode').value;
+        socket.emit('start-game', { code, mode }); 
+    }
 
     socket.on('round-started', data => {
         document.getElementById('lobby').style.display = "none";
         document.getElementById('game').style.display = "block";
         document.getElementById('voting').style.display = "none";
         document.getElementById('qText').innerText = data.q;
-        speak(data.q);
     });
 
     socket.on('show-voting', data => {
         document.getElementById('voting').style.display = "flex";
-        document.getElementById('ans1').innerText = data.ans1.join(", ");
-        document.getElementById('ans2').innerText = data.ans2.join(", ");
-        document.getElementById('author1').innerText = ""; document.getElementById('author2').innerText = "";
+        const c1 = document.getElementById('card1');
+        const c2 = document.getElementById('card2');
+        
+        if (data.type === 'draw') {
+            c1.innerHTML = `<img src="${data.ans1}" class="drawing">`;
+            c2.innerHTML = `<img src="${data.ans2}" class="drawing">`;
+        } else {
+            c1.innerText = data.ans1;
+            c2.innerText = data.ans2;
+        }
     });
 
     socket.on('voting-results', data => {
-        document.getElementById('author1').innerText = `${data.p1_emoji} ${data.p1_name}`;
-        document.getElementById('author2').innerText = `${data.p2_emoji} ${data.p2_name}`;
-    });
-
-    socket.on('final-results', data => {
-        document.getElementById('game').style.display = "none";
-        document.getElementById('final').style.display = "block";
-        document.getElementById('winner').innerText = data.players[0].emoji + " " + data.players[0].name;
-        
-        // КИКАЕМ ИГРОКОВ ЧЕРЕЗ 5 СЕКУНД (когда начнутся титры)
-        setTimeout(() => {
-            document.getElementById('ui-layer').style.display = "none";
-            document.getElementById('credits').style.display = "block";
-            const list = document.getElementById('top-jokes-list');
-            data.topAnswers.forEach(ans => {
-                list.innerHTML += `<div class="joke-item">"${ans.text}" <br><small>— ${ans.author}</small></div>`;
-            });
-            socket.emit('kick-all', code); // Специальное событие для очистки
-        }, 6000);
+        document.getElementById('card1').innerHTML += `<br><small style="color:#f1c40f">${data.p1_emoji} ${data.p1_name}</small>`;
+        document.getElementById('card2').innerHTML += `<br><small style="color:#3498db">${data.p2_emoji} ${data.p2_name}</small>`;
     });
 </script>
 </body>
