@@ -4,93 +4,148 @@
     <meta charset="UTF-8">
     <title>ГРЕХО-СМЕХ | HOST</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
-        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; }
-        .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotate 60s linear infinite; z-index: -1; }
-        @keyframes rotate { 100% { transform: rotate(360deg); } }
-
-        /* ТАЙМЕР ЦИФРАМИ */
-        #timer { 
-            position: absolute; top: 20px; left: 30px; font-family: 'Roboto Mono', monospace; 
-            font-size: 80px; color: #3e2723; text-shadow: 4px 4px 0 #fff; z-index: 10;
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
+        
+        * { box-sizing: border-box; }
+        body { 
+            margin: 0; padding: 0; overflow: hidden;
+            background: #fbc02d; font-family: 'Montserrat', sans-serif;
+            color: #3e2723; text-align: center;
         }
 
-        .screen { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; }
+        /* АНИМИРОВАННАЯ СПИРАЛЬ */
+        #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; }
+
+        #digital-timer {
+            position: absolute; top: 30px; left: 40px;
+            font-size: 100px; color: #fff;
+            text-shadow: 8px 8px 0 #000; z-index: 1000;
+        }
+
+        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; }
         #lobby { display: flex; }
-        .big-code { font-size: 100px; background: #3e2723; color: #fbc02d; padding: 10px 50px; border-radius: 20px; }
-        .bubble { background: #fff; border: 6px solid #3e2723; border-radius: 20px; padding: 30px; width: 40%; font-size: 45px; box-shadow: 10px 10px 0 rgba(0,0,0,0.1); }
-        #card1 { transform: rotate(-3deg); } #card2 { transform: rotate(3deg); }
-        .player-chip { background: #fff; border: 4px solid #3e2723; padding: 10px 20px; border-radius: 50px; margin: 10px; display: inline-block; font-size: 24px; }
+
+        /* КОД КОМНАТЫ */
+        .room-code-panel {
+            background: #fff; border: 10px solid #000;
+            padding: 20px 60px; transform: rotate(-2deg);
+            box-shadow: 20px 20px 0 rgba(0,0,0,0.2);
+        }
+        .room-code-panel b { font-size: 120px; color: #000; letter-spacing: 5px; }
+
+        /* КРУГ ИГРОКОВ */
+        .player-circle {
+            position: relative; width: 600px; height: 600px; margin: 40px;
+        }
+        .player-avatar {
+            position: absolute; width: 130px; height: 130px;
+            background: #fff; border: 6px solid #000; border-radius: 30px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: 0.5s; animation: breathe 3s infinite ease-in-out;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(-3deg); }
+            50% { transform: translate(-50%, -50%) scale(1.1) rotate(3deg); }
+        }
+
+        /* БАБЛЫ ОТВЕТОВ */
+        .quiplash-bubble {
+            background: #fff; border: 8px solid #000; border-radius: 40px;
+            padding: 40px; width: 45%; font-size: 50px; font-weight: 900;
+            box-shadow: 15px 15px 0 rgba(0,0,0,0.1); position: relative;
+        }
+        .quiplash-bubble::after {
+            content: ''; position: absolute; bottom: -30px; left: 50px;
+            border-width: 30px 30px 0 0; border-style: solid; border-color: #000 transparent;
+        }
+
+        .main-btn {
+            background: #4caf50; border: 6px solid #000; color: #fff;
+            padding: 20px 60px; font-size: 40px; border-radius: 100px;
+            cursor: pointer; box-shadow: 0 10px 0 #2e7d32;
+        }
     </style>
 </head>
-<body onclick="new Audio('lobby.mp3').play()">
-    <div class="spiral"></div>
-    <div id="timer"></div>
-    
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <div id="digital-timer">30</div>
+
+    <!-- ЛОББИ -->
     <div id="lobby" class="screen">
-        <h1>ГРЕХО-СМЕХ</h1>
-        <div class="big-code" id="codeText">...</div>
-        <div id="playerList"></div>
-        <button onclick="socket.emit('start-game', curCode)" style="margin-top:30px; padding:20px 50px; font-size:25px; cursor:pointer;">ПОГНАЛИ!</button>
-    </div>
-
-    <div id="game" class="screen">
-        <h2 id="qText" style="font-size: 50px; background: #fff; padding: 20px; border: 5px solid #3e2723;"></h2>
-        <div id="voting" style="display:none; justify-content: center; gap: 40px; width: 100%; margin-top: 30px;">
-            <div id="card1" class="bubble"></div>
-            <div id="card2" class="bubble"></div>
+        <h1 style="font-size: 100px; color: #fff; text-shadow: 8px 8px 0 #000;">ГРЕХО-СМЕХ</h1>
+        <div class="room-code-panel">
+            <span style="font-size: 20px; font-weight: bold;">ЗАХОДИТЕ ПО КОДУ:</span><br>
+            <b id="roomCode">...</b>
         </div>
+        <div class="player-circle" id="playerList"></div>
+        <button onclick="socket.emit('start-game', curCode)" class="main-btn">ПОГНАЛИ!</button>
     </div>
 
-    <div id="scores" class="screen">
-        <h1>СЧЁТ</h1>
-        <div id="scoreList"></div>
-        <button onclick="socket.emit('next-after-scores', curCode)" style="padding:15px 40px; font-size:20px; cursor:pointer;">ДАЛЕЕ</button>
+    <!-- ИГРА -->
+    <div id="game" class="screen">
+        <div style="background:#000; color:#fff; padding:10px 40px; font-size:30px; margin-bottom:20px;" id="roundLabel">РАУНД 1</div>
+        <h2 id="qText" style="font-size: 70px; text-shadow: 5px 5px 0 #fff; max-width: 90%;"></h2>
+        <div id="voting" style="display:none; width:100%; justify-content:space-around; margin-top:50px;">
+            <div id="card1" class="quiplash-bubble" style="transform:rotate(-2deg)"></div>
+            <div id="card2" class="quiplash-bubble" style="transform:rotate(2deg)"></div>
+        </div>
     </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io(); let curCode = "", tVal = 0, tInt;
+    const socket = io();
+    let curCode = "";
 
-    function startLocalTimer(sec) {
-        clearInterval(tInt);
-        tVal = sec;
-        const el = document.getElementById('timer');
-        el.style.display = "block";
-        tInt = setInterval(() => {
-            el.innerText = tVal;
-            if(tVal <= 5) el.style.color = "red"; else el.style.color = "#3e2723";
-            if(tVal <= 0) { clearInterval(tInt); el.style.display = "none"; }
-            tVal--;
-        }, 1000);
+    // КАНВАС-СПИРАЛЬ (Quiplash Style)
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let angle = 0;
+
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.onresize = resize; resize();
+
+    function drawSpiral() {
+        ctx.clearRect(0,0,canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(canvas.width/2, canvas.height/2);
+        ctx.rotate(angle);
+        for(let i=0; i<15; i++) {
+            ctx.beginPath();
+            ctx.rotate(Math.PI / 7.5);
+            ctx.moveTo(0,0);
+            ctx.lineTo(2000, 500);
+            ctx.lineTo(2000, -500);
+            ctx.fillStyle = i % 2 === 0 ? '#fbc02d' : '#f9a825';
+            ctx.fill();
+        }
+        ctx.restore();
+        angle += 0.005;
+        requestAnimationFrame(drawSpiral);
     }
+    drawSpiral();
 
-    socket.emit('create-room');
-    socket.on('room-created', c => { curCode = c; document.getElementById('codeText').innerText = c; });
+    socket.emit('create-room', sessionStorage.getItem('lastCode'));
+    socket.on('room-created', c => { curCode = c; document.getElementById('roomCode').innerText = c; });
+
     socket.on('player-list-update', players => {
-        document.getElementById('playerList').innerHTML = players.map(p => `<div class="player-chip">${p.name}</div>`).join('');
+        const list = document.getElementById('playerList');
+        list.innerHTML = "";
+        players.forEach((p, i) => {
+            const a = (i / players.length) * Math.PI * 2;
+            const x = Math.cos(a) * 250 + 300;
+            const y = Math.sin(a) * 250 + 300;
+            list.innerHTML += `<div class="player-avatar" style="left:${x}px; top:${y}px">
+                <span style="font-size:60px">${p.emoji}</span>
+                <b style="color:#000">${p.name}</b>
+            </div>`;
+        });
     });
 
+    // Озвучка и остальная логика...
     socket.on('round-started', d => {
-        document.getElementById('lobby').style.display = "none";
-        document.getElementById('scores').style.display = "none";
-        document.getElementById('game').style.display = "flex";
-        document.getElementById('voting').style.display = "none";
+        document.getElementById('lobby').style.display='none';
+        document.getElementById('game').style.display='flex';
         document.getElementById('qText').innerText = d.q;
-        startLocalTimer(d.time);
-    });
-
-    socket.on('show-voting', d => {
-        document.getElementById('voting').style.display = "flex";
-        document.getElementById('card1').innerText = d.ans1;
-        document.getElementById('card2').innerText = d.ans2;
-        startLocalTimer(d.time);
-    });
-
-    socket.on('show-scores', players => {
-        document.getElementById('game').style.display = "none";
-        document.getElementById('scores').style.display = "flex";
-        document.getElementById('scoreList').innerHTML = players.map(p => `<h2>${p.name}: ${p.score}</h2>`).join('');
     });
 </script>
 </body>
