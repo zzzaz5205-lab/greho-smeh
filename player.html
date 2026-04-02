@@ -5,26 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ИГРОК</title>
     <style>
-        body { font-family: sans-serif; background: #fbc02d; text-align: center; margin: 0; padding: 0; }
-        .top-bar { background: #3e2723; color: #fff; padding: 15px; font-weight: 900; font-size: 20px; }
-        .card { background: #fff; border: 4px solid #000; border-radius: 15px; margin: 20px auto; padding: 25px; width: 85%; box-shadow: 10px 10px 0 #000; }
-        input { width: 90%; padding: 15px; border: 3px solid #000; border-radius: 10px; font-size: 20px; font-weight: bold; margin-bottom: 15px; }
-        .btn { background: #ef5350; color: #fff; border: 4px solid #000; border-radius: 12px; padding: 18px; width: 100%; font-size: 22px; font-weight: 900; cursor: pointer; box-shadow: 0 5px 0 #000; }
+        body { font-family: sans-serif; background: #3e2723; color: #fff; text-align: center; margin: 0; }
         .hidden { display: none; }
+        .btn { background: #ef5350; color: #fff; width: 90%; padding: 20px; border: 4px solid #000; border-radius: 15px; font-weight: 900; font-size: 20px; margin-top: 10px; box-shadow: 0 6px 0 #000; }
+        input { width: 85%; padding: 15px; border: 3px solid #000; border-radius: 10px; margin: 5px; font-size: 18px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="top-bar">КОМНАТА: <span id="rCode">...</span></div>
-    
-    <div id="join-ui" class="card">
-        <input type="text" id="name" placeholder="ТВОЁ ИМЯ"><br>
-        <input type="text" id="code" placeholder="КОД КОМНАТЫ"><br>
+    <div id="join-ui">
+        <h2 style="background:#fbc02d; color:#000; padding:15px;">ГРЕХО-СМЕХ</h2>
+        <input type="text" id="name" placeholder="ИМЯ"><br>
+        <input type="text" id="code" placeholder="КОД"><br>
         <button class="btn" onclick="join()">ВОЙТИ</button>
     </div>
 
-    <div id="wait-ui" class="hidden">
-        <h1 style="margin-top: 50px;">ТЫ В ИГРЕ!</h1>
-        <p>Выбери цвет своего монстра на большом экране...</p>
+    <div id="status" class="hidden" style="margin-top:100px;">
+        <h1>ТЫ В ИГРЕ!</h1>
+        <p>Смотри на экран Хоста...</p>
+    </div>
+
+    <div id="game-ui" class="hidden">
+        <h2 id="qText"></h2>
+        <input type="text" id="ans" placeholder="ПИШИ ТУТ...">
+        <button class="btn" onclick="sendAns()">ОТПРАВИТЬ</button>
     </div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -35,17 +38,28 @@
     function join() {
         myName = document.getElementById('name').value;
         const code = document.getElementById('code').value.toUpperCase();
-        if(!myName || !code) return alert("Заполни всё!");
         socket.emit('join-room', { code, name: myName });
     }
 
-    socket.on('joined-success', (data) => {
-        document.getElementById('rCode').innerText = data.code; // data.code, а не объект!
+    socket.on('joined-success', () => {
         document.getElementById('join-ui').classList.add('hidden');
-        document.getElementById('wait-ui').classList.remove('hidden');
+        document.getElementById('status').classList.remove('hidden');
     });
 
-    socket.on('error-join', m => alert(m));
+    socket.on('round-started', d => {
+        const myTurn = (myName === d.p1_name || myName === d.p2_name);
+        document.getElementById('status').classList.toggle('hidden', myTurn);
+        document.getElementById('game-ui').classList.toggle('hidden', !myTurn);
+        if(myTurn) document.getElementById('qText').innerText = d.q;
+    });
+
+    function sendAns() {
+        const a = document.getElementById('ans').value;
+        const c = new URLSearchParams(window.location.search).get('code'); // Или через переменную
+        socket.emit('submit-answer', { code: document.getElementById('code').value.toUpperCase(), name: myName, answer: a });
+        document.getElementById('game-ui').classList.add('hidden');
+        document.getElementById('status').classList.remove('hidden');
+    }
 </script>
 </body>
 </html>
