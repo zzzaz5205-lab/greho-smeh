@@ -17,12 +17,9 @@
     <div id="emoji-ui" class="hidden">
         <h3>ВЫБЕРИ ПЕРСОНАЖА:</h3>
         <div class="emoji-grid">
-            <div class="emoji-item" onclick="selEm('🤡')">🤡</div>
-            <div class="emoji-item" onclick="selEm('👽')">👽</div>
-            <div class="emoji-item" onclick="selEm('🤖')">🤖</div>
-            <div class="emoji-item" onclick="selEm('👻')">👻</div>
-            <div class="emoji-item" onclick="selEm('🐙')">🐙</div>
-            <div class="emoji-item" onclick="selEm('🐸')">🐸</div>
+            <div class="emoji-item" onclick="selEm('🤡')">🤡</div><div class="emoji-item" onclick="selEm('👽')">👽</div>
+            <div class="emoji-item" onclick="selEm('🤖')">🤖</div><div class="emoji-item" onclick="selEm('👻')">👻</div>
+            <div class="emoji-item" onclick="selEm('🐙')">🐙</div><div class="emoji-item" onclick="selEm('🐸')">🐸</div>
         </div>
     </div>
     <div id="answer-ui" class="hidden">
@@ -53,7 +50,8 @@
             document.getElementById('answer-ui').classList.toggle('hidden', !myTurn);
             document.getElementById('vote-ui').classList.add('hidden');
             if(myTurn) {
-                document.getElementById('qText').innerText = d.q; const area = document.getElementById('inp-area');
+                document.getElementById('qText').innerText = d.q;
+                const area = document.getElementById('inp-area');
                 const rb = document.getElementById('rec-btn'); rb.classList.toggle('hidden', myMode!=='voice');
                 area.innerHTML = (myMode==='draw') ? '<canvas id="canv" width="300" height="300" style="background:white"></canvas>' : (myMode==='voice'?'': '<input id="ansV" type="text" style="width:85%; padding:15px; border-radius:10px;">');
                 if(myMode==='voice') initVoice();
@@ -61,38 +59,34 @@
         });
 
         function initVoice() {
-            const b = document.getElementById('rec-btn'); let recorder;
+            const b = document.getElementById('rec-btn'); let rec;
             b.onclick = async () => {
                 if(!isRec) {
                     const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    recorder = new MediaRecorder(s); let ch = [];
-                    recorder.ondataavailable = e => ch.push(e.data);
-                    recorder.onstop = () => { 
+                    rec = new MediaRecorder(s); let ch = [];
+                    rec.ondataavailable = e => ch.push(e.data);
+                    rec.onstop = () => { 
                         const bl = new Blob(ch, { type: 'audio/ogg; codecs=opus' }); 
                         const r = new FileReader(); r.readAsDataURL(bl); 
                         r.onloadend = () => { audioBlob = r.result; b.innerText = "ЗАПИСАНО! ✅"; b.style.background="#27ae60"; };
                     };
-                    recorder.start(); isRec = true; b.innerText = "СТОП (МАКС 10 СЕК)"; b.style.background="#ff0000";
-                    recT = setTimeout(() => { if(isRec) recorder.stop(); isRec=false; }, 10000);
-                } else { clearTimeout(recT); recorder.stop(); isRec = false; }
+                    rec.start(); isRec = true; b.innerText = "СТОП (МАКС 10 СЕК)"; b.style.background="#ff0000";
+                    recT = setTimeout(() => { if(isRec) rec.stop(); isRec=false; }, 10000);
+                } else { clearTimeout(recT); rec.stop(); isRec = false; }
             };
         }
-
         function sendAns() {
             let v = (myMode==='voice') ? audioBlob : (myMode==='draw' ? document.getElementById('canv').toDataURL() : document.getElementById('ansV').value);
             socket.emit('submit-answer', { code, answer: v });
             document.getElementById('answer-ui').classList.add('hidden'); document.getElementById('status').classList.remove('hidden'); document.getElementById('status').innerText = "ПРИНЯТО!";
         }
-
         socket.on('show-voting', d => {
             if(d.isSolo) return; document.getElementById('status').classList.add('hidden'); document.getElementById('vote-ui').classList.remove('hidden');
             document.getElementById('b1').innerText = d.type==='classic' ? d.ans1 : "ВАРИАНТ 1";
             document.getElementById('b2').innerText = d.type==='classic' ? d.ans2 : "ВАРИАНТ 2";
         });
-
         function vote(n) { socket.emit('cast-vote', { code, voteNum: n }); document.getElementById('vote-ui').classList.add('hidden'); document.getElementById('status').classList.remove('hidden'); }
         socket.on('go-to-menu', () => location.href='index.html');
-        window.onbeforeunload = () => { if(myMode!=="") return "Игра прервется!"; };
     </script>
 </body>
 </html>
