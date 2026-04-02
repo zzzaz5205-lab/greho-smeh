@@ -2,23 +2,21 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ИГРОК</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUI-DEVICE</title>
     <style>
-        body { font-family: sans-serif; background: #3e2723; color: #fff; text-align: center; margin: 0; touch-action: manipulation; }
-        .header { background: #fbc02d; color: #000; padding: 15px; font-weight: 900; }
-        .btn { background: #ef5350; border: 5px solid #000; border-radius: 15px; padding: 20px; width: 90%; color: #fff; font-size: 24px; font-weight: 900; box-shadow: 0 6px 0 #000; margin: 10px 0; }
-        .char-pick { width: 70px; height: 70px; border: 3px solid #fff; display: inline-block; margin: 5px; border-radius: 10px; }
-        input { width: 85%; padding: 20px; border: 5px solid #000; border-radius: 15px; font-size: 22px; font-weight: bold; margin-top: 15px; }
+        body { font-family: sans-serif; background: #3e2723; color: #fff; text-align: center; margin: 0; }
+        .btn { background: #ef5350; border: 4px solid #000; border-radius: 15px; padding: 20px; width: 90%; color: #fff; font-size: 24px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 0 #000; margin-top: 10px; }
         .hidden { display: none; }
+        .char-pick { width: 80px; height: 80px; border: 4px solid #fff; display: inline-block; margin: 10px; border-radius: 15px; }
+        input { width: 85%; padding: 15px; border: 4px solid #000; border-radius: 10px; margin: 5px; font-size: 20px; }
     </style>
 </head>
 <body>
-    <div class="header">ROOM: <span id="rCode">...</span></div>
-    <div id="status" style="padding:20px; font-size:24px;">ПОДКЛЮЧЕНИЕ...</div>
+    <div id="status" style="padding:40px; font-weight:900; font-size:24px">ПОДКЛЮЧЕНИЕ...</div>
 
     <div id="char-ui" class="hidden">
-        <h3>ВЫБЕРИ ФИГУРУ:</h3>
+        <h3>ВЫБЕРИ СВОЙ ЦВЕТ:</h3>
         <div id="colors"></div>
     </div>
 
@@ -28,59 +26,41 @@
         <button class="btn" onclick="send()" style="background:#4caf50">ОТПРАВИТЬ!</button>
     </div>
 
-    <div id="vote-ui" class="hidden">
-        <h2>КТО СМЕШНЕЕ?</h2>
-        <button id="b1" class="btn" onclick="vote(1)"></button>
-        <button id="b2" class="btn" style="background:#2196f3" onclick="vote(2)"></button>
-    </div>
-
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io(); const params = new URLSearchParams(window.location.search);
-    const name = params.get('name'), code = params.get('code')?.toUpperCase();
-    document.getElementById('rCode').innerText = code;
-    const shapes = ['cube','circle','poly'];
-    const colors = ['#ef5350','#42a5f5','#66bb6a','#ffca28','#ab47bc','#ffa726'];
+    const socket = io(); 
+    let name = localStorage.getItem('pName'), code = localStorage.getItem('pCode');
+    const colors = ['#ef5350','#42a5f5','#66bb6a','#ffca28','#ab47bc','#ffa726','#ec407a','#26c6da'];
+    const shapes = ['square','circle','poly'];
 
+    if(!name){ const p = new URLSearchParams(window.location.search); name=p.get('name'); code=p.get('code'); localStorage.setItem('pName', name); localStorage.setItem('pCode', code); }
     socket.emit('join-room', { code, name });
+
     socket.on('joined-success', () => {
         document.getElementById('status').classList.add('hidden');
         document.getElementById('char-ui').classList.remove('hidden');
-        const cDiv = document.getElementById('colors');
         colors.forEach(c => {
-            const btn = document.createElement('div'); btn.className='char-pick'; btn.style.background=c;
-            btn.onclick = () => { socket.emit('select-char', { code, name, char: { type: shapes[Math.floor(Math.random()*3)], color: c } }); document.getElementById('char-ui').innerHTML="<h1>ГОТОВ!</h1>"; };
-            cDiv.appendChild(btn);
+            const d = document.createElement('div'); d.className='char-pick'; d.style.background=c;
+            d.onclick = () => { socket.emit('select-char', { code, name, char: { shape: shapes[Math.floor(Math.random()*3)], color: c } }); document.getElementById('char-ui').innerHTML="<h1>ГОТОВ!</h1>"; };
+            document.getElementById('colors').appendChild(d);
         });
     });
 
     socket.on('round-started', d => {
-        const myTurn = (name === d.p1 || name === d.p2 || d.isFinal);
+        const myTurn = (name === d.p1_name || name === d.p2_name || d.round === 3);
         document.getElementById('char-ui').classList.add('hidden');
         document.getElementById('answer-ui').classList.toggle('hidden', !myTurn);
-        document.getElementById('vote-ui').classList.add('hidden');
         if(myTurn) {
             document.getElementById('qText').innerText = d.q;
-            const area = document.getElementById('inps');
-            area.innerHTML = d.round === 3 ? '<input class="v" placeholder="1"><input class="v" placeholder="2"><input class="v" placeholder="3">' : '<input class="v" placeholder="Твой ответ...">';
+            document.getElementById('inps').innerHTML = d.round === 3 ? '<input class="v" placeholder="1"><input class="v" placeholder="2"><input class="v" placeholder="3">' : '<input class="v" placeholder="Твой ответ...">';
         } else { document.getElementById('status').classList.remove('hidden'); document.getElementById('status').innerText = "СМОТРИ НА ЭКРАН!"; }
     });
 
-    function send() { 
-        const val = Array.from(document.querySelectorAll('.v')).map(i=>i.value);
-        socket.emit('submit-answer', { code, name, answer: val });
-        document.getElementById('answer-ui').classList.add('hidden'); 
+    function send() {
+        const v = Array.from(document.querySelectorAll('.v')).map(i=>i.value);
+        socket.emit('submit-answer', { code, name, answer: v });
+        document.getElementById('answer-ui').classList.add('hidden');
     }
-
-    socket.on('show-voting', d => {
-        if(name === d.p1 || name === d.p2) return;
-        document.getElementById('status').classList.add('hidden');
-        document.getElementById('vote-ui').classList.remove('hidden');
-        document.getElementById('b1').innerText = d.ans1; document.getElementById('b2').innerText = d.ans2;
-    });
-
-    function vote(n) { socket.emit('cast-vote', { code, voteNum: n }); document.getElementById('vote-ui').classList.add('hidden'); }
-    socket.on('error-join', m => alert(m));
 </script>
 </body>
 </html>
