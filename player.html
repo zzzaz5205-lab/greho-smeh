@@ -6,45 +6,107 @@
     <title>QUI-DEVICE</title>
     <style>
         body { font-family: sans-serif; background: #3e2723; color: #fff; text-align: center; margin: 0; }
-        .header { background: #fbc02d; color: #000; padding: 15px; font-weight: 900; font-size: 20px; }
-        .input-box { background: #fff; color: #000; width: 90%; margin: 20px auto; border-radius: 15px; padding: 20px; border: 5px solid #000; }
-        input { width: 100%; border: none; font-size: 24px; font-weight: bold; text-align: center; outline: none; }
-        .btn { background: #ef5350; border: 4px solid #000; border-radius: 15px; padding: 20px; width: 90%; color: #fff; font-size: 24px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 0 #b71c1c; }
-        .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #b71c1c; }
+        .hidden { display: none !important; }
+        .header { background: #fbc02d; color: #000; padding: 15px; font-weight: 900; }
+        .btn { background: #ef5350; border: 4px solid #000; border-radius: 15px; padding: 20px; width: 90%; color: #fff; font-size: 22px; font-weight: 900; cursor: pointer; margin: 10px 0; }
+        .emoji-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 20px; }
+        .emoji-btn { font-size: 40px; background: #fff; border: 3px solid #000; border-radius: 12px; width: 65px; height: 65px; cursor: pointer; }
+        input { width: 85%; padding: 20px; border: 4px solid #000; border-radius: 15px; font-size: 20px; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <div class="header">ROOM: <span id="codeDisplay">...</span></div>
+    <div class="header">ROOM: <span id="roomCodeDisplay">...</span></div>
     
-    <div id="answer-ui">
-        <div class="input-box">
-            <input id="ans1" type="text" maxlength="40" placeholder="ПИШИ ТУТ...">
-        </div>
-        <div id="extra-inputs" style="display:none">
-             <div class="input-box"><input id="ans2" type="text" maxlength="40"></div>
-             <div class="input-box"><input id="ans3" type="text" maxlength="40"></div>
-        </div>
+    <!-- ЭКРАН 1: ВХОД -->
+    <div id="join-ui" style="padding: 20px;">
+        <input type="text" id="name" placeholder="ТВОЁ ИМЯ"><br>
+        <input type="text" id="code" placeholder="КОД КОМНАТЫ"><br>
+        <button class="btn" onclick="join()">ВОЙТИ</button>
+    </div>
+
+    <!-- ЭКРАН 2: ВЫБОР ГЕРОЯ -->
+    <div id="emoji-ui" class="hidden">
+        <h3>ВЫБЕРИ ПЕРСОНАЖА:</h3>
+        <div class="emoji-grid" id="grid"></div>
+    </div>
+
+    <!-- ЭКРАН 3: ОЖИДАНИЕ / ИГРА -->
+    <div id="game-ui" class="hidden">
+        <h2 id="qText" style="padding:15px; color:#fbc02d"></h2>
+        <input type="text" id="ans" placeholder="ПИШИ ТУТ...">
         <button class="btn" onclick="send()">ОТПРАВИТЬ!</button>
+    </div>
+
+    <!-- ЭКРАН 4: ГОЛОСОВАНИЕ -->
+    <div id="vote-ui" class="hidden">
+        <h3>КТО СМЕШНЕЕ?</h3>
+        <button id="b1" class="btn" onclick="vote(1)"></button>
+        <button id="b2" class="btn" onclick="vote(2)" style="background:#42a5f5"></button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const params = new URLSearchParams(window.location.search);
-        const name = params.get('name'), code = params.get('code');
-        document.getElementById('codeDisplay').innerText = code;
+        let myName = "";
+        let myRoom = "";
 
-        socket.emit('join-room', { code, name });
+        function join() {
+            myName = document.getElementById('name').value;
+            myRoom = document.getElementById('code').value.toUpperCase();
+            socket.emit('join-room', { code: myRoom, name: myName });
+        }
+
+        socket.on('joined-success', (data) => {
+            document.getElementById('roomCodeDisplay').innerText = data.code;
+            document.getElementById('join-ui').classList.add('hidden');
+            document.getElementById('emoji-ui').classList.remove('hidden');
+            
+            const grid = document.getElementById('grid');
+            grid.innerHTML = "";
+            ['🤡','👽','🤖','👻','🐙','🐸','🐷','🍔','🚀','💎'].forEach(e => {
+                const b = document.createElement('button'); b.className = 'emoji-btn'; b.innerText = e;
+                b.onclick = () => {
+                    socket.emit('select-emoji', { code: myRoom, name: myName, emoji: e });
+                    document.getElementById('emoji-ui').innerHTML = "<h1>ГОТОВ!</h1>";
+                };
+                grid.appendChild(b);
+            });
+        });
 
         socket.on('round-started', d => {
-            if(d.round === 3) document.getElementById('extra-inputs').style.display = 'block';
+            const isMyTurn = (myName === d.p1 || myName === d.p2);
+            document.getElementById('emoji-ui').classList.add('hidden');
+            document.getElementById('vote-ui').classList.add('hidden');
+            document.getElementById('game-ui').classList.toggle('hidden', !isMyTurn);
+            if(isMyTurn) {
+                document.getElementById('qText').innerText = d.q;
+                document.getElementById('ans').value = "";
+            } else {
+                document.getElementById('game-ui').innerHTML = "<h1>СМОТРИ НА ЭКРАН!</h1>";
+                document.getElementById('game-ui').classList.remove('hidden');
+            }
         });
 
         function send() {
-            const a = [document.getElementById('ans1').value, document.getElementById('ans2').value, document.getElementById('ans3').value];
-            socket.emit('submit-answer', { code, name, answer: a });
-            document.body.innerHTML = "<h1>ЖДИ ЭКРАНА!</h1>";
+            const answer = document.getElementById('ans').value;
+            socket.emit('submit-answer', { code: myRoom, name: myName, answer });
+            document.getElementById('game-ui').innerHTML = "<h1>ПРИНЯТО!</h1>";
         }
+
+        socket.on('show-voting', d => {
+            if(myName === d.p1 || myName === d.p2) return;
+            document.getElementById('game-ui').classList.add('hidden');
+            document.getElementById('vote-ui').classList.remove('hidden');
+            document.getElementById('b1').innerText = d.ans1;
+            document.getElementById('b2').innerText = d.ans2;
+        });
+
+        function vote(n) {
+            socket.emit('cast-vote', { code: myRoom, voteNum: n });
+            document.getElementById('vote-ui').innerHTML = "<h1>ГОЛОС УЧТЕН!</h1>";
+        }
+
+        socket.on('error-join', m => alert(m));
     </script>
 </body>
 </html>
