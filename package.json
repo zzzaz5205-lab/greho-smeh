@@ -1,6 +1,7 @@
 {
-  "name": "greho-smeh",
-  "version": "1.1.0",
+  "name": "greho-smeh-pro",
+  "version": "2.0.0",
+  "description": "Quiplash Clone with Gemini AI",
   "main": "server.js",
   "scripts": { "start": "node server.js" },
   "dependencies": {
