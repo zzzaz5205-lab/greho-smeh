@@ -13,13 +13,16 @@ const io = new Server(server, {
 app.use(express.static(__dirname));
 
 const prompts = {
-    classic: ["Почему vangavgav лысый?", "Что Ванга скрывает под кепкой?", "Лучший подарок для злейшего врага?"],
-    text: ["Напиши отзыв на: Пылесос для кошек", "Заголовок газеты из 2077 года"],
-    draw: ["Нарисуй: Пьяный кактус", "Нарисуй: Ванга Фiйко"],
-    voice: ["Запиши звук: Как кричит лысая Ванга?", "Запиши: Звук Димы Модерасса в кустах", "Запиши: Твоя реакция на подарок"]
+    classic: ["Почему vangavgav лысый?", "Что Ванга скрывает под кепкой?", "Лучший подарок для злейшего врага?", "Почему Дима Moderass д#очит на Вангу?"],
+    text: ["Напиши отзыв на: Пылесос для кошек", "Заголовок газеты из 2077 года", "Жалоба на: Слишком яркое солнце"],
+    draw: ["Нарисуй: Пьяный кактус", "Нарисуй: Ванга Фiйко", "Нарисуй: Танцующий стул"],
+    voice: ["Звук: Как кричит Ванга в лесу?", "Звук: Твоя реакция на бан в Твиче", "Звук: Озвучь падающий шкаф"]
 };
 
+const defaultAns = ["Я уснул, пока писал...", "Мой мозг покинул чат", "Я просто смотрел в стену 30 секунд", "У меня лапки, я не смог написать"];
+
 const rooms = {};
+let timers = {};
 
 io.on('connection', (socket) => {
     socket.on('create-room', () => {
@@ -33,23 +36,20 @@ io.on('connection', (socket) => {
         const room = rooms[code];
         if (room && !room.gameStarted) {
             socket.join(code);
-            const newPlayer = { id: socket.id, name, emoji: '❓', score: 0 };
-            room.players.push(newPlayer);
-            io.to(room.host).emit('player-joined', newPlayer);
-            socket.emit('joined-success', { code, name });
+            const player = { id: socket.id, name, emoji: '❓', score: 0 };
+            room.players.push(player);
+            io.to(room.host).emit('player-joined', player);
+            socket.emit('joined-success', code);
         } else {
-            socket.emit('error-join', 'Комната не найдена или игра уже идет');
+            socket.emit('error-join');
         }
     });
 
     socket.on('select-emoji', ({ code, emoji }) => {
         const room = rooms[code];
         if (room) {
-            const p = room.players.find(p => p.id === socket.id);
-            if (p) {
-                p.emoji = emoji;
-                io.to(room.host).emit('update-player-emoji', { id: socket.id, emoji });
-            }
+            const p = room.players.find(pl => pl.id === socket.id);
+            if (p) { p.emoji = emoji; io.to(room.host).emit('update-player-emoji', { id: socket.id, emoji }); }
         }
     });
 
@@ -76,7 +76,20 @@ io.on('connection', (socket) => {
         const room = rooms[code];
         const pair = room.pairs[room.currentPairIndex];
         if (!pair) return io.to(code).emit('final-results', { players: room.players });
+        
         io.to(code).emit('round-started', { mode: room.mode, q: pair.q, p1_id: pair.p1.id, p2_id: pair.p2 ? pair.p2.id : null });
+
+        if(timers[code]) clearTimeout(timers[code]);
+        timers[code] = setTimeout(() => forceSubmit(code), 32000);
+    }
+
+    function forceSubmit(code) {
+        const room = rooms[code];
+        const pair = room.pairs[room.currentPairIndex];
+        if (!pair || pair.finished) return;
+        if (!pair.ans1) pair.ans1 = room.mode === 'voice' ? 'EMPTY' : defaultAns[Math.floor(Math.random()*defaultAns.length)];
+        if (pair.p2 && !pair.ans2) pair.ans2 = room.mode === 'voice' ? 'EMPTY' : defaultAns[Math.floor(Math.random()*defaultAns.length)];
+        showVoting(code, pair, room.mode);
     }
 
     socket.on('submit-answer', ({ code, answer }) => {
@@ -84,20 +97,23 @@ io.on('connection', (socket) => {
         const pair = room.pairs[room.currentPairIndex];
         if (pair.p1.id === socket.id) pair.ans1 = answer;
         if (pair.p2 && pair.p2.id === socket.id) pair.ans2 = answer;
-
         if (pair.ans1 && (!pair.p2 || pair.ans2)) {
-            io.to(code).emit('show-voting', { type: room.mode, ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2 });
-            if (!pair.p2) setTimeout(() => { if(rooms[code]) finishPair(code); }, 8000);
+            clearTimeout(timers[code]);
+            showVoting(code, pair, room.mode);
         }
     });
+
+    function showVoting(code, pair, mode) {
+        io.to(code).emit('show-voting', { type: mode, ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2 });
+        if (!pair.p2) setTimeout(() => finishPair(code), 8000);
+    }
 
     socket.on('cast-vote', ({ code, voteNum }) => {
         const room = rooms[code];
         const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return;
         pair.votes.push({ voter: socket.id, voteNum });
-        const participants = pair.p2 ? 2 : 1;
-        if (pair.votes.length >= (room.players.length - participants)) finishPair(code);
+        if (pair.votes.length >= (room.players.length - (pair.p2 ? 2 : 1))) finishPair(code);
     });
 
     function finishPair(code) {
@@ -109,23 +125,11 @@ io.on('connection', (socket) => {
         let v2 = pair.votes.filter(v => v.voteNum === 2).length;
         pair.p1.score += v1 * 100;
         if (pair.p2) pair.p2.score += v2 * 100;
-        io.to(code).emit('voting-results', { 
-            p1: { name: pair.p1.name, emoji: pair.p1.emoji },
-            p2: pair.p2 ? { name: pair.p2.name, emoji: pair.p2.emoji } : null,
-            isSolo: !pair.p2, v1, v2 
-        });
+        io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, v1, v2 });
         setTimeout(() => { if (rooms[code]) { rooms[code].currentPairIndex++; sendPair(code); } }, 5000);
     }
 
-    socket.on('finish-credits', (code) => {
-        io.to(code).emit('go-to-menu');
-        delete rooms[code];
-    });
-
-    socket.on('disconnect', () => {
-        // Логика удаления игрока или уведомление хоста
-    });
+    socket.on('finish-credits', (code) => { io.to(code).emit('go-to-menu'); delete rooms[code]; });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Server live on ' + PORT));
+server.listen(process.env.PORT || 3000);
