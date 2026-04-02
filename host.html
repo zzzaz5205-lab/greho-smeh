@@ -2,47 +2,63 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>HOST | ГРЕХО-СМЕХ</title>
+    <title>СМЕХЛЫСТ | HOST</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
-        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; }
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
+        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; text-align: center; color: #3e2723; }
         #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; }
+        #timer { position: absolute; top: 20px; left: 30px; font-size: 90px; font-family: 'Roboto Mono'; font-weight: 900; text-shadow: 4px 4px 0 #fff; z-index: 100; }
         .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; }
-        #lobby { display: flex; }
-        .room-code-panel { background: #fff; border: 8px solid #000; padding: 15px 40px; transform: rotate(-2deg); box-shadow: 10px 10px 0 rgba(0,0,0,0.2); }
-        .player-circle { position: relative; width: 500px; height: 500px; margin: 30px; }
-        .avatar { position: absolute; width: 120px; height: 120px; background: #fff; border: 5px solid #000; border-radius: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translate(-50%, -50%); animation: wobble 3s infinite ease-in-out; }
-        @keyframes wobble { 0%, 100% { transform: translate(-50%, -50%) rotate(-3deg); } 50% { transform: translate(-50%, -50%) rotate(3deg); } }
-        .bubble { background: #fff; border: 6px solid #3e2723; border-radius: 20px; padding: 30px; width: 40%; font-size: 40px; font-weight: 900; box-shadow: 10px 10px 0 rgba(0,0,0,0.1); }
-        .main-btn { background: #4caf50; border: 6px solid #000; color: #fff; padding: 20px 60px; font-size: 30px; border-radius: 100px; cursor: pointer; font-weight: 900; }
+        
+        /* ГЕОМЕТРИЧЕСКИЕ ПЕРСОНАЖИ */
+        .char { width: 120px; height: 120px; border: 6px solid #000; position: absolute; display: flex; align-items: center; justify-content: center; animation: breathe 3s infinite ease-in-out; }
+        .char.cube { border-radius: 20px; }
+        .char.circle { border-radius: 50%; }
+        .char.poly { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
+        .char-eyes { width: 60%; height: 20%; background: #000; border-radius: 10px; position: relative; }
+        .char-eyes::before, .char-eyes::after { content:''; position:absolute; width:10px; height:10px; background:#fff; border-radius:50%; top:20%; }
+        .char-eyes::before { left: 15%; } .char-eyes::after { right: 15%; }
+        @keyframes breathe { 0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(-3deg); } 50% { transform: translate(-50%, -50%) scale(1.1) rotate(3deg); } }
+
+        .bubble { background: #fff; border: 8px solid #3e2723; border-radius: 30px; padding: 40px; width: 42%; font-size: 50px; font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); }
+        .room-code-box { background: #fff; border: 8px solid #000; padding: 20px 60px; transform: rotate(-2deg); margin-bottom: 50px; }
+        .room-code-box b { font-size: 110px; font-family: 'Roboto Mono'; }
+        .score-bar { background: #000; color: #fff; font-size: 45px; padding: 10px 40px; border-radius: 15px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 10px; }
     </style>
 </head>
-<body>
+<body onclick="startMusic()">
     <canvas id="bg-canvas"></canvas>
-    <div id="lobby" class="screen">
-        <h1 style="font-size: 70px; color: #fff; text-shadow: 6px 6px 0 #000;">ГРЕХО-СМЕХ</h1>
-        <div class="room-code-panel">
-            <span style="font-size: 18px; font-weight: bold;">КОД:</span><br>
-            <b id="roomCode" style="font-size: 90px;">...</b>
-        </div>
-        <div class="player-circle" id="playerList"></div>
-        <button onclick="socket.emit('start-game', curCode)" class="main-btn">ПОГНАЛИ!</button>
+    <div id="timer"></div>
+
+    <div id="lobby" class="screen" style="display:flex">
+        <h1 style="font-size: 80px; text-shadow: 6px 6px 0 #fff; margin:0;">СМЕХЛЫСТ</h1>
+        <div class="room-code-box"><span>КОД:</span><br><b id="bigCode">...</b></div>
+        <div id="playerList" style="position:relative; width:600px; height:500px;"></div>
+        <button onclick="socket.emit('start-game', curCode)" style="padding:20px 60px; font-size:35px; border-radius:50px; border:6px solid #000; background:#4caf50; color:#fff; cursor:pointer; font-weight:900;">ПОГНАЛИ!</button>
     </div>
 
     <div id="game" class="screen">
-        <h2 id="qText" style="font-size: 50px; background: #fff; border: 6px solid #000; padding: 20px; transform: rotate(-1deg);"></h2>
-        <div id="voting" style="display:none; width:100%; justify-content:center; gap:30px; margin-top:40px;">
-            <div id="card1" class="bubble" style="transform:rotate(-2deg)"></div>
-            <div id="card2" class="bubble" style="transform:rotate(2deg)"></div>
+        <h1 id="roundTag" style="font-size:40px; background:#000; color:#fff; padding:10px 30px; transform:rotate(-1deg);">РАУНД 1</h1>
+        <h2 id="qText" style="font-size: 60px; text-shadow: 4px 4px 0 #fff; margin: 40px;"></h2>
+        <div id="voting" style="display:none; width:100%; justify-content:center; gap:40px;">
+            <div id="card1" class="bubble" style="transform:rotate(-3deg)"></div>
+            <div id="card2" class="bubble" style="transform:rotate(3deg)"></div>
         </div>
     </div>
 
+    <div id="scores" class="screen">
+        <h1 style="font-size:80px">СЧЁТ</h1><div id="scoreList"></div>
+        <button onclick="socket.emit('next-after-scores', curCode)" style="padding:15px 50px; font-size:25px; cursor:pointer; margin-top:30px;">ДАЛЕЕ</button>
+    </div>
+
+    <div id="final" class="screen"><h1 style="font-size:100px">ПОБЕДИТЕЛЬ</h1><div id="winner" style="font-size:120px; color:#ef5350"></div></div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io();
-    let curCode = "";
-    
-    // SPIRAL BACKGROUND
+    const socket = io(); let curCode = "", tInt;
+    const music = { lobby: new Audio('lobby.mp3'), game: new Audio('game.mp3'), final: new Audio('final.mp3') };
+
+    // SPIRAL CANVAS
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let angle = 0;
@@ -51,40 +67,63 @@
     function draw() {
         ctx.clearRect(0,0,canvas.width, canvas.height);
         ctx.save(); ctx.translate(canvas.width/2, canvas.height/2); ctx.rotate(angle);
-        for(let i=0; i<12; i++){ ctx.beginPath(); ctx.rotate(Math.PI/6); ctx.moveTo(0,0); ctx.lineTo(2000, 400); ctx.lineTo(2000, -400); ctx.fillStyle = i%2==0 ? '#fbc02d' : '#f9a825'; ctx.fill(); }
+        for(let i=0; i<14; i++){ ctx.beginPath(); ctx.rotate(Math.PI/7); ctx.moveTo(0,0); ctx.lineTo(2000, 500); ctx.lineTo(2000, -500); ctx.fillStyle = i%2==0 ? '#fbc02d' : '#f9a825'; ctx.fill(); }
         ctx.restore(); angle += 0.005; requestAnimationFrame(draw);
     }
     draw();
 
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
-    socket.on('room-created', c => { curCode = c; document.getElementById('roomCode').innerText = c; });
+    socket.on('room-created', c => { curCode = c; document.getElementById('bigCode').innerText = c; });
 
     socket.on('player-list-update', players => {
-        const list = document.getElementById('playerList');
-        list.innerHTML = "";
+        const list = document.getElementById('playerList'); list.innerHTML = "";
         players.forEach((p, i) => {
-            const a = (i / players.length) * Math.PI * 2;
-            const x = Math.cos(a) * 230 + 250;
-            const y = Math.sin(a) * 230 + 250;
-            list.innerHTML += `<div class="avatar" style="left:${x}px; top:${y}px">
-                <span style="font-size:50px">${p.emoji}</span>
-                <b style="color:#000; font-size:14px">${p.name}</b>
-            </div>`;
+            const a = (i / players.length) * Math.PI * 2 - Math.PI/2;
+            const x = Math.cos(a) * 280 + 300; const y = Math.sin(a) * 250 + 250;
+            const charHtml = `<div class="char ${p.char?.type}" style="left:${x}px; top:${y}px; background:${p.char?.color}"><div class="char-eyes"></div><b style="position:absolute; bottom:-40px; color:#000">${p.name}</b></div>`;
+            list.innerHTML += charHtml;
         });
     });
 
+    function speak(t) {
+        window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
+        m.pitch = 0.5; m.rate = 0.9; window.speechSynthesis.speak(m);
+    }
+
     socket.on('round-started', d => {
-        document.getElementById('lobby').style.display='none';
-        document.getElementById('game').style.display='flex';
-        document.getElementById('voting').style.display='none';
-        document.getElementById('qText').innerText = d.q;
+        document.querySelectorAll('.screen').forEach(s => s.style.display='none');
+        document.getElementById('game').style.display='flex'; document.getElementById('voting').style.display='none';
+        document.getElementById('qText').innerText = d.q; document.getElementById('roundTag').innerText = "РАУНД " + d.round;
+        speak(d.q);
+        let tl = 30; const tEl = document.getElementById('timer'); tEl.style.display='block';
+        clearInterval(tInt); tInt = setInterval(()=>{ tEl.innerText=tl; if(tl<=5) tEl.style.color='red'; if(tl<=0) clearInterval(tInt); tl--; }, 1000);
     });
 
     socket.on('show-voting', d => {
-        document.getElementById('voting').style.display='flex';
-        document.getElementById('card1').innerText = d.ans1;
-        document.getElementById('card2').innerText = d.ans2 || "...";
+        document.getElementById('voting').style.display='flex'; document.getElementById('timer').style.display='none';
+        document.getElementById('card1').innerText = d.ans1; document.getElementById('card2').innerText = d.ans2 || "...";
+        speak("Чей ответ лучше?");
     });
+
+    socket.on('voting-results', d => {
+        document.getElementById('card1').innerHTML += `<div style="font-size:24px; margin-top:20px;">${d.p1.name}</div>`;
+        if(d.p2) document.getElementById('card2').innerHTML += `<div style="font-size:24px; margin-top:20px;">${d.p2.name}</div>`;
+        setTimeout(() => speak(d.aiComment), 1000);
+    });
+
+    socket.on('show-scores', d => {
+        document.querySelectorAll('.screen').forEach(s => s.style.display='none');
+        document.getElementById('scores').style.display='flex';
+        document.getElementById('scoreList').innerHTML = d.players.sort((a,b)=>b.score-a.score).map((p,i)=>`
+            <div class="score-bar"><span>${i+1}. ${p.name}</span><b>${p.score}</b></div>`).join('');
+    });
+
+    socket.on('final-results', d => {
+        document.querySelectorAll('.screen').forEach(s => s.style.display='none');
+        document.getElementById('final').style.display='flex'; document.getElementById('winner').innerText = d.players[0].name;
+    });
+
+    function startMusic() { music.lobby.loop=true; music.lobby.play(); }
 </script>
 </body>
 </html>
