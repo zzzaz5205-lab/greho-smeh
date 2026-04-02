@@ -4,106 +4,89 @@
     <meta charset="UTF-8">
     <title>ГРЕХО-СМЕХ | HOST</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Montserrat:wght@900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
+        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; text-align: center; }
         
-        body { 
-            margin: 0; padding: 0; overflow: hidden;
-            font-family: 'Montserrat', sans-serif;
-            background: #fbc02d; /* Цвет фона из Смехлыста */
-        }
+        /* ГИПНО-ФОН */
+        .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotate 60s linear infinite; z-index: -1; }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
 
-        /* АНИМИРОВАННАЯ СПИРАЛЬ */
-        .spiral {
-            position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: conic-gradient(#fbc02d, #f9a825, #fbc02d, #f9a825, #fbc02d);
-            animation: rotate 20s linear infinite;
-            z-index: -1;
+        /* ГЕОМЕТРИЧЕСКИЕ ФИГУРЫ */
+        .char-box { 
+            position: absolute; width: 140px; height: 140px; border: 6px solid #000; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.2); transition: 0.8s ease-out;
+            animation: breathe 3s infinite ease-in-out;
         }
-        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .cube { border-radius: 20px; }
+        .circle { border-radius: 50%; }
+        .poly { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
 
-        /* ИНТЕРФЕЙС */
-        .container { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        
-        .logo { 
-            font-family: 'Luckiest Guy', cursive; font-size: 120px; color: white;
-            text-shadow: 8px 8px 0px #3e2723; transform: rotate(-5deg);
-            animation: bounce 0.5s ease-in-out infinite alternate;
-        }
-        @keyframes bounce { from { transform: rotate(-5deg) scale(1); } to { transform: rotate(-5deg) scale(1.05); } }
+        /* ГЛАЗА КАК В СМЕХЛЫСТЕ */
+        .eyes { width: 60%; height: 18px; background: #000; border-radius: 10px; position: relative; margin-top: -10px; }
+        .eyes::before, .eyes::after { content: ''; position: absolute; width: 8px; height: 8px; background: #fff; border-radius: 50%; top: 3px; }
+        .eyes::before { left: 15%; } .eyes::after { right: 15%; }
 
-        .room-code {
-            background: white; border: 8px solid #3e2723; padding: 20px 60px;
-            font-size: 80px; font-weight: 900; color: #3e2723;
-            transform: rotate(2deg); box-shadow: 15px 15px 0px rgba(0,0,0,0.1);
-        }
+        .char-name { position: absolute; bottom: -35px; background: #000; color: #fff; padding: 2px 15px; border-radius: 5px; font-size: 18px; }
 
-        /* БАБЛЫ ОТВЕТОВ */
-        .voting-container { display: flex; gap: 40px; margin-top: 50px; width: 90%; justify-content: center; }
-        .bubble {
-            background: white; border: 6px solid #3e2723; padding: 40px;
-            border-radius: 40px; width: 45%; font-size: 40px; font-weight: 900;
-            box-shadow: 10px 10px 0px #3e2723; position: relative;
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes breathe { 0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(-2deg); } 50% { transform: translate(-50%, -50%) scale(1.1) rotate(2deg); } }
 
-        /* ПЕРСОНАЖИ */
-        .player-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 40px; }
-        .avatar {
-            width: 100px; height: 100px; border: 4px solid #3e2723;
-            display: flex; align-items: center; justify-content: center;
-            background: white; border-radius: 20px; transition: 0.3s;
-        }
-        
-        .question-text { font-size: 50px; color: white; text-shadow: 4px 4px 0 #3e2723; margin-bottom: 20px; }
+        /* ЦЕНТР */
+        #lobby-ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; }
+        #bigCode { font-size: 110px; background: #000; color: #ffeb3b; padding: 10px 60px; border: 6px solid #fff; transform: rotate(-2deg); font-family: 'Roboto Mono'; box-shadow: 20px 20px 0 rgba(0,0,0,0.3); }
+
+        .main-btn { background: #4caf50; border: 6px solid #000; color: #fff; padding: 20px 60px; font-size: 35px; border-radius: 100px; cursor: pointer; margin-top: 40px; }
     </style>
 </head>
 <body>
     <div class="spiral"></div>
 
-    <div id="lobby" class="container">
-        <div class="logo">ГРЕХО-СМЕХ</div>
-        <div class="room-code" id="roomCode">....</div>
-        <div class="player-list" id="playerList"></div>
-        <button onclick="socket.emit('start-game', code)" style="margin-top:50px; padding:20px 50px; font-size:30px; border-radius:50px; border:none; cursor:pointer; background:#ef5350; color:white; font-weight:900;">ВСЕ ЗДЕСЬ!</button>
+    <div id="lobby-ui">
+        <h1 style="font-size: 80px; color: #fff; text-shadow: 6px 6px 0 #000; margin: 0;">ГРЕХО-СМЕХ</h1>
+        <div id="bigCode">...</div>
+        <br>
+        <button onclick="socket.emit('start-game', curCode)" class="main-btn">ПОГНАЛИ!</button>
     </div>
 
-    <div id="game" class="container" style="display:none;">
-        <div class="question-text" id="qText">Вопрос...</div>
-        <div class="voting-container" id="votingArea">
-            <div class="bubble" id="ans1" style="transform: rotate(-2deg);">ОТВЕТ 1</div>
-            <div class="bubble" id="ans2" style="transform: rotate(2deg);">ОТВЕТ 2</div>
-        </div>
-    </div>
+    <div id="playerList"></div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        let code = "";
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    let curCode = "";
 
-        socket.emit('create-room');
-        socket.on('room-created', c => { code = c; document.getElementById('roomCode').innerText = c; });
+    socket.emit('create-room', sessionStorage.getItem('lastCode'));
+    socket.on('room-created', c => { 
+        curCode = c; 
+        sessionStorage.setItem('lastCode', c); 
+        document.getElementById('bigCode').innerText = c; 
+    });
 
-        socket.on('player-joined', players => {
-            const list = document.getElementById('playerList');
-            list.innerHTML = players.map(p => `
-                <div class="avatar" style="border-color:${p.color}">
-                    <div style="font-size:40px">${p.name[0]}</div>
-                </div>
-            `).join('');
+    socket.on('player-list-update', players => {
+        const list = document.getElementById('playerList');
+        list.innerHTML = "";
+        const radius = 350; // Расстояние от центра
+
+        players.forEach((p, i) => {
+            const angle = (i / players.length) * (Math.PI * 2) - (Math.PI / 2);
+            const x = Math.cos(angle) * radius + window.innerWidth / 2;
+            const y = Math.sin(angle) * radius + window.innerHeight / 2;
+
+            const div = document.createElement('div');
+            div.className = `char-box ${p.shape}`;
+            div.style.left = x + 'px';
+            div.style.top = y + 'px';
+            div.style.backgroundColor = p.color;
+            div.innerHTML = `<div class="eyes"></div><div class="char-name">${p.name}</div>`;
+            list.appendChild(div);
         });
+    });
 
-        socket.on('round-started', data => {
-            document.getElementById('lobby').style.display = 'none';
-            document.getElementById('game').style.display = 'flex';
-            document.getElementById('qText').innerText = data.pairs[0].q;
-        });
-
-        socket.on('start-voting', pair => {
-            document.getElementById('votingArea').style.display = 'flex';
-            document.getElementById('ans1').innerText = pair.ans1;
-            document.getElementById('ans2').innerText = pair.ans2;
-        });
-    </script>
+    socket.on('round-started', d => {
+        document.getElementById('lobby-ui').style.display = 'none';
+        document.getElementById('playerList').style.display = 'none';
+        // Тут пойдет текст вопроса...
+    });
+</script>
 </body>
 </html>
