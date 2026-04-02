@@ -8,17 +8,15 @@ const io = new Server(server, { maxHttpBufferSize: 2e7, cors: { origin: "*" } })
 
 app.use(express.static(__dirname));
 
-// ПРЯМЫЕ МАРШРУТЫ ДЛЯ СТРАНИЦ (чтобы не было Cannot GET)
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
 app.get('/host', (req, res) => res.sendFile(path.resolve(__dirname, 'host.html')));
 app.get('/player', (req, res) => res.sendFile(path.resolve(__dirname, 'player.html')));
 app.get('/mod', (req, res) => res.sendFile(path.resolve(__dirname, 'mod.html')));
-app.get('/mod.html', (req, res) => res.sendFile(path.resolve(__dirname, 'mod.html')));
 
 const prompts = {
     ru: {
-        classic: ["Почему vangavgav лысый?", "Что скрывает Ванга?", "Худшая фраза хирурга?", "Название туалетной бумаги."],
-        final: ["3 вещи, которые нельзя делать в гостях", "3 причины не доверять Диме Модерассу", "3 признака, что ты лысеешь"]
+        classic: ["Почему vangavgav лысый?", "Что скрывает Ванга?", "Худшая фраза хирурга?", "Назови туалетную бумагу.", "За что Дима Moderass любит Вангу?"],
+        final: ["3 вещи, которые нельзя делать в церкви", "3 причины не доверять Диме Модерассу", "3 признака, что ты лысеешь"]
     }
 };
 
@@ -26,6 +24,7 @@ const rooms = {};
 let timers = {};
 
 io.on('connection', (socket) => {
+    // ХОСТ: Создание или восстановление комнаты
     socket.on('create-room', (oldCode) => {
         let code = (oldCode && rooms[oldCode]) ? oldCode : Math.random().toString(36).substring(2, 6).toUpperCase();
         if (!rooms[code]) {
@@ -33,37 +32,47 @@ io.on('connection', (socket) => {
                 host: socket.id, players: [], round: 1, currentPairIndex: 0, pairs: [], gameStarted: false,
                 settings: { timer: 30, lang: 'ru', voice: 'male', moderation: false }, modId: null
             };
-        } else { rooms[code].host = socket.id; }
+        } else {
+            rooms[code].host = socket.id; // Перехватываем хост-права
+        }
         socket.join(code);
         socket.emit('room-created', code);
         io.to(code).emit('player-list-update', rooms[code].players);
     });
 
+    // ИГРОК: Вход с жесткой проверкой
     socket.on('join-room', ({ code, name }) => {
         const cleanCode = code?.trim().toUpperCase();
         const room = rooms[cleanCode];
-        if (!room) return socket.emit('error-join', 'Комната не найдена!');
 
+        // 1. Сначала проверка существования комнаты
+        if (!room) {
+            return socket.emit('error-join', 'Комната не найдена!');
+        }
+
+        // 2. Поиск существующего игрока (защита от клонов при обновлении страницы)
         let player = room.players.find(p => p.name === name);
-        if (player) { player.id = socket.id; } 
-        else {
+
+        if (player) {
+            player.id = socket.id; // Обновляем сокет для старого имени
+        } else {
             if (room.gameStarted) return socket.emit('error-join', 'Игра уже идет!');
+            if (room.players.length >= 12) return socket.emit('error-join', 'Комната полная!');
+            
             player = { id: socket.id, name, emoji: '❓', score: 0, lastPoints: 0 };
             room.players.push(player);
         }
+
         socket.join(cleanCode);
-        io.to(room.host).emit('player-list-update', room.players);
         socket.emit('joined-success', { code: cleanCode, settings: room.settings });
+        io.to(room.host).emit('player-list-update', room.players);
     });
 
-    socket.on('join-mod', (code) => {
-        const cleanCode = code?.toUpperCase();
-        if (rooms[cleanCode]) {
-            rooms[cleanCode].modId = socket.id;
-            socket.join(cleanCode);
-            socket.emit('mod-success');
-        } else {
-            socket.emit('error-join', 'Комната для модерации не найдена!');
+    socket.on('select-emoji', ({ code, emoji }) => {
+        const room = rooms[code];
+        if (room) {
+            const p = room.players.find(pl => pl.id === socket.id);
+            if (p) { p.emoji = emoji; io.to(room.host).emit('player-list-update', room.players); }
         }
     });
 
@@ -73,9 +82,10 @@ io.on('connection', (socket) => {
 
     socket.on('start-game', (code) => {
         const room = rooms[code];
-        if (!room || room.players.length < 2) return;
-        room.gameStarted = true;
-        startRound(code, 1);
+        if (room && room.players.length >= 2) {
+            room.gameStarted = true;
+            startRound(code, 1);
+        }
     });
 
     function startRound(code, roundNum) {
@@ -103,45 +113,40 @@ io.on('connection', (socket) => {
     socket.on('submit-answer', ({ code, answer }) => {
         const room = rooms[code];
         const pair = room.pairs[room.currentPairIndex];
-        const content = Array.isArray(answer) ? answer.filter(x => x).join(' | ') : answer;
-        if (room.settings.moderation && room.modId) {
-            io.to(room.modId).emit('mod-check', { playerId: socket.id, text: content });
-        } else { applyAnswer(code, pair, socket.id, content); }
+        const txt = Array.isArray(answer) ? answer.filter(x => x).join(' | ') : answer;
+        if (pair.p1.id === socket.id) pair.ans1 = txt;
+        if (pair.p2 && pair.p2.id === socket.id) pair.ans2 = txt;
+        if (pair.ans1 && (!pair.p2 || pair.ans2)) { 
+            clearTimeout(timers[code]); 
+            io.to(code).emit('show-voting', { ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2, settings: room.settings }); 
+            if(!pair.p2) setTimeout(() => finishPair(code), 6000);
+        }
     });
-
-    socket.on('mod-action', ({ code, playerId, text, action }) => {
-        const room = rooms[code];
-        applyAnswer(code, room.pairs[room.currentPairIndex], playerId, action === 'block' ? "ЗАБЛОКИРОВАНО" : text);
-    });
-
-    function applyAnswer(code, pair, pid, txt) {
-        if (pair.p1.id === pid) pair.ans1 = txt;
-        if (pair.p2 && pair.p2.id === pid) pair.ans2 = txt;
-        if (pair.ans1 && (!pair.p2 || pair.ans2)) { clearTimeout(timers[code]); io.to(code).emit('show-voting', { ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2, settings: rooms[code].settings }); if(!pair.p2) setTimeout(() => finishPair(code), 6000); }
-    }
 
     socket.on('cast-vote', ({ code, voteNum }) => {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return;
         pair.votes.push({ voter: socket.id, voteNum });
-        const participants = pair.p2 ? 2 : 1;
-        if (pair.votes.length >= (room.players.length - participants)) finishPair(code);
+        const needed = room.players.length - (pair.p2 ? 2 : 1);
+        if (pair.votes.length >= Math.max(needed, 1)) finishPair(code);
     });
 
     function finishPair(code) {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return; pair.finished = true;
-        let v1 = pair.votes.filter(v => v.voteNum === 1).length, v2 = pair.votes.filter(v => v.voteNum === 2).length;
         let mult = (room.round === 3) ? 200 : 100;
+        let v1 = pair.votes.filter(v => v.voteNum === 1).length, v2 = pair.votes.filter(v => v.voteNum === 2).length;
         pair.p1.score += v1 * mult; if (pair.p2) pair.p2.score += v2 * mult;
         io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, v1, v2 });
         setTimeout(() => { if (rooms[code]) { rooms[code].currentPairIndex++; sendPair(code); } }, 5000);
     }
 
-    socket.on('next-after-scores', (code) => { if (rooms[code].round < 3) startRound(code, rooms[code].round + 1); else io.to(code).emit('final-results', { players: rooms[code].players.sort((a,b)=>b.score-a.score) }); });
-    socket.on('select-emoji', ({ code, emoji }) => { const room = rooms[code]; if (room) { const p = room.players.find(pl => pl.id === socket.id); if (p) { p.emoji = emoji; io.to(room.host).emit('player-list-update', room.players); } } });
+    socket.on('next-after-scores', (code) => {
+        if (rooms[code].round < 3) startRound(code, rooms[code].round + 1);
+        else io.to(code).emit('final-results', { players: rooms[code].players.sort((a,b)=>b.score-a.score) });
+    });
+
     socket.on('finish-credits', (code) => { io.to(code).emit('go-to-menu'); delete rooms[code]; });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Live on ' + PORT));
+server.listen(process.env.PORT || 3000);
