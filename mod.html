@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head><title>МОДЕРАТОР</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    body { background: #000; color: #fff; font-family: sans-serif; text-align: center; }
+    .card { background: #222; border: 2px solid #fff; margin: 10px; padding: 20px; }
+    .btn { padding: 15px; width: 45%; font-weight: bold; cursor: pointer; }
+</style></head>
+<body>
+    <h1>МОДЕРАЦИЯ</h1>
+    <div id="room-input">
+        <input type="text" id="code" placeholder="КОД КОМНАТЫ">
+        <button onclick="join()">ВОЙТИ</button>
+    </div>
+    <div id="queue"></div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    function join() { socket.emit('join-mod', document.getElementById('code').value.toUpperCase()); }
+    socket.on('mod-success', () => document.getElementById('room-input').style.display='none');
+    socket.on('mod-check', d => {
+        const div = document.createElement('div'); div.className = 'card';
+        div.innerHTML = `<p>${d.text}</p>
+            <button class="btn" style="background:green" onclick="act('${d.playerId}','${d.text}','pass', this)">OK</button>
+            <button class="btn" style="background:red" onclick="act('${d.playerId}','${d.text}','block', this)">БАН</button>`;
+        document.getElementById('queue').appendChild(div);
+    });
+    function act(pid, txt, action, btn) {
+        socket.emit('mod-action', { code: document.getElementById('code').value.toUpperCase(), playerId: pid, text: txt, action });
+        btn.parentElement.remove();
+    }
+</script></body></html>
