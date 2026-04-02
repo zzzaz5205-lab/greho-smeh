@@ -10,13 +10,12 @@ app.use(express.static(__dirname));
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
 
 const prompts = {
-    classic: ["Почему vangavgav лысый?", "Почему Дима Moderass д#очит на Вангу?", "Что Ванга скрывает под кепкой?"],
+    classic: ["Почему vangavgav лысый?", "Что Ванга скрывает под кепкой?", "Худшая фраза хирурга?", "Если бы у овощей была армия, кто генерал?", "Придумай название для туалетной бумаги."],
     text: ["Напиши отзыв на: Пылесос для кошек", "Заголовок газеты из 2077 года", "Жалоба на: Слишком яркое солнце"],
     draw: ["Нарисуй: Пьяный кактус", "Нарисуй: Ванга Фiйко", "Нарисуй: Танцующий стул"],
-    voice: ["Звук: Как кричит Ванга в лесу?", "Звук: Твоя реакция на бан", "Звук: Озвучь падающий шкаф"]
+    voice: ["Звук: Как кричит Ванга?", "Звук: Реакция на бан", "Звук: Озвучь падающий шкаф"]
 };
 
-const defaultAns = ["Я промолчал...", "Мозг покинул чат", "Просто смотрел в стену"];
 const rooms = {};
 let timers = {};
 
@@ -24,8 +23,8 @@ io.on('connection', (socket) => {
     socket.on('create-room', () => {
         const code = Math.random().toString(36).substring(2, 6).toUpperCase();
         rooms[code] = { 
-            host: socket.id, players: [], mode: 'classic', currentPairIndex: 0, pairs: [], gameStarted: false,
-            settings: { timer: 30, maxPlayers: 12, allowMates: true, bonusX2: false, voice: 'male', subs: true }
+            host: socket.id, players: [], mode: 'classic', round: 1, currentPairIndex: 0, pairs: [], gameStarted: false,
+            settings: { timer: 30, maxPlayers: 12, allowMates: true, bonusX2: true, voice: 'male', subs: true }
         };
         socket.join(code);
         socket.emit('room-created', code);
@@ -35,22 +34,16 @@ io.on('connection', (socket) => {
         const room = rooms[code];
         if (!room) return socket.emit('error-join', 'Комнаты не существует!');
         if (room.gameStarted) return socket.emit('error-join', 'Игра уже началась!');
-
-        // ЖЕСТКИЙ ФИКС ДУБЛИКАТОВ: Проверяем по имени
-        const existingIdx = room.players.findIndex(p => p.name === name);
-        if (existingIdx !== -1) {
-            room.players[existingIdx].id = socket.id; // Обновляем сокет, если переподключился
-        } else {
-            if (room.players.length >= room.settings.maxPlayers) return socket.emit('error-join', 'Комната полная!');
-            const player = { id: socket.id, name, emoji: '❓', score: 0 };
-            room.players.push(player);
-        }
-
+        if (room.players.find(p => p.name === name)) return socket.emit('error-join', 'Имя занято!');
+        
+        const player = { id: socket.id, name, emoji: '❓', score: 0, lastPoints: 0 };
+        room.players.push(player);
         socket.join(code);
-        io.to(room.host).emit('player-list-update', room.players); // Шлем весь список сразу
+        io.to(room.host).emit('player-list-update', room.players);
         socket.emit('joined-success', code);
     });
 
+    socket.on('update-settings', ({ code, settings }) => { if (rooms[code]) rooms[code].settings = settings; });
     socket.on('select-emoji', ({ code, emoji }) => {
         const room = rooms[code];
         if (room) {
@@ -59,12 +52,18 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('update-settings', ({ code, settings }) => { if (rooms[code]) rooms[code].settings = settings; });
-
     socket.on('start-game', ({ code, mode }) => {
         const room = rooms[code];
         if (!room) return;
-        room.mode = mode; room.gameStarted = true; room.currentPairIndex = 0;
+        room.mode = mode;
+        room.gameStarted = true;
+        startRound(code, 1);
+    });
+
+    function startRound(code, roundNum) {
+        const room = rooms[code];
+        room.round = roundNum;
+        room.currentPairIndex = 0;
         let shuffled = [...room.players].sort(() => 0.5 - Math.random());
         room.pairs = [];
         for (let i = 0; i < shuffled.length; i += 2) {
@@ -75,22 +74,30 @@ io.on('connection', (socket) => {
             });
         }
         sendPair(code);
-    });
+    }
 
     function sendPair(code) {
         const room = rooms[code];
         const pair = room.pairs[room.currentPairIndex];
-        if (!pair) return io.to(code).emit('final-results', { players: room.players });
-        io.to(code).emit('round-started', { mode: room.mode, q: pair.q, p1_id: pair.p1.id, p2_id: pair.p2 ? pair.p2.id : null, settings: room.settings });
+        if (!pair) {
+            // Конец раунда -> Показать счет
+            return io.to(code).emit('show-scores', { players: room.players, round: room.round });
+        }
+        io.to(code).emit('round-started', { mode: room.mode, round: room.round, q: pair.q, p1_id: pair.p1.id, p2_id: pair.p2 ? pair.p2.id : null, settings: room.settings });
         if(timers[code]) clearTimeout(timers[code]);
         timers[code] = setTimeout(() => forceSubmit(code), (room.settings.timer + 2) * 1000);
     }
 
+    socket.on('next-after-scores', (code) => {
+        const room = rooms[code];
+        if (room.round < 3) startRound(code, room.round + 1);
+        else io.to(code).emit('final-results', { players: room.players.sort((a,b) => b.score - a.score) });
+    });
+
     function forceSubmit(code) {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return;
-        if (!pair.ans1) pair.ans1 = room.mode === 'voice' ? 'EMPTY' : defaultAns[Math.floor(Math.random()*defaultAns.length)];
-        if (pair.p2 && !pair.ans2) pair.ans2 = room.mode === 'voice' ? 'EMPTY' : defaultAns[Math.floor(Math.random()*defaultAns.length)];
+        if (!pair.ans1) pair.ans1 = "..."; if (pair.p2 && !pair.ans2) pair.ans2 = "...";
         showVoting(code, pair, room.mode);
     }
 
@@ -103,7 +110,7 @@ io.on('connection', (socket) => {
 
     function showVoting(code, pair, mode) {
         io.to(code).emit('show-voting', { type: mode, ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2, settings: rooms[code].settings });
-        if (!pair.p2) setTimeout(() => finishPair(code), 8000);
+        if (!pair.p2) setTimeout(() => finishPair(code), 6000);
     }
 
     socket.on('cast-vote', ({ code, voteNum }) => {
@@ -119,8 +126,16 @@ io.on('connection', (socket) => {
         pair.finished = true;
         let v1 = pair.votes.filter(v => v.voteNum === 1).length;
         let v2 = pair.votes.filter(v => v.voteNum === 2).length;
-        let mult = room.settings.bonusX2 ? 200 : 100;
-        pair.p1.score += v1 * mult; if (pair.p2) pair.p2.score += v2 * mult;
+        
+        let mult = (room.round === 3 && room.settings.bonusX2) ? 200 : 100;
+        
+        pair.p1.lastPoints = v1 * mult;
+        pair.p1.score += pair.p1.lastPoints;
+        if (pair.p2) {
+            pair.p2.lastPoints = v2 * mult;
+            pair.p2.score += pair.p2.lastPoints;
+        }
+
         io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, v1, v2 });
         setTimeout(() => { if (rooms[code]) { rooms[code].currentPairIndex++; sendPair(code); } }, 5000);
     }
