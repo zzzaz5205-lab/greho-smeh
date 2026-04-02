@@ -4,171 +4,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ИГРОК | ГРЕХО-СМЕХ</title>
-    <link rel="icon" href="https://fav.farm/🎮" />
     <style>
-        body { font-family: sans-serif; background: #1a1a2e; color: white; text-align: center; margin: 0; touch-action: none; overflow: hidden; }
-        .top-code { position: absolute; top: 5px; left: 5px; background: #e94560; padding: 5px 15px; border-radius: 8px; font-size: 22px; font-weight: bold; border: 1px solid white; }
-        .btn { background: #e94560; color: white; width: 90%; padding: 18px; margin: 10px; border: none; border-radius: 15px; font-weight: bold; font-size: 22px; box-shadow: 0 4px 0 #950740; }
-        #canvas { background: white; border: 5px solid #e94560; border-radius: 15px; margin: 10px; touch-action: none; }
+        body { font-family: sans-serif; background: #fbc02d; color: #3e2723; text-align: center; margin: 0; overflow-x: hidden; }
+        .top-code { background: #3e2723; color: #fff; padding: 10px; font-weight: bold; font-size: 20px; }
+        .btn { background: #ef5350; color: white; width: 90%; padding: 18px; margin: 10px; border: 3px solid #3e2723; border-radius: 12px; font-weight: bold; font-size: 22px; box-shadow: 0 5px 0 #b71c1c; }
+        .emoji-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 15px; }
+        .emoji-item { font-size: 40px; background: #fff; border: 3px solid #3e2723; border-radius: 10px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        input { width: 85%; padding: 15px; border: 3px solid #3e2723; border-radius: 10px; font-size: 18px; }
         .hidden { display: none; }
-        .emoji-grid { display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; gap: 10px; }
-        .emoji-item { font-size: 55px; background: #0f3460; padding: 15px; border-radius: 20px; cursor: pointer; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; }
-        input { width: 85%; padding: 15px; margin: 8px; border-radius: 12px; border: none; background: #16213e; color: white; font-size: 18px; }
     </style>
 </head>
 <body>
-    <div id="room-display" class="top-code">...</div>
-    <div id="status" style="padding:40px; font-size:24px;">Подключение...</div>
+    <div class="top-code">КОМНАТА: <span id="room-display">...</span></div>
+    <div id="status" style="padding:20px;">Подключение...</div>
 
-    <!-- ВЫБОР ЭМОДЗИ -->
     <div id="emoji-ui" class="hidden">
-        <h2 style="color:#f1c40f">ВЫБЕРИ ПЕРСОНАЖА</h2>
-        <div class="emoji-grid">
-            <div class="emoji-item" onclick="selEm('🤡')">🤡</div>
-            <div class="emoji-item" onclick="selEm('👽')">👽</div>
-            <div class="emoji-item" onclick="selEm('🤖')">🤖</div>
-            <div class="emoji-item" onclick="selEm('👻')">👻</div>
-            <div class="emoji-item" onclick="selEm('🐙')">🐙</div>
-            <div class="emoji-item" onclick="selEm('🐸')">🐸</div>
-            <div class="emoji-item" onclick="selEm('🐱')">🐱</div>
-            <div class="emoji-item" onclick="selEm('🍌')">🍌</div>
-        </div>
+        <h3>КТО ТЫ СЕГОДНЯ?</h3>
+        <div class="emoji-grid" id="grid"></div>
     </div>
 
-    <!-- ИНТЕРФЕЙС ОТВЕТА -->
     <div id="answer-ui" class="hidden">
-        <div id="qText" style="background:#e94560; padding:15px; margin:10px; border-radius:10px; font-weight:bold;"></div>
+        <h3 id="qText" style="background:#fff; border:3px solid #3e2723; padding:15px; margin:10px; border-radius:10px;"></h3>
         <div id="inp-area"></div>
-        <button id="rec-btn" class="btn hidden" style="background:#f1c40f; color: black;">ЗАПИСАТЬ ГОЛОС</button>
-        <button class="btn" onclick="sendAns()" style="background:#27ae60; box-shadow: 0 4px 0 #1e8449;">ОТПРАВИТЬ</button>
+        <button id="rec-btn" class="btn hidden" style="background:#42a5f5; box-shadow: 0 5px 0 #1565c0;">ЗАПИСАТЬ</button>
+        <button class="btn" onclick="sendAns()" style="background:#4caf50; box-shadow: 0 5px 0 #2e7d32;">ОТПРАВИТЬ</button>
     </div>
 
-    <!-- ГОЛОСОВАНИЕ -->
     <div id="vote-ui" class="hidden">
-        <h2 id="v-title">КТО СМЕШНЕЕ?</h2>
-        <button id="b1" class="btn" onclick="vote(1)"></button>
-        <button id="b2" class="btn" onclick="vote(2)" style="background:#3498db; box-shadow: 0 4px 0 #217dbb;"></button>
+        <h3>КТО СМЕШНЕЕ?</h3>
+        <button id="b1" class="btn"></button>
+        <button id="b2" class="btn" style="background:#42a5f5; box-shadow: 0 5px 0 #1565c0;"></button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
-        const params = new URLSearchParams(window.location.search);
-        const name = params.get('name'), code = params.get('code');
-
-        // КИК ПРИ ОБНОВЛЕНИИ ИЛИ ПУСТОМ ВХОДЕ
-        if (!name || !code) { location.href = 'index.html'; }
-
-        let myMode = "", audioBlob = null, isRec = false, recT, myTurn = false;
-        let canvas, ctx, drawing = false;
-
+        const socket = io(); const params = new URLSearchParams(window.location.search);
+        const name = params.get('name'), code = params.get('code').toUpperCase();
         document.getElementById('room-display').innerText = code;
-        socket.emit('join-room', { code, name });
+        const emojis = ['🤡','👽','🤖','👻','🐙','🐸','🐱','🍌','💩','🦄','🐼','🦊','🐷','🐧','🦖','🍦','🍔','🍕','🎸','🚀','💎','🎲','🍄','🧶','🦷'];
 
+        socket.emit('join-room', { code, name });
         socket.on('joined-success', () => {
             document.getElementById('status').classList.add('hidden');
             document.getElementById('emoji-ui').classList.remove('hidden');
+            const grid = document.getElementById('grid');
+            emojis.forEach(e => {
+                const d = document.createElement('div'); d.className = 'emoji-item'; d.innerText = e;
+                d.onclick = () => { socket.emit('select-emoji', { code, emoji: e }); document.getElementById('emoji-ui').innerHTML = "<h1>ГОТОВ!</h1>"; };
+                grid.appendChild(d);
+            });
         });
 
-        function selEm(e) {
-            socket.emit('select-emoji', { code, emoji: e });
-            document.getElementById('emoji-ui').innerHTML = `<h2 style="margin-top:100px;">ТЫ ${e}<br><br>ЖДЕМ НАЧАЛА ИГРЫ...</h2>`;
-        }
-
         socket.on('round-started', d => {
-            myMode = d.mode;
-            myTurn = (socket.id === d.p1_id || socket.id === d.p2_id);
+            let myTurn = (socket.id === d.p1_id || socket.id === d.p2_id);
             document.getElementById('emoji-ui').classList.add('hidden');
             document.getElementById('answer-ui').classList.toggle('hidden', !myTurn);
             document.getElementById('vote-ui').classList.add('hidden');
-            document.getElementById('status').classList.toggle('hidden', myTurn);
-            document.getElementById('status').innerText = "СМОТРИ НА ЭКРАН ХОСТА!";
-
-            if(myTurn) {
-                document.getElementById('qText').innerText = d.q;
-                const area = document.getElementById('inp-area');
-                const rb = document.getElementById('rec-btn');
-                rb.classList.toggle('hidden', myMode !== 'voice');
-                rb.innerText = "ЗАПИСАТЬ ГОЛОС"; rb.style.background = "#f1c40f";
-
-                if(myMode === 'draw') {
-                    area.innerHTML = '<canvas id="canv" width="300" height="300" style="background:white; border-radius:10px;"></canvas><br><button onclick="clearC()" style="color:white; background:none; border:1px solid white; padding:5px; border-radius:5px;">Стереть</button>';
-                    initCanvas();
-                } else if(myMode === 'voice') {
-                    area.innerHTML = ''; initVoice();
-                } else {
-                    area.innerHTML = '<input id="ansV" type="text" placeholder="Пиши сюда...">';
-                }
-            }
+            if(myTurn) { document.getElementById('qText').innerText = d.q; document.getElementById('inp-area').innerHTML = '<input id="ansV" type="text">'; }
         });
 
-        function initCanvas() {
-            canvas = document.getElementById('canv'); ctx = canvas.getContext('2d');
-            canvas.addEventListener('touchstart', e => { drawing=true; ctx.beginPath(); ctx.moveTo(e.touches[0].clientX-canvas.offsetLeft, e.touches[0].clientY-canvas.offsetTop); e.preventDefault(); });
-            canvas.addEventListener('touchmove', e => { if(drawing){ ctx.lineTo(e.touches[0].clientX-canvas.offsetLeft, e.touches[0].clientY-canvas.offsetTop); ctx.lineWidth=5; ctx.lineCap='round'; ctx.stroke(); } e.preventDefault(); });
-            canvas.addEventListener('touchend', () => drawing=false);
-        }
-        function clearC() { ctx.clearRect(0,0,300,300); }
-
-        function initVoice() {
-            const b = document.getElementById('rec-btn');
-            let rec;
-            b.onclick = async () => {
-                if(!isRec) {
-                    try {
-                        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        rec = new MediaRecorder(s);
-                        let ch = [];
-                        rec.ondataavailable = e => ch.push(e.data);
-                        rec.onstop = () => {
-                            const bl = new Blob(ch, { type: 'audio/ogg; codecs=opus' });
-                            const r = new FileReader(); r.readAsDataURL(bl);
-                            r.onloadend = () => { audioBlob = r.result; b.innerText = "ГОТОВО! ✅"; b.style.background="#27ae60"; };
-                        };
-                        rec.start(); isRec = true;
-                        b.innerText = "СТОП (ИДЕТ ЗАПИСЬ)"; b.style.background="#ff4757";
-                        recT = setTimeout(() => { if(isRec) rec.stop(); isRec = false; }, 10000);
-                    } catch(e) { alert("Дай доступ к микрофону!"); }
-                } else {
-                    clearTimeout(recT); rec.stop(); isRec = false;
-                }
-            };
-        }
-
-        function sendAns() {
-            let a;
-            if(myMode === 'draw') a = canvas.toDataURL();
-            else if(myMode === 'voice') a = audioBlob;
-            else a = document.getElementById('ansV').value;
-
-            if(!a && myMode !== 'voice') return alert("Напиши что-нибудь!");
-            socket.emit('submit-answer', { code, answer: a });
-            document.getElementById('answer-ui').classList.add('hidden');
-            document.getElementById('status').classList.remove('hidden');
-            document.getElementById('status').innerText = "ОТВЕТ ПРИНЯТ!";
-        }
-
+        function sendAns() { socket.emit('submit-answer', { code, answer: document.getElementById('ansV').value }); document.getElementById('answer-ui').classList.add('hidden'); }
+        
         socket.on('show-voting', d => {
-            if(myTurn || d.isSolo) {
-                document.getElementById('status').classList.remove('hidden');
-                document.getElementById('status').innerText = d.isSolo ? "ОДИНОЧНОЕ ВЫСТУПЛЕНИЕ" : "ТВОЙ ОТВЕТ НА ЭКРАНЕ!";
-                return;
-            }
-            document.getElementById('status').classList.add('hidden');
+            if(d.isSolo) return;
             document.getElementById('vote-ui').classList.remove('hidden');
-            document.getElementById('b1').innerText = d.type==='classic' ? d.ans1 : "ВАРИАНТ 1";
-            document.getElementById('b2').innerText = d.type==='classic' ? d.ans2 : "ВАРИАНТ 2";
+            document.getElementById('b1').innerText = d.ans1; document.getElementById('b1').onclick = () => { socket.emit('cast-vote', {code, voteNum:1}); document.getElementById('vote-ui').classList.add('hidden'); };
+            document.getElementById('b2').innerText = d.ans2; document.getElementById('b2').onclick = () => { socket.emit('cast-vote', {code, voteNum:2}); document.getElementById('vote-ui').classList.add('hidden'); };
         });
-
-        function vote(n) {
-            socket.emit('cast-vote', { code, voteNum: n });
-            document.getElementById('vote-ui').classList.add('hidden');
-            document.getElementById('status').classList.remove('hidden');
-            document.getElementById('status').innerText = "ГОЛОС УЧТЕН!";
-        }
-
-        socket.on('go-to-menu', () => location.href='index.html');
-        window.onbeforeunload = () => { if(myTurn) return "Выход прервет игру!"; };
+        socket.on('error-join', () => location.href='index.html');
     </script>
 </body>
 </html>
