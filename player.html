@@ -6,34 +6,31 @@
     <title>ИГРОК | ГРЕХО-СМЕХ</title>
     <style>
         body { font-family: sans-serif; background: #fbc02d; color: #3e2723; text-align: center; margin: 0; overflow-x: hidden; }
-        .top-code { background: #3e2723; color: #fff; padding: 10px; font-weight: bold; font-size: 20px; }
-        .btn { background: #ef5350; color: white; width: 90%; padding: 18px; margin: 10px; border: 3px solid #3e2723; border-radius: 12px; font-weight: bold; font-size: 22px; box-shadow: 0 5px 0 #b71c1c; }
-        .emoji-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 15px; }
-        .emoji-item { font-size: 40px; background: #fff; border: 3px solid #3e2723; border-radius: 10px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        input { width: 85%; padding: 15px; border: 3px solid #3e2723; border-radius: 10px; font-size: 18px; }
+        .top-bar { background: #3e2723; color: #fff; padding: 15px; font-weight: 900; font-size: 22px; transform: rotate(-1deg); }
+        .btn { background: #ef5350; color: white; width: 90%; padding: 20px; margin: 10px; border: 4px solid #3e2723; border-radius: 15px; font-weight: 900; font-size: 24px; box-shadow: 0 6px 0 #b71c1c; cursor: pointer; }
+        .emoji-item { font-size: 40px; background: #fff; border: 3px solid #3e2723; border-radius: 12px; width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        input { width: 85%; padding: 20px; border: 4px solid #3e2723; border-radius: 15px; font-size: 22px; font-weight: bold; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="top-code">КОМНАТА: <span id="room-display">...</span></div>
-    <div id="status" style="padding:20px;">Подключение...</div>
-
+    <div class="top-bar">КОМНАТА: <span id="room-display">...</span></div>
+    
     <div id="emoji-ui" class="hidden">
-        <h3>КТО ТЫ СЕГОДНЯ?</h3>
-        <div class="emoji-grid" id="grid"></div>
+        <h3>ВЫБЕРИ ПЕРСОНАЖА</h3>
+        <div id="grid" style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:20px;"></div>
     </div>
 
     <div id="answer-ui" class="hidden">
-        <h3 id="qText" style="background:#fff; border:3px solid #3e2723; padding:15px; margin:10px; border-radius:10px;"></h3>
-        <div id="inp-area"></div>
-        <button id="rec-btn" class="btn hidden" style="background:#42a5f5; box-shadow: 0 5px 0 #1565c0;">ЗАПИСАТЬ</button>
-        <button class="btn" onclick="sendAns()" style="background:#4caf50; box-shadow: 0 5px 0 #2e7d32;">ОТПРАВИТЬ</button>
+        <h3 id="qText" style="background:#fff; border:4px solid #3e2723; padding:20px; margin:15px; border-radius:15px; font-size:24px;"></h3>
+        <input id="ansV" type="text" placeholder="ТВОЙ ОТВЕТ...">
+        <button class="btn" onclick="sendAns()" style="background:#4caf50; box-shadow: 0 6px 0 #2e7d32; margin-top:20px;">ОТПРАВИТЬ</button>
     </div>
 
     <div id="vote-ui" class="hidden">
-        <h3>КТО СМЕШНЕЕ?</h3>
+        <h2 style="text-transform:uppercase;">КТО СМЕШНЕЕ?</h2>
         <button id="b1" class="btn"></button>
-        <button id="b2" class="btn" style="background:#42a5f5; box-shadow: 0 5px 0 #1565c0;"></button>
+        <button id="b2" class="btn" style="background:#42a5f5; box-shadow: 0 6px 0 #1565c0;"></button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -41,17 +38,16 @@
         const socket = io(); const params = new URLSearchParams(window.location.search);
         const name = params.get('name'), code = params.get('code').toUpperCase();
         document.getElementById('room-display').innerText = code;
-        const emojis = ['🤡','👽','🤖','👻','🐙','🐸','🐱','🍌','💩','🦄','🐼','🦊','🐷','🐧','🦖','🍦','🍔','🍕','🎸','🚀','💎','🎲','🍄','🧶','🦷'];
+        const emojis = ['🤡','👽','🤖','👻','🐙','🐸','🐱','💩','🍔','🚀','💎','🎸','🐼','🐧','🐷'];
 
         socket.emit('join-room', { code, name });
         socket.on('joined-success', () => {
-            document.getElementById('status').classList.add('hidden');
             document.getElementById('emoji-ui').classList.remove('hidden');
-            const grid = document.getElementById('grid');
+            const g = document.getElementById('grid');
             emojis.forEach(e => {
-                const d = document.createElement('div'); d.className = 'emoji-item'; d.innerText = e;
-                d.onclick = () => { socket.emit('select-emoji', { code, emoji: e }); document.getElementById('emoji-ui').innerHTML = "<h1>ГОТОВ!</h1>"; };
-                grid.appendChild(d);
+                const d = document.createElement('div'); d.className='emoji-item'; d.innerText=e;
+                d.onclick = () => { socket.emit('select-emoji', { code, emoji: e }); document.getElementById('emoji-ui').innerHTML="<h1>ГОТОВ!</h1>"; };
+                g.appendChild(d);
             });
         });
 
@@ -60,16 +56,17 @@
             document.getElementById('emoji-ui').classList.add('hidden');
             document.getElementById('answer-ui').classList.toggle('hidden', !myTurn);
             document.getElementById('vote-ui').classList.add('hidden');
-            if(myTurn) { document.getElementById('qText').innerText = d.q; document.getElementById('inp-area').innerHTML = '<input id="ansV" type="text">'; }
+            if(myTurn) document.getElementById('qText').innerText = d.q;
         });
 
         function sendAns() { socket.emit('submit-answer', { code, answer: document.getElementById('ansV').value }); document.getElementById('answer-ui').classList.add('hidden'); }
-        
+
         socket.on('show-voting', d => {
             if(d.isSolo) return;
             document.getElementById('vote-ui').classList.remove('hidden');
-            document.getElementById('b1').innerText = d.ans1; document.getElementById('b1').onclick = () => { socket.emit('cast-vote', {code, voteNum:1}); document.getElementById('vote-ui').classList.add('hidden'); };
-            document.getElementById('b2').innerText = d.ans2; document.getElementById('b2').onclick = () => { socket.emit('cast-vote', {code, voteNum:2}); document.getElementById('vote-ui').classList.add('hidden'); };
+            const btn1 = document.getElementById('b1'); const btn2 = document.getElementById('b2');
+            btn1.innerText = d.ans1; btn1.onclick = () => { socket.emit('cast-vote', {code, voteNum:1}); document.getElementById('vote-ui').classList.add('hidden'); };
+            btn2.innerText = d.ans2; btn2.onclick = () => { socket.emit('cast-vote', {code, voteNum:2}); document.getElementById('vote-ui').classList.add('hidden'); };
         });
         socket.on('error-join', () => location.href='index.html');
     </script>
