@@ -12,11 +12,11 @@
             background: #1a1a2e; 
             color: white; 
             text-align: center; 
-            padding-top: 100px; 
+            padding-top: 80px; 
             margin: 0; 
         }
 
-        /* ГЛАВНЫЙ БЛОК ВАНГИ В УГЛУ */
+        /* БЛОК ВАНГИ В УГЛУ */
         .vanga-box {
             position: absolute;
             top: 20px;
@@ -24,11 +24,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 250px;
+            width: 260px;
             z-index: 100;
         }
 
-        /* Ссылка на Твич (оборачивает имя и аватарку) */
         .vanga-link {
             text-decoration: none;
             display: flex;
@@ -58,13 +57,12 @@
             box-shadow: 0 0 20px #e94560; 
         }
 
-        /* КНОПКА "КТО ЭТО?" */
         .who-btn { 
             background: #f1c40f; 
             color: black; 
             border: none; 
-            padding: 8px 20px; 
-            border-radius: 10px; 
+            padding: 10px 20px; 
+            border-radius: 12px; 
             font-weight: bold; 
             cursor: pointer; 
             font-size: 16px; 
@@ -74,7 +72,7 @@
         }
         .who-btn:active { transform: translateY(2px); box-shadow: none; }
 
-        /* ОКНО С ВИДЕО (ГИГАНТСКОЕ) */
+        /* ОКНО ВИДЕО */
         #video-overlay { 
             display: none; 
             position: fixed; 
@@ -88,9 +86,9 @@
         }
         
         #v-player { 
-            width: 80%; 
-            max-width: 1000px;
-            aspect-ratio: 16 / 9; /* Чтобы не было полоской */
+            width: 85%; 
+            max-width: 1100px;
+            aspect-ratio: 16 / 9; /* ФИКС ПОЛОСКИ */
             border: 4px solid #e94560; 
             border-radius: 20px; 
             box-shadow: 0 0 50px rgba(233, 69, 96, 0.5);
@@ -100,13 +98,12 @@
         .close-vid { 
             position: absolute; 
             top: 20px; right: 40px; 
-            font-size: 60px; 
+            font-size: 70px; 
             cursor: pointer; 
             color: white; 
             font-weight: bold;
         }
 
-        /* КАРТОЧКА ВХОДА */
         .card { 
             background: #16213e; 
             padding: 40px; 
@@ -118,21 +115,18 @@
         }
         h1 { font-family: 'Montserrat', sans-serif; font-size: 45px; color: #e94560; margin: 0 0 20px 0; }
         input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: none; font-size: 18px; box-sizing: border-box; background: #0f3460; color: white; border: 2px solid transparent; }
-        input:focus { border-color: #e94560; outline: none; }
         .btn { width: 100%; padding: 18px; border-radius: 15px; border: none; background: #e94560; color: white; font-weight: bold; font-size: 22px; cursor: pointer; box-shadow: 0 5px 0 #950740; }
-        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #950740; }
     </style>
 </head>
 <body>
 
-    <!-- Видео плеер -->
+    <!-- Видео плеер со ссылкой из Discord -->
     <div id="video-overlay">
         <span class="close-vid" onclick="closeVid()">&times;</span>
         <video id="v-player" controls preload="auto">
-            <source src="whois.mp4" type="video/mp4">
+            <source src="https://cdn.discordapp.com/attachments/1093516468131479583/1489189505691947069/9b3f18d2-e0c6-4f75-bdda-21d9c93ef113.mp4?ex=69cf834d&is=69ce31cd&hm=f8602763e529f0abeb52e58f9dcf1862b6382c35937fa11335e0b8c2c4a63832&" type="video/mp4">
             Ваш браузер не поддерживает видео.
         </video>
-        <p id="video-error" style="color: red; display: none; margin-top: 10px;">Ошибка загрузки видео. Проверьте файл whois.mp4</p>
     </div>
 
     <!-- Блок Ванги -->
@@ -148,7 +142,7 @@
     <div class="card">
         <h1>ГРЕХО-СМЕХ</h1>
         <button class="btn" onclick="location.href='host.html'" style="background:#27ae60; box-shadow: 0 5px 0 #1e8449; margin-bottom:20px;">СОЗДАТЬ ИГРУ</button>
-        <hr style="border:none; height: 1px; background: #0f3460; margin:10px 0;">
+        <hr style="border:none; height: 1px; background: #0f3460; margin:15px 0;">
         <input type="text" id="name" placeholder="Твоё Имя">
         <input type="text" id="code" placeholder="Код Комнаты">
         <button class="btn" onclick="join()">ВОЙТИ</button>
@@ -157,28 +151,18 @@
     <script>
         const vOverlay = document.getElementById('video-overlay');
         const vPlayer = document.getElementById('v-player');
-        const vError = document.getElementById('video-error');
 
         function openVid() { 
             vOverlay.style.display = 'flex'; 
-            vPlayer.load(); // Принудительно перезагружаем файл
-            
-            // Пытаемся воспроизвести
-            let playPromise = vPlayer.play();
-            
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.log("Автовоспроизведение заблокировано или файл не найден");
-                    vError.style.display = 'block';
-                });
-            }
+            vPlayer.play().catch(e => {
+                console.log("Нужно нажать Play вручную");
+            }); 
         }
 
         function closeVid() { 
             vOverlay.style.display = 'none'; 
             vPlayer.pause(); 
             vPlayer.currentTime = 0; 
-            vError.style.display = 'none';
         }
 
         function join() { 
@@ -186,12 +170,6 @@
             const c = document.getElementById('code').value.toUpperCase(); 
             if(n && c) location.href=`player.html?name=${encodeURIComponent(n)}&code=${encodeURIComponent(c)}`; 
         }
-
-        // Проверка на ошибки самого видео-тега
-        vPlayer.onerror = function() {
-            vError.style.display = 'block';
-            vError.innerText = "Файл whois.mp4 не найден на сервере!";
-        };
     </script>
 </body>
 </html>
