@@ -12,7 +12,7 @@
             background: #2196f3; font-family: 'Montserrat', sans-serif; color: #fff; text-align: center;
         }
 
-        /* ГИПНО-СПИРАЛЬ НА ФОНЕ */
+        /* ГИПНО-СПИРАЛЬ */
         .spiral { 
             position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; 
             background: repeating-conic-gradient(from 0deg, #1a237e 0deg 20deg, #0d47a1 20deg 40deg); 
@@ -20,13 +20,19 @@
         }
         @keyframes rotateSpiral { 100% { transform: rotate(360deg); } }
 
+        /* ЦИФРОВОЙ ТАЙМЕР (ВЕРХНИЙ ЛЕВЫЙ УГОЛ) */
+        #digital-timer {
+            position: absolute; top: 20px; left: 30px;
+            font-size: 80px; font-family: 'Roboto Mono', monospace;
+            font-weight: 900; color: #fff;
+            text-shadow: 6px 6px 0 #000;
+            z-index: 1000; display: none;
+            transform: rotate(-5deg);
+        }
+
         /* ЭКРАНЫ */
         .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; }
         #lobby { display: flex; }
-
-        /* ТАЙМЕР-ПОЛОСКА ВНИЗУ */
-        #timer-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 25px; background: rgba(0,0,0,0.4); display: none; z-index: 1000; }
-        #timer-bar { width: 100%; height: 100%; background: #ffeb3b; box-shadow: 0 0 20px #ffeb3b; }
 
         /* КОД В УГЛУ */
         .top-code-box { 
@@ -57,18 +63,16 @@
         }
         #card1 { transform: rotate(-3deg); }
         #card2 { transform: rotate(3deg); border-color: #ef5350; }
-        .bubble.solo { width: 70%; transform: rotate(0deg); }
 
-        /* ТАБЛИЦА СЧЕТА */
+        /* СЧЁТ */
         .score-row { display: flex; align-items: center; justify-content: center; margin: 15px; }
         .big-num { font-size: 90px; color: #fff; text-shadow: 6px 6px 0 #1a237e; width: 120px; font-style: italic; }
-        .score-bar { 
-            background: #000; color: #fff; font-size: 45px; padding: 10px 40px; 
-            border-radius: 15px; width: 550px; display: flex; justify-content: space-between;
-            border: 4px solid #fff; box-shadow: 10px 10px 0 rgba(0,0,0,0.2);
-        }
+        .score-bar { background: #000; color: #fff; font-size: 45px; padding: 10px 40px; border-radius: 15px; width: 550px; display: flex; justify-content: space-between; border: 4px solid #fff; }
 
         /* НАСТРОЙКИ */
+        .settings-btn { position: absolute; top: 120px; left: 30px; font-size: 50px; cursor: pointer; z-index: 1100; transition: 0.3s; filter: drop-shadow(4px 4px 0 #000); }
+        .settings-btn:hover { transform: rotate(90deg); }
+        
         .modal { 
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
             background: #fff; color: #000; padding: 40px; border: 8px solid #000; 
@@ -80,89 +84,67 @@
         select, input { padding: 10px; border: 4px solid #000; border-radius: 10px; font-weight: 900; font-size: 18px; }
 
         .main-btn { background: #4caf50; border: 6px solid #000; color: #fff; padding: 25px 70px; font-size: 40px; border-radius: 100px; cursor: pointer; font-weight: 900; box-shadow: 0 10px 0 #2e7d32; }
-        .main-btn:active { transform: translateY(5px); box-shadow: 0 5px 0 #2e7d32; }
 
-        #subs { position: fixed; bottom: 40px; width: 100%; font-size: 32px; font-weight: 900; text-shadow: 3px 3px 0 #000; color: #fff; z-index: 2000; pointer-events: none; }
+        #subs { position: fixed; bottom: 40px; width: 100%; font-size: 32px; font-weight: 900; text-shadow: 3px 3px 0 #000; color: #fff; z-index: 2000; }
     </style>
 </head>
 <body onclick="startAudio()">
     <div class="spiral"></div>
-    <div id="timer-container"><div id="timer-bar"></div></div>
+    <div id="digital-timer">30</div>
     <div id="corner-code" class="top-code-box" style="display:none;"><span>ПРИСОЕДИНЯЙСЯ:</span><b id="c-val">...</b></div>
     <div id="subs"></div>
 
-    <!-- ОКНО НАСТРОЕК -->
     <div id="settings-modal" class="modal">
         <h2 style="text-align:center; font-size:40px; margin-top:0;">⚙️ НАСТРОЙКИ</h2>
         <div class="setting-row"><label>ГОЛОС:</label> <select id="voiceType"><option value="male">МУЖСКОЙ (БАС)</option><option value="female">ЖЕНСКИЙ</option></select></div>
         <div class="setting-row"><label>ТАЙМЕР (СЕК):</label> <input type="number" id="timerVal" value="30"></div>
-        <div class="setting-row">
-            <label>МОДЕРАЦИЯ:</label> 
-            <input type="checkbox" id="modToggle" onchange="document.getElementById('modSection').style.display=this.checked?'block':'none'" style="width:30px; height:30px;">
-        </div>
-        <div id="modSection" style="display:none; text-align:center; background:#eee; padding:15px; border-radius:15px;">
-             <button onclick="copyM()" style="background:#2196f3; color:#fff; padding:10px; border:3px solid #000; font-weight:bold; cursor:pointer; border-radius:10px;">СКОПИРОВАТЬ ССЫЛКУ</button>
-        </div>
-        <br><button onclick="saveS()" style="width:100%; background:#4caf50; padding:15px; color:#fff; border:4px solid #000; font-size:24px; font-weight:bold; cursor:pointer; border-radius:15px;">СОХРАНИТЬ</button>
+        <div class="setting-row"><label>МОДЕРАЦИЯ:</label> <input type="checkbox" id="modToggle" onchange="document.getElementById('modSection').style.display=this.checked?'block':'none'"></div>
+        <div id="modSection" style="display:none; text-align:center;"><button onclick="copyM()" style="background:#2196f3; color:#fff; padding:10px; border:2px solid #000; font-weight:bold; cursor:pointer;">КОПИРОВАТЬ ССЫЛКУ</button></div>
+        <br><button onclick="saveS()" style="width:100%; background:#4caf50; padding:15px; color:#fff; border:4px solid #000; font-weight:bold; cursor:pointer;">СОХРАНИТЬ</button>
     </div>
 
-    <!-- ЭКРАН ЛОББИ -->
     <div id="lobby" class="screen">
-        <div onclick="document.getElementById('settings-modal').classList.add('active')" style="position:absolute; top:20px; left:20px; font-size:60px; cursor:pointer;">⚙️</div>
+        <div class="settings-btn" onclick="document.getElementById('settings-modal').classList.add('active')">⚙️</div>
         <h1 style="font-size: 100px; text-shadow: 8px 8px 0 #000; margin: 0;">ГРЕХО-СМЕХ</h1>
-        <div id="bigCodeDisplay" style="background:#000; color:#ffeb3b; padding:15px 80px; border:8px solid #fff; font-size:120px; transform:rotate(-2deg); margin:20px; box-shadow:15px 15px 0 rgba(0,0,0,0.3);">...</div>
+        <div id="bigCodeDisplay" style="background:#000; color:#ffeb3b; padding:15px 80px; border:8px solid #fff; font-size:120px; transform:rotate(-2deg); margin:20px;">...</div>
         <div id="playerList"></div>
         <button onclick="socket.emit('start-game', curCode)" class="main-btn" style="margin-top:20px;">ПОГНАЛИ!</button>
     </div>
 
-    <!-- ЭКРАН ИГРЫ -->
     <div id="game" class="screen">
-        <h1 id="roundTag" style="font-size:40px; background:#000; padding:10px 40px; transform:rotate(-1deg);">РАУНД 1</h1>
-        <h2 id="qText" style="font-size: 65px; text-shadow: 6px 6px 0 #000; margin: 40px 20px;"></h2>
+        <h1 id="roundTag" style="font-size:35px; background:#000; padding:10px 40px; transform:rotate(-1deg);">РАУНД 1</h1>
+        <h2 id="qText" style="font-size: 60px; text-shadow: 6px 6px 0 #000; margin: 40px 20px;"></h2>
         <div class="bubble-container" id="voting" style="display:none;">
             <div id="card1" class="bubble"></div>
             <div id="card2" class="bubble"></div>
         </div>
     </div>
 
-    <!-- ЭКРАН ТЕКУЩЕГО СЧЕТА -->
     <div id="scores" class="screen">
         <h1 style="font-size:80px; text-shadow: 6px 6px 0 #000;">ТЕКУЩИЙ СЧЁТ</h1>
         <div id="scoreList"></div>
-        <button onclick="socket.emit('next-after-scores', curCode)" class="main-btn" style="font-size:30px; margin-top:20px;">ДАЛЕЕ</button>
+        <button onclick="socket.emit('next-after-scores', curCode)" class="main-btn" style="font-size:25px; margin-top:20px;">ДАЛЕЕ</button>
     </div>
 
-    <!-- ЭКРАН ПОБЕДИТЕЛЯ -->
     <div id="final" class="screen">
         <h1 style="font-size:90px; text-shadow: 8px 8px 0 #000;">🏆 ПОБЕДИТЕЛЬ</h1>
         <div id="winner" style="font-size:130px; color:#ffeb3b; text-shadow:6px 6px 0 #000"></div>
         <button onclick="location.reload()" class="main-btn" style="font-size:25px; margin-top:40px;">В МЕНЮ</button>
     </div>
 
-    <!-- ТИТРЫ -->
     <div id="credits" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#000; display:none; flex-direction:column; justify-content:center; z-index:9999;">
         <h1 style="font-size:100px; color:#ffeb3b;">ГРЕХО-СМЕХ</h1>
-        <div style="font-size:50px; line-height:2;">
-            ВАНГА ФIЙКО ПЕРФОРАТОР<br>
-            ДИМА MODERASS<br>
-            ГРЕХА И ИИ-ШКА<br><br>
-            СПАСИБО ЗА ИГРУ!
-        </div>
+        <div style="font-size:50px; line-height:2;">ВАНГА ФIЙКО ПЕРФОРАТОР<br>ДИМА MODERASS<br>ГРЕХА И ИИ-ШКА<br><br>СПАСИБО ЗА ИГРУ!</div>
     </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io(); 
-    let curCode = "", tInt, audioInited = false;
+    let curCode = "", countdownInt, audioInited = false;
     let gameSettings = { timer: 30, voice: 'male', moderation: false };
     const music = { lobby: new Audio('lobby.mp3'), game: new Audio('game.mp3'), final: new Audio('final.mp3') };
 
-    function copyM() { 
-        const link = window.location.origin + "/mod?code=" + curCode;
-        navigator.clipboard.writeText(link); 
-        alert("Ссылка для модератора скопирована!"); 
-    }
-
+    function copyM() { navigator.clipboard.writeText(window.location.origin + "/mod?code=" + curCode); alert("Link copied!"); }
     function saveS() {
         gameSettings.voice = document.getElementById('voiceType').value;
         gameSettings.timer = parseInt(document.getElementById('timerVal').value);
@@ -171,119 +153,91 @@
         document.getElementById('settings-modal').classList.remove('active');
     }
 
-    function playM(t) { 
-        Object.values(music).forEach(m => { m.pause(); m.currentTime = 0; });
-        music[t].loop = true; music[t].volume = 0.3; music[t].play(); 
-    }
-
+    function playM(t) { Object.values(music).forEach(m => { m.pause(); m.currentTime = 0; }); music[t].loop = true; music[t].volume = 0.3; music[t].play(); }
     function startAudio() { if(!audioInited){ playM('lobby'); audioInited=true; } }
 
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
-    socket.on('room-created', c => { 
-        curCode = c; sessionStorage.setItem('lastCode', c); 
-        document.getElementById('bigCodeDisplay').innerText = c; 
-        document.getElementById('c-val').innerText = c; 
-    });
+    socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCodeDisplay').innerText = c; document.getElementById('c-val').innerText = c; });
 
     socket.on('player-list-update', players => {
         const list = document.getElementById('playerList'); list.innerHTML = "";
         players.forEach((p, i) => {
             const angle = (i / players.length) * (Math.PI * 2);
-            const x = Math.cos(angle) * 230; 
-            const y = Math.sin(angle) * 230;
-            list.innerHTML += `<div class="player-node" style="transform: translate(${x}px, ${y}px)">
-                <span style="font-size:60px">${p.emoji}</span>
-                <b style="font-size:20px">${p.name}</b>
-            </div>`;
+            const x = Math.cos(angle) * 230; const y = Math.sin(angle) * 230;
+            list.innerHTML += `<div class="player-node" style="transform: translate(${x}px, ${y}px)"><span style="font-size:60px">${p.emoji}</span><b style="font-size:20px">${p.name}</b></div>`;
         });
     });
+
+    function startCountdown(seconds) {
+        let timeLeft = seconds;
+        const timerEl = document.getElementById('digital-timer');
+        timerEl.style.display = 'block';
+        timerEl.innerText = timeLeft;
+        timerEl.style.color = "#fff";
+
+        clearInterval(countdownInt);
+        countdownInt = setInterval(() => {
+            timeLeft--;
+            timerEl.innerText = timeLeft;
+            if (timeLeft <= 5) timerEl.style.color = "#f44336"; // Красный цвет в конце
+            if (timeLeft <= 0) {
+                clearInterval(countdownInt);
+            }
+        }, 1000);
+    }
 
     function speak(t, cb) {
         window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
         const vs = window.speechSynthesis.getVoices();
         let ru = vs.find(v => v.lang.includes('ru') && (gameSettings.voice==='male' ? (v.name.includes('David') || v.name.includes('Pavel')) : true));
-        m.voice = ru || vs[0]; 
-        m.pitch = gameSettings.voice === 'male' ? 0.4 : 1.2; 
-        m.rate = 0.9;
+        m.voice = ru || vs[0]; m.pitch = gameSettings.voice === 'male' ? 0.4 : 1.2; m.rate = 0.9;
         document.getElementById('subs').innerText = t;
         m.onend = () => { document.getElementById('subs').innerText = ""; if(cb) cb(); };
         window.speechSynthesis.speak(m);
     }
 
-    function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-        document.getElementById(id).style.display = 'flex';
-    }
-
     socket.on('round-started', d => {
-        showScreen('game'); 
+        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+        document.getElementById('game').style.display = 'flex'; 
         document.getElementById('voting').style.display = 'none';
-        document.getElementById('qText').innerText = d.q; 
-        speak(d.q);
+        document.getElementById('qText').innerText = d.q; speak(d.q);
+        document.getElementById('roundTag').innerText = "РАУНД " + d.round;
         
-        document.getElementById('timer-container').style.display = 'block';
-        let bar = document.getElementById('timer-bar');
-        bar.style.width = "100%"; bar.style.transition = "none";
-        setTimeout(() => { 
-            bar.style.transition = `width ${gameSettings.timer}s linear`; 
-            bar.style.width = "0%"; 
-        }, 100);
+        startCountdown(gameSettings.timer);
     });
 
     socket.on('show-voting', d => {
-        document.getElementById('timer-container').style.display = 'none';
+        document.getElementById('digital-timer').style.display = 'none';
+        clearInterval(countdownInt);
         document.getElementById('corner-code').style.display = 'block';
         document.getElementById('voting').style.display = 'flex';
-        
         const c1 = document.getElementById('card1'), c2 = document.getElementById('card2');
-        c1.className = d.isSolo ? "bubble solo" : "bubble";
         c1.innerText = d.ans1;
-        
-        if(!d.isSolo) { 
-            c2.style.display = 'flex'; 
-            c2.innerText = d.ans2; 
-            speak("Чей ответ смешнее?");
-        } else {
-            c2.style.display = 'none';
-            speak("Одиночное выступление. Оцените!");
-        }
+        if(!d.isSolo) { c2.style.display = 'flex'; c2.innerText = d.ans2; speak("Чей ответ лучше?"); } 
+        else { c2.style.display = 'none'; speak("Одиночное выступление. Оцените!"); }
     });
 
     socket.on('voting-results', d => {
         document.getElementById('card1').innerHTML += `<div style="font-size:24px; color:#1a237e; margin-top:15px;">${d.p1.emoji} ${d.p1.name}</div>`;
         if(!d.isSolo) document.getElementById('card2').innerHTML += `<div style="font-size:24px; color:#ef5350; margin-top:15px;">${d.p2.emoji} ${d.p2.name}</div>`;
-        speak("Результаты!");
     });
 
     socket.on('show-scores', d => {
-        showScreen('scores');
+        document.getElementById('digital-timer').style.display = 'none';
+        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+        document.getElementById('scores').style.display = 'flex';
         document.getElementById('scoreList').innerHTML = d.players.sort((a,b) => b.score - a.score).map((p, i) => `
-            <div class="score-row">
-                <div class="big-num">${i+1}</div>
-                <div class="score-bar">
-                    <span>${p.emoji} ${p.name}</span>
-                    <b>${p.score}</b>
-                </div>
-            </div>`).join('');
-        speak("Текущий счёт на экране.");
+            <div class="score-row"><div class="big-num">${i+1}</div><div class="score-bar"><span>${p.emoji} ${p.name}</span><b>${p.score}</b></div></div>
+        `).join('');
     });
 
     socket.on('final-results', d => {
-        showScreen('final'); 
-        document.getElementById('winner').innerText = d.players[0].name;
-        speak("Победил " + d.players[0].name + "! Поздравляем!");
-        
-        setTimeout(() => {
-            document.getElementById('final').style.display = 'none';
-            document.getElementById('credits').style.display = 'flex';
-            setTimeout(() => { socket.emit('finish-credits', curCode); }, 15000);
-        }, 7000);
+        playM('final'); document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+        document.getElementById('final').style.display = 'flex'; document.getElementById('winner').innerText = d.players[0].name;
+        setTimeout(() => { document.getElementById('final').style.display = 'none'; document.getElementById('credits').style.display = 'flex'; setTimeout(() => socket.emit('finish-credits', curCode), 15000); }, 7000);
     });
 
-    socket.on('go-to-menu', () => { 
-        sessionStorage.clear();
-        location.href = '/'; 
-    });
+    socket.on('go-to-menu', () => { sessionStorage.clear(); location.href = '/'; });
 </script>
 </body>
 </html>
