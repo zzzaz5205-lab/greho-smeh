@@ -7,7 +7,13 @@ const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 2e7, cors: { origin: "*" } });
 
 app.use(express.static(__dirname));
+
+// ПРЯМЫЕ МАРШРУТЫ ДЛЯ СТРАНИЦ (чтобы не было Cannot GET)
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
+app.get('/host', (req, res) => res.sendFile(path.resolve(__dirname, 'host.html')));
+app.get('/player', (req, res) => res.sendFile(path.resolve(__dirname, 'player.html')));
+app.get('/mod', (req, res) => res.sendFile(path.resolve(__dirname, 'mod.html')));
+app.get('/mod.html', (req, res) => res.sendFile(path.resolve(__dirname, 'mod.html')));
 
 const prompts = {
     ru: {
@@ -50,12 +56,19 @@ io.on('connection', (socket) => {
         socket.emit('joined-success', { code: cleanCode, settings: room.settings });
     });
 
-    socket.on('update-settings', ({ code, settings }) => {
-        if (rooms[code]) { rooms[code].settings = settings; io.to(code).emit('settings-updated', settings); }
+    socket.on('join-mod', (code) => {
+        const cleanCode = code?.toUpperCase();
+        if (rooms[cleanCode]) {
+            rooms[cleanCode].modId = socket.id;
+            socket.join(cleanCode);
+            socket.emit('mod-success');
+        } else {
+            socket.emit('error-join', 'Комната для модерации не найдена!');
+        }
     });
 
-    socket.on('join-mod', (code) => {
-        if (rooms[code]) { rooms[code].modId = socket.id; socket.join(code); socket.emit('mod-success'); }
+    socket.on('update-settings', ({ code, settings }) => {
+        if (rooms[code]) { rooms[code].settings = settings; io.to(code).emit('settings-updated', settings); }
     });
 
     socket.on('start-game', (code) => {
@@ -111,7 +124,8 @@ io.on('connection', (socket) => {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return;
         pair.votes.push({ voter: socket.id, voteNum });
-        if (pair.votes.length >= (room.players.length - (pair.p2 ? 2 : 1))) finishPair(code);
+        const participants = pair.p2 ? 2 : 1;
+        if (pair.votes.length >= (room.players.length - participants)) finishPair(code);
     });
 
     function finishPair(code) {
@@ -128,4 +142,6 @@ io.on('connection', (socket) => {
     socket.on('select-emoji', ({ code, emoji }) => { const room = rooms[code]; if (room) { const p = room.players.find(pl => pl.id === socket.id); if (p) { p.emoji = emoji; io.to(room.host).emit('player-list-update', room.players); } } });
     socket.on('finish-credits', (code) => { io.to(code).emit('go-to-menu'); delete rooms[code]; });
 });
-server.listen(process.env.PORT || 3000);
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log('Live on ' + PORT));
