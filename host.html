@@ -5,50 +5,44 @@
     <title>ГРЕХО-СМЕХ | HOST</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
-        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; text-align: center; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; text-align: center; color: #3e2723; }
         
-        /* ГИПНО-ФОН */
         .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotate 60s linear infinite; z-index: -1; }
         @keyframes rotate { 100% { transform: rotate(360deg); } }
 
-        /* ГЕОМЕТРИЧЕСКИЕ ФИГУРЫ */
-        .char-box { 
-            position: absolute; width: 140px; height: 140px; border: 6px solid #000; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            box-shadow: 10px 10px 0 rgba(0,0,0,0.2); transition: 0.8s ease-out;
-            animation: breathe 3s infinite ease-in-out;
-        }
-        .cube { border-radius: 20px; }
-        .circle { border-radius: 50%; }
-        .poly { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
+        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; }
+        #lobby { display: flex; } /* Лобби видно сразу */
 
-        /* ГЛАЗА КАК В СМЕХЛЫСТЕ */
-        .eyes { width: 60%; height: 18px; background: #000; border-radius: 10px; position: relative; margin-top: -10px; }
-        .eyes::before, .eyes::after { content: ''; position: absolute; width: 8px; height: 8px; background: #fff; border-radius: 50%; top: 3px; }
-        .eyes::before { left: 15%; } .eyes::after { right: 15%; }
+        /* МОНСТРЫ */
+        .player-circle { position: relative; width: 600px; height: 600px; }
+        .char { position: absolute; width: 130px; height: 130px; border: 6px solid #000; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translate(-50%, -50%); transition: 0.5s; }
+        .cube { border-radius: 20px; } .circle { border-radius: 50%; } .poly { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
+        .eyes { width: 50%; height: 15px; background: #000; border-radius: 10px; position: relative; }
+        .eyes::after, .eyes::before { content:''; position:absolute; width:6px; height:6px; background:#fff; border-radius:50%; top:2px; }
+        .eyes::before { left: 4px; } .eyes::after { right: 4px; }
 
-        .char-name { position: absolute; bottom: -35px; background: #000; color: #fff; padding: 2px 15px; border-radius: 5px; font-size: 18px; }
-
-        @keyframes breathe { 0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(-2deg); } 50% { transform: translate(-50%, -50%) scale(1.1) rotate(2deg); } }
-
-        /* ЦЕНТР */
-        #lobby-ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; }
-        #bigCode { font-size: 110px; background: #000; color: #ffeb3b; padding: 10px 60px; border: 6px solid #fff; transform: rotate(-2deg); font-family: 'Roboto Mono'; box-shadow: 20px 20px 0 rgba(0,0,0,0.3); }
-
-        .main-btn { background: #4caf50; border: 6px solid #000; color: #fff; padding: 20px 60px; font-size: 35px; border-radius: 100px; cursor: pointer; margin-top: 40px; }
+        .room-code-box { background: #fff; border: 8px solid #000; padding: 20px 60px; transform: rotate(-2deg); box-shadow: 15px 15px 0 rgba(0,0,0,0.1); }
+        .bubble { background: #fff; border: 6px solid #000; border-radius: 30px; padding: 40px; width: 42%; font-size: 50px; font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); }
+        .main-btn { background: #4caf50; border: 6px solid #000; color: #fff; padding: 20px 60px; font-size: 35px; border-radius: 100px; cursor: pointer; font-weight: 900; }
     </style>
 </head>
 <body>
     <div class="spiral"></div>
 
-    <div id="lobby-ui">
-        <h1 style="font-size: 80px; color: #fff; text-shadow: 6px 6px 0 #000; margin: 0;">ГРЕХО-СМЕХ</h1>
-        <div id="bigCode">...</div>
-        <br>
+    <div id="lobby" class="screen">
+        <h1 style="font-size: 80px; text-shadow: 6px 6px 0 #fff; margin:0;">ГРЕХО-СМЕХ</h1>
+        <div class="room-code-box"><span>КОД:</span><br><b id="bigCode" style="font-size:110px">...</b></div>
+        <div class="player-circle" id="playerList"></div>
         <button onclick="socket.emit('start-game', curCode)" class="main-btn">ПОГНАЛИ!</button>
     </div>
 
-    <div id="playerList"></div>
+    <div id="game" class="screen">
+        <h2 id="qText" style="font-size: 60px; background: #fff; border: 6px solid #000; padding: 20px; transform: rotate(-1deg);"></h2>
+        <div id="voting" style="display:none; width:100%; justify-content:center; gap:40px; margin-top:50px;">
+            <div id="card1" class="bubble" style="transform:rotate(-3deg)"></div>
+            <div id="card2" class="bubble" style="transform:rotate(3deg)"></div>
+        </div>
+    </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -56,36 +50,31 @@
     let curCode = "";
 
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
-    socket.on('room-created', c => { 
-        curCode = c; 
-        sessionStorage.setItem('lastCode', c); 
-        document.getElementById('bigCode').innerText = c; 
-    });
+    socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; });
 
     socket.on('player-list-update', players => {
         const list = document.getElementById('playerList');
         list.innerHTML = "";
-        const radius = 350; // Расстояние от центра
-
         players.forEach((p, i) => {
-            const angle = (i / players.length) * (Math.PI * 2) - (Math.PI / 2);
-            const x = Math.cos(angle) * radius + window.innerWidth / 2;
-            const y = Math.sin(angle) * radius + window.innerHeight / 2;
-
-            const div = document.createElement('div');
-            div.className = `char-box ${p.shape}`;
-            div.style.left = x + 'px';
-            div.style.top = y + 'px';
-            div.style.backgroundColor = p.color;
-            div.innerHTML = `<div class="eyes"></div><div class="char-name">${p.name}</div>`;
-            list.appendChild(div);
+            const a = (i / players.length) * Math.PI * 2 - Math.PI/2;
+            const x = Math.cos(a) * 250 + 300;
+            const y = Math.sin(a) * 250 + 300;
+            list.innerHTML += `<div class="char ${p.shape}" style="left:${x}px; top:${y}px; background:${p.color}">
+                <div class="eyes"></div><b style="position:absolute; bottom:-35px; color:#000">${p.name}</b>
+            </div>`;
         });
     });
 
     socket.on('round-started', d => {
-        document.getElementById('lobby-ui').style.display = 'none';
-        document.getElementById('playerList').style.display = 'none';
-        // Тут пойдет текст вопроса...
+        document.getElementById('lobby').style.display = 'none';
+        document.getElementById('game').style.display = 'flex';
+        document.getElementById('qText').innerText = d.q;
+    });
+
+    socket.on('show-voting', d => {
+        document.getElementById('voting').style.display = 'flex';
+        document.getElementById('card1').innerText = d.ans1;
+        document.getElementById('card2').innerText = d.ans2 || "...";
     });
 </script>
 </body>
