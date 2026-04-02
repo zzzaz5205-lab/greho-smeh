@@ -1,32 +1,56 @@
 <!DOCTYPE html>
 <html>
-<head><title>МОДЕРАТОР</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-    body { background: #000; color: #fff; font-family: sans-serif; text-align: center; }
-    .card { background: #222; border: 2px solid #fff; margin: 10px; padding: 20px; }
-    .btn { padding: 15px; width: 45%; font-weight: bold; cursor: pointer; }
-</style></head>
+<head>
+    <title>ГРЕХО-СМЕХ | МОДЕРАТОР</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #1a1a2e; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .card { background: #16213e; border: 4px solid #fbc02d; border-radius: 15px; margin: 20px auto; padding: 20px; max-width: 500px; }
+        .btn { padding: 15px 30px; font-weight: bold; cursor: pointer; border-radius: 10px; border: none; margin: 10px; font-size: 18px; }
+        .pass { background: #4caf50; color: white; }
+        .block { background: #f44336; color: white; }
+        #status { font-size: 24px; color: #fbc02d; }
+    </style>
+</head>
 <body>
-    <h1>МОДЕРАЦИЯ</h1>
-    <div id="room-input">
-        <input type="text" id="code" placeholder="КОД КОМНАТЫ">
-        <button onclick="join()">ВОЙТИ</button>
-    </div>
+    <h1>ПАНЕЛЬ МОДЕРАТОРА</h1>
+    <div id="status">Подключение...</div>
     <div id="queue"></div>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    const socket = io();
-    function join() { socket.emit('join-mod', document.getElementById('code').value.toUpperCase()); }
-    socket.on('mod-success', () => document.getElementById('room-input').style.display='none');
-    socket.on('mod-check', d => {
-        const div = document.createElement('div'); div.className = 'card';
-        div.innerHTML = `<p>${d.text}</p>
-            <button class="btn" style="background:green" onclick="act('${d.playerId}','${d.text}','pass', this)">OK</button>
-            <button class="btn" style="background:red" onclick="act('${d.playerId}','${d.text}','block', this)">БАН</button>`;
-        document.getElementById('queue').appendChild(div);
-    });
-    function act(pid, txt, action, btn) {
-        socket.emit('mod-action', { code: document.getElementById('code').value.toUpperCase(), playerId: pid, text: txt, action });
-        btn.parentElement.remove();
-    }
-</script></body></html>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+
+        if (code) {
+            socket.emit('join-mod', code.toUpperCase());
+        } else {
+            document.getElementById('status').innerText = "Ошибка: Код комнаты не найден в ссылке!";
+        }
+
+        socket.on('mod-success', () => {
+            document.getElementById('status').innerText = "Модерация активна: Комната " + code;
+        });
+
+        socket.on('mod-check', d => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = `
+                <h3>Ответ игрока:</h3>
+                <p style="font-size: 20px; background: #0f3460; padding: 15px; border-radius: 10px;">${d.text}</p>
+                <button class="btn pass" onclick="act('${d.playerId}','${d.text}','pass', this)">ПРОПУСТИТЬ</button>
+                <button class="btn block" onclick="act('${d.playerId}','${d.text}','block', this)">ЗАБАНИТЬ</button>
+            `;
+            document.getElementById('queue').appendChild(div);
+        });
+
+        function act(pid, txt, action, btn) {
+            socket.emit('mod-action', { code: code.toUpperCase(), playerId: pid, text: txt, action });
+            btn.parentElement.remove();
+        }
+
+        socket.on('error-join', m => { alert(m); });
+    </script>
+</body>
+</html>
