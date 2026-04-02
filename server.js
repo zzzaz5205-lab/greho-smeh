@@ -17,18 +17,18 @@ app.use(express.static(__dirname));
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
 app.get('/host', (req, res) => res.sendFile(path.resolve(__dirname, 'host.html')));
 app.get('/player', (req, res) => res.sendFile(path.resolve(__dirname, 'player.html')));
+app.get('/mod', (req, res) => res.sendFile(path.resolve(__dirname, 'mod.html')));
 
 const prompts = {
     ru: {
-        classic: ["Почему vangavgav лысый?", "Что Ванга скрывает под кепкой?", "За что Дима Moderass любит Вангу?"],
-        final: ["3 причины не доверять лысым", "3 вещи в подвале Димы"]
+        classic: ["Почему vangavgav лысый?", "Что скрывает Ванга?", "За что Дима Moderass любит Вангу?", "Худшая фраза хирурга?"],
+        final: ["3 вещи, которые нельзя делать в гостях", "3 признака, что ты лысеешь"]
     }
 };
 
 const rooms = {};
 let timers = {};
 
-// Генерация вопроса (80% шанс)
 async function getAIQuestion(isFinal = false) {
     try {
         const prompt = `Ты сценарист игры "Грехо-Смех". Придумай один ${isFinal ? "список из 3 абсурдных вещей" : "смешной вопрос"} на русском. Юмор: Jackbox, едкий, мемный. Упомяни Вангу или Диму. Только текст.`;
@@ -37,35 +37,36 @@ async function getAIQuestion(isFinal = false) {
     } catch (e) { return "Почему лысина Ванги так блестит?"; }
 }
 
-// Генерация комментария ИИ
 async function getAIComment(q, a1, a2) {
     try {
-        const prompt = `Вопрос: "${q}". Ответ 1: "${a1}". Ответ 2: "${a2}". Напиши одну короткую (5-7 слов) издевательскую или смешную реакцию на эти ответы от лица едкого ведущего.`;
+        const prompt = `Вопрос: "${q}". Ответ 1: "${a1}". Ответ 2: "${a2}". Напиши одну короткую (до 7 слов) смешную реакцию от едкого ведущего.`;
         const result = await aiModel.generateContent(prompt);
         return result.response.text().trim();
-    } catch (e) { return "Ну и бред вы написали, ребята."; }
+    } catch (e) { return "Ну и бред вы написали!"; }
 }
 
 io.on('connection', (socket) => {
     socket.on('create-room', (oldCode) => {
         let code = (oldCode && rooms[oldCode]) ? oldCode : Math.random().toString(36).substring(2, 6).toUpperCase();
         if (!rooms[code]) {
-            rooms[code] = { host: socket.id, players: [], round: 1, currentPairIndex: 0, pairs: [], gameStarted: false, settings: { timer: 30, voice: 'male', lang: 'ru' } };
+            rooms[code] = { host: socket.id, players: [], round: 1, currentPairIndex: 0, pairs: [], gameStarted: false, settings: { timer: 30, voice: 'male' } };
         } else rooms[code].host = socket.id;
         socket.join(code);
         socket.emit('room-created', code);
-        io.to(code).emit('player-list-update', rooms[code].players);
     });
 
     socket.on('join-room', ({ code, name }) => {
         const cleanCode = code?.trim().toUpperCase();
         const room = rooms[cleanCode];
         if (!room) return socket.emit('error-join', 'Комната не найдена!');
+        
+        // ФИКС КЛОНОВ: Полная очистка перед входом
         room.players = room.players.filter(p => p.name.toLowerCase() !== name.toLowerCase());
         const player = { id: socket.id, name, emoji: '❓', score: 0, lastPoints: 0 };
         room.players.push(player);
+        
         socket.join(cleanCode);
-        socket.emit('joined-success', { code: cleanCode, settings: room.settings });
+        socket.emit('joined-success', { code: cleanCode });
         io.to(room.host).emit('player-list-update', room.players);
     });
 
@@ -80,7 +81,6 @@ io.on('connection', (socket) => {
         let shuffled = [...room.players].sort(() => 0.5 - Math.random());
         room.pairs = [];
         for (let i = 0; i < shuffled.length; i += 2) {
-            // 80% шанс на ИИ вопрос
             let q = (Math.random() < 0.8) ? await getAIQuestion(roundNum === 3) : prompts.ru.classic[0];
             room.pairs.push({ p1: shuffled[i], p2: shuffled[i+1] || null, q, ans1: null, ans2: null, votes: [], finished: false });
         }
@@ -98,8 +98,7 @@ io.on('connection', (socket) => {
     function forceSubmit(code) {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return;
-        if (!pair.ans1) pair.ans1 = "Я не придумал...";
-        if (pair.p2 && !pair.ans2) pair.ans2 = "Я тормоз...";
+        if (!pair.ans1) pair.ans1 = "..."; if (pair.p2 && !pair.ans2) pair.ans2 = "...";
         showVoting(code, pair);
     }
 
@@ -115,34 +114,35 @@ io.on('connection', (socket) => {
     function showVoting(code, pair) {
         io.to(code).emit('show-voting', { ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2, p1_name: pair.p1.name, p2_name: pair.p2 ? pair.p2.name : null });
         if (!pair.p2) setTimeout(() => finishPair(code), 6000);
+        else {
+            if(timers[code]) clearTimeout(timers[code]);
+            timers[code] = setTimeout(() => finishPair(code), 20000);
+        }
     }
 
     socket.on('cast-vote', ({ code, voteNum }) => {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return;
         pair.votes.push({ voter: socket.id, voteNum });
-        if (pair.votes.length >= (room.players.length - (pair.p2 ? 2 : 1))) finishPair(code);
+        if (pair.votes.length >= (room.players.length - (pair.p2 ? 2 : 1))) { clearTimeout(timers[code]); finishPair(code); }
     });
 
     async function finishPair(code) {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return; pair.finished = true;
         let v1 = pair.votes.filter(v => v.voteNum === 1).length, v2 = pair.votes.filter(v => v.voteNum === 2).length;
-        pair.p1.score += v1 * 100; if (pair.p2) pair.p2.score += v2 * 100;
-        
-        // Генерация комментария ИИ
+        let mult = (room.round === 3) ? 200 : 100;
+        pair.p1.score += v1 * mult; if (pair.p2) pair.p2.score += v2 * mult;
         const comment = await getAIComment(pair.q, pair.ans1, pair.ans2 || "");
-        
         io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, v1, v2, aiComment: comment });
         setTimeout(() => { if (rooms[code]) { rooms[code].currentPairIndex++; sendPair(code); } }, 8000);
     }
 
     socket.on('next-after-scores', (code) => {
-        const r = rooms[code];
-        if (r.round < 3) startRound(code, r.round + 1);
-        else io.to(code).emit('final-results', { players: r.players.sort((a,b)=>b.score-a.score) });
+        if (rooms[code].round < 3) startRound(code, rooms[code].round + 1);
+        else io.to(code).emit('final-results', { players: rooms[code].players.sort((a,b)=>b.score-a.score) });
     });
-    
+
     socket.on('select-emoji', ({ code, name, emoji }) => {
         const p = rooms[code]?.players.find(pl => pl.name === name);
         if (p) { p.emoji = emoji; io.to(code).emit('player-list-update', rooms[code].players); }
