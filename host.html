@@ -8,94 +8,111 @@
         body { margin: 0; padding: 0; overflow: hidden; background: #2196f3; font-family: 'Montserrat', sans-serif; color: #fff; text-align: center; }
         .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #1a237e 0deg 20deg, #0d47a1 20deg 40deg); animation: rotateSpiral 40s linear infinite; z-index: -1; }
         @keyframes rotateSpiral { 100% { transform: rotate(360deg); } }
+        
         #digital-timer { position: absolute; top: 20px; left: 30px; font-size: 80px; font-family: 'Roboto Mono'; font-weight: 900; text-shadow: 6px 6px 0 #000; z-index: 1000; display: none; }
-        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; }
-        #lobby { display: flex; }
-        .lobby-container { position: relative; width: 1000px; height: 800px; display: flex; align-items: center; justify-content: center; }
-        .player-wrapper { position: absolute; top: 50%; left: 50%; transition: 0.8s ease-out; }
-        .player-node { width: 140px; height: 140px; background: #fff; border: 6px solid #000; border-radius: 25px; color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translate(-50%, -50%); animation: wobble 2.5s infinite ease-in-out; }
-        @keyframes wobble { 0%, 100% { transform: translate(-50%, -50%) rotate(-3deg); } 50% { transform: translate(-50%, -50%) rotate(3deg); } }
-        #roomCodeCenter { z-index: 10; background: #000; color: #ffeb3b; padding: 20px 50px; border: 6px solid #fff; font-size: 100px; transform: rotate(-2deg); font-family: 'Roboto Mono'; }
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; color: #000; padding: 30px; border: 8px solid #000; z-index: 5000; width: 400px; border-radius: 20px; text-align: left; }
-        .modal.active { display: block; }
+        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; }
+        
+        /* ЛОББИ В РЯД */
+        #playerList { 
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; 
+            width: 90%; margin-top: 50px; 
+        }
+        .player-node { 
+            width: 140px; height: 140px; background: #fff; border: 6px solid #000; border-radius: 20px; color: #000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 8px 8px 0 rgba(0,0,0,0.2); animation: wobble 2s infinite;
+        }
+        @keyframes wobble { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+
+        #bigCode { font-size: 100px; background: #000; color: #ffeb3b; padding: 15px 50px; border: 5px solid #fff; transform: rotate(-2deg); }
+        .bubble { background: #fff; color: #000; padding: 40px; border: 8px solid #000; border-radius: 25px; width: 42%; font-size: 50px; font-weight: 900; }
+        .score-bar { background: #000; color: #fff; font-size: 40px; padding: 10px 40px; border-radius: 15px; width: 550px; display: flex; justify-content: space-between; border: 4px solid #fff; margin: 10px; }
         .main-btn { background: #4caf50; border: 6px solid #000; color: #fff; padding: 20px 60px; font-size: 35px; border-radius: 50px; cursor: pointer; font-weight: 900; }
-        .bubble { background: #fff; color: #000; padding: 30px; border: 6px solid #000; border-radius: 25px; width: 42%; font-size: 45px; font-weight: 900; }
-        .score-bar { background: #000; color: #fff; font-size: 40px; padding: 10px 40px; border-radius: 15px; width: 550px; display: flex; justify-content: space-between; border: 4px solid #fff; margin: 5px; }
     </style>
 </head>
 <body onclick="startAudio()">
     <div class="spiral"></div>
     <div id="digital-timer">30</div>
-    <div id="settings-modal" class="modal">
-        <h2 style="text-align:center">⚙️ НАСТРОЙКИ</h2>
-        ГОЛОС: <select id="voiceType" style="width:100%"><option value="male">МУЖСКОЙ</option><option value="female">ЖЕНСКИЙ</option></select><br><br>
-        ТАЙМЕР: <input type="number" id="timerVal" value="30" style="width:95%"><br><br>
-        <button onclick="saveS()" style="width:100%; background:#4caf50; padding:10px; color:#fff; font-weight:bold; cursor:pointer; border:4px solid #000">СОХРАНИТЬ</button>
+    
+    <div id="lobby" class="screen" style="display:flex">
+        <h1>ГРЕХО-СМЕХ</h1>
+        <div id="bigCode">...</div>
+        <div id="playerList"></div>
+        <button onclick="socket.emit('start-game', curCode)" class="main-btn" style="margin-top:40px">ПОГНАЛИ!</button>
     </div>
-    <div id="lobby" class="screen">
-        <div onclick="document.getElementById('settings-modal').classList.add('active')" style="position:absolute; top:20px; right:30px; font-size:50px; cursor:pointer; z-index:1000">⚙️</div>
-        <h1 style="font-size: 70px; text-shadow: 4px 4px 0 #000; margin: 0; position:absolute; top:20px;">ГРЕХО-СМЕХ</h1>
-        <div class="lobby-container"><div id="playerList"></div><div id="roomCodeCenter">...</div></div>
-        <button onclick="socket.emit('start-game', curCode)" class="main-btn" style="position:absolute; bottom:50px;">ПОГНАЛИ!</button>
-    </div>
+
     <div id="game" class="screen">
-        <h1 id="roundTag" style="font-size:30px; background:#000; padding:5px 20px; margin-top:-50px;">РАУНД 1</h1>
+        <h1 id="roundTag" style="font-size:30px; background:#000; padding:5px 20px;">РАУНД 1</h1>
         <h2 id="qText" style="font-size: 55px; text-shadow: 4px 4px 0 #000; margin: 30px;"></h2>
-        <div style="display:none; justify-content:center; gap:25px; width:100%" id="voting">
-            <div id="card1" class="bubble" style="transform:rotate(-2deg)"></div>
-            <div id="card2" class="bubble" style="transform:rotate(2deg)"></div>
+        <div style="display:none; justify-content:center; gap:20px; width:100%" id="voting">
+            <div id="card1" class="bubble"></div>
+            <div id="card2" class="bubble"></div>
         </div>
     </div>
-    <div id="scores" class="screen"><h1>СЧЁТ</h1><div id="scoreList" style="width:100%"></div><button onclick="socket.emit('next-after-scores', curCode)" class="main-btn">ДАЛЕЕ</button></div>
-    <div id="final" class="screen"><h1 style="font-size:80px">🏆 ПОБЕДИТЕЛЬ</h1><div id="winner" style="font-size:100px; color:#ffeb3b"></div></div>
+
+    <div id="scores" class="screen">
+        <h1>СЧЁТ</h1><div id="scoreList"></div>
+        <button onclick="socket.emit('next-after-scores', curCode)" class="main-btn">ДАЛЕЕ</button>
+    </div>
+
+    <div id="final" class="screen"><h1>ПОБЕДИТЕЛЬ</h1><div id="winner" style="font-size:120px; color:#ffeb3b"></div></div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io(); let curCode = "", cdnInt;
-    let gameSettings = { timer: 30, voice: 'male' };
     const music = { lobby: new Audio('lobby.mp3'), game: new Audio('game.mp3'), final: new Audio('final.mp3') };
-    function saveS() { gameSettings.voice = document.getElementById('voiceType').value; gameSettings.timer = parseInt(document.getElementById('timerVal').value); socket.emit('update-settings', { code: curCode, settings: gameSettings }); document.getElementById('settings-modal').classList.remove('active'); }
+
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
-    socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('roomCodeCenter').innerText = c; });
+    socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; });
+
     socket.on('player-list-update', players => {
-        const list = document.getElementById('playerList'); list.innerHTML = "";
-        const radius = 380;
-        players.forEach((p, i) => {
-            const angle = (i / players.length) * (Math.PI * 2) - (Math.PI / 2);
-            const x = Math.cos(angle) * radius, y = Math.sin(angle) * radius;
-            const wrap = document.createElement('div'); wrap.className = 'player-wrapper';
-            wrap.style.transform = `translate(${x}px, ${y}px)`;
-            wrap.innerHTML = `<div class="player-node"><span style="font-size:60px">${p.emoji}</span><b style="font-size:18px">${p.name}</b></div>`;
-            list.appendChild(wrap);
-        });
+        document.getElementById('playerList').innerHTML = players.map(p => `
+            <div class="player-node">
+                <span style="font-size:60px">${p.emoji}</span>
+                <b style="font-size:18px">${p.name}</b>
+            </div>`).join('');
     });
+
     function speak(t, cb) {
         window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
         const vs = window.speechSynthesis.getVoices();
-        m.voice = vs.find(v => v.lang.includes('ru') && (gameSettings.voice==='male' ? (v.name.includes('David') || v.name.includes('Pavel')) : true)) || vs[0];
-        m.pitch = gameSettings.voice === 'male' ? 0.45 : 1.2; m.rate = 0.88;
+        m.voice = vs.find(v => v.lang.includes('ru') && v.name.includes('David')) || vs[0];
+        m.pitch = 0.5; m.rate = 0.9;
         m.onend = cb; window.speechSynthesis.speak(m);
     }
+
     socket.on('round-started', d => {
         document.querySelectorAll('.screen').forEach(s => s.style.display='none');
         document.getElementById('game').style.display='flex'; document.getElementById('voting').style.display = 'none';
         document.getElementById('qText').innerText = d.q; speak(d.q);
         document.getElementById('roundTag').innerText = "РАУНД " + d.round;
-        let tl = gameSettings.timer; const tEl = document.getElementById('digital-timer');
+        let tl = 30; const tEl = document.getElementById('digital-timer');
         tEl.style.display = 'block'; tEl.innerText = tl;
         clearInterval(cdnInt); cdnInt = setInterval(() => { tl--; tEl.innerText = tl; if(tl<=0) clearInterval(cdnInt); }, 1000);
     });
+
     socket.on('show-voting', d => {
         document.getElementById('digital-timer').style.display = 'none'; clearInterval(cdnInt);
         document.getElementById('voting').style.display = 'flex';
         document.getElementById('card1').innerText = d.ans1;
-        if(!d.isSolo) { document.getElementById('card2').style.display = 'block'; document.getElementById('card2').innerText = d.ans2; speak("Чей ответ лучше?"); }
-        else { document.getElementById('card2').style.display = 'none'; speak("Оцените!"); }
+        document.getElementById('card2').innerText = d.ans2 || "...";
+        speak("Чей ответ лучше?");
     });
+
+    socket.on('voting-results', d => {
+        document.getElementById('card1').innerHTML += `<div style="font-size:24px; color:blue">${d.p1.name}</div>`;
+        if(!d.isSolo) document.getElementById('card2').innerHTML += `<div style="font-size:24px; color:red">${d.p2.name}</div>`;
+        
+        // Озвучка ИИ комментария
+        setTimeout(() => speak(d.aiComment), 1000);
+    });
+
     socket.on('show-scores', d => {
         document.querySelectorAll('.screen').forEach(s => s.style.display='none');
         document.getElementById('scores').style.display='flex';
         document.getElementById('scoreList').innerHTML = d.players.sort((a,b)=>b.score-a.score).map((p,i)=>`<div class="score-bar"><span>${i+1}. ${p.emoji} ${p.name}</span><b>${p.score}</b></div>`).join('');
     });
+
     socket.on('final-results', d => {
         document.querySelectorAll('.screen').forEach(s => s.style.display='none');
         document.getElementById('final').style.display='flex'; document.getElementById('winner').innerText = d.players[0].name;
