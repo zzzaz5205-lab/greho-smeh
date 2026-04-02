@@ -16,6 +16,7 @@ const prompts = {
     voice: ["Звук: Как кричит Ванга в лесу?", "Звук: Твоя реакция на бан", "Звук: Озвучь падающий шкаф"]
 };
 
+const defaultAns = ["Я уснул...", "Мозг покинул чат", "Просто смотрел в стену"];
 const rooms = {};
 let timers = {};
 
@@ -34,6 +35,11 @@ io.on('connection', (socket) => {
         const room = rooms[code];
         if (!room) return socket.emit('error-join', 'Комнаты не существует!');
         if (room.gameStarted) return socket.emit('error-join', 'Игра уже началась!');
+        
+        // ФИКС ДУБЛИКАТОВ: Проверяем, нет ли уже игрока с таким ID
+        const alreadyIn = room.players.find(p => p.id === socket.id);
+        if (alreadyIn) return;
+
         if (room.players.length >= room.settings.maxPlayers) return socket.emit('error-join', 'Комната полная!');
 
         socket.join(code);
@@ -82,9 +88,7 @@ io.on('connection', (socket) => {
         const room = rooms[code];
         const pair = room.pairs[room.currentPairIndex];
         if (!pair) return io.to(code).emit('final-results', { players: room.players });
-        
         io.to(code).emit('round-started', { mode: room.mode, q: pair.q, p1_id: pair.p1.id, p2_id: pair.p2 ? pair.p2.id : null, settings: room.settings });
-
         if(timers[code]) clearTimeout(timers[code]);
         timers[code] = setTimeout(() => forceSubmit(code), (room.settings.timer + 2) * 1000);
     }
@@ -103,7 +107,6 @@ io.on('connection', (socket) => {
         const pair = room.pairs[room.currentPairIndex];
         if (pair.p1.id === socket.id) pair.ans1 = answer;
         if (pair.p2 && pair.p2.id === socket.id) pair.ans2 = answer;
-
         if (pair.ans1 && (!pair.p2 || pair.ans2)) {
             clearTimeout(timers[code]);
             showVoting(code, pair, room.mode);
@@ -130,20 +133,15 @@ io.on('connection', (socket) => {
         pair.finished = true;
         let v1 = pair.votes.filter(v => v.voteNum === 1).length;
         let v2 = pair.votes.filter(v => v.voteNum === 2).length;
-        
-        let multiplier = room.settings.bonusX2 ? 200 : 100;
-        pair.p1.score += v1 * multiplier;
-        if (pair.p2) pair.p2.score += v2 * multiplier;
-
+        let mult = room.settings.bonusX2 ? 200 : 100;
+        pair.p1.score += v1 * mult;
+        if (pair.p2) pair.p2.score += v2 * mult;
         io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, v1, v2 });
         setTimeout(() => { if (rooms[code]) { rooms[code].currentPairIndex++; sendPair(code); } }, 5000);
     }
 
-    socket.on('finish-credits', (code) => {
-        io.to(code).emit('go-to-menu');
-        delete rooms[code];
-    });
+    socket.on('finish-credits', (code) => { io.to(code).emit('go-to-menu'); delete rooms[code]; });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Server live on ' + PORT));
+server.listen(PORT, () => console.log('Server running on ' + PORT));
