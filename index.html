@@ -6,130 +6,36 @@
     <link rel="icon" href="https://fav.farm/🎮" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: white; text-align: center; padding-top: 80px; margin: 0; }
         
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: #1a1a2e; 
-            color: white; 
-            text-align: center; 
-            padding-top: 80px; 
-            margin: 0; 
-        }
-
-        /* БЛОК ВАНГИ В УГЛУ */
-        .vanga-box {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 260px;
-            z-index: 100;
-        }
-
-        .vanga-link {
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: 0.3s;
-        }
+        .vanga-box { position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; align-items: center; width: 260px; z-index: 100; }
+        .vanga-link { text-decoration: none; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
         .vanga-link:hover { transform: scale(1.05); }
-
-        .vanga-label { 
-            color: #f1c40f; 
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 900; 
-            font-size: 22px; 
-            text-transform: uppercase; 
-            text-shadow: 2px 2px 0 #000; 
-            margin-bottom: 10px;
-            line-height: 1.1;
-        }
-
-        .vanga-avatar { 
-            width: 120px; 
-            height: 120px; 
-            border-radius: 50%; 
-            border: 5px solid #e94560; 
-            background: #000 url('vanga.png') center/cover no-repeat; 
-            box-shadow: 0 0 20px #e94560; 
-        }
-
-        .who-btn { 
-            background: #f1c40f; 
-            color: black; 
-            border: none; 
-            padding: 10px 20px; 
-            border-radius: 12px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 16px; 
-            margin-top: 15px; 
-            box-shadow: 0 4px 0 #b7950b;
-            text-transform: uppercase;
-        }
-        .who-btn:active { transform: translateY(2px); box-shadow: none; }
-
-        /* ОКНО ВИДЕО */
-        #video-overlay { 
-            display: none; 
-            position: fixed; 
-            top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.98); 
-            z-index: 9999; 
-            flex-direction: column;
-            justify-content: center; 
-            align-items: center; 
-        }
+        .vanga-label { color: #f1c40f; font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 22px; text-transform: uppercase; text-shadow: 2px 2px 0 #000; margin-bottom: 10px; line-height: 1.1; }
+        .vanga-avatar { width: 120px; height: 120px; border-radius: 50%; border: 5px solid #e94560; background: #000 url('vanga.png') center/cover no-repeat; box-shadow: 0 0 20px #e94560; }
+        .who-btn { background: #f1c40f; color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 15px; box-shadow: 0 4px 0 #b7950b; text-transform: uppercase; }
         
-        #v-player { 
-            width: 85%; 
-            max-width: 1100px;
-            aspect-ratio: 16 / 9; /* ФИКС ПОЛОСКИ */
-            border: 4px solid #e94560; 
-            border-radius: 20px; 
-            box-shadow: 0 0 50px rgba(233, 69, 96, 0.5);
-            background: #000;
-        }
+        #video-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; }
+        #v-player { width: 85%; max-width: 1100px; aspect-ratio: 16 / 9; border: 4px solid #e94560; border-radius: 20px; background: #000; }
+        .close-vid { position: absolute; top: 20px; right: 40px; font-size: 70px; cursor: pointer; color: white; font-weight: bold; }
 
-        .close-vid { 
-            position: absolute; 
-            top: 20px; right: 40px; 
-            font-size: 70px; 
-            cursor: pointer; 
-            color: white; 
-            font-weight: bold;
-        }
-
-        .card { 
-            background: #16213e; 
-            padding: 40px; 
-            display: inline-block; 
-            border-radius: 30px; 
-            border: 4px solid #e94560; 
-            width: 350px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
+        .card { background: #16213e; padding: 40px; display: inline-block; border-radius: 30px; border: 4px solid #e94560; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         h1 { font-family: 'Montserrat', sans-serif; font-size: 45px; color: #e94560; margin: 0 0 20px 0; }
         input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: none; font-size: 18px; box-sizing: border-box; background: #0f3460; color: white; border: 2px solid transparent; }
         .btn { width: 100%; padding: 18px; border-radius: 15px; border: none; background: #e94560; color: white; font-weight: bold; font-size: 22px; cursor: pointer; box-shadow: 0 5px 0 #950740; }
     </style>
 </head>
-<body>
+<body onclick="startMenuMusic()">
 
-    <!-- Видео плеер со ссылкой из Discord -->
+    <audio id="menu-music" src="menu.mp3" loop></audio>
+
     <div id="video-overlay">
         <span class="close-vid" onclick="closeVid()">&times;</span>
         <video id="v-player" controls preload="auto">
             <source src="https://cdn.discordapp.com/attachments/1093516468131479583/1489189505691947069/9b3f18d2-e0c6-4f75-bdda-21d9c93ef113.mp4?ex=69cf834d&is=69ce31cd&hm=f8602763e529f0abeb52e58f9dcf1862b6382c35937fa11335e0b8c2c4a63832&" type="video/mp4">
-            Ваш браузер не поддерживает видео.
         </video>
     </div>
 
-    <!-- Блок Ванги -->
     <div class="vanga-box">
         <a href="https://www.twitch.tv/vangavgav" target="_blank" class="vanga-link">
             <div class="vanga-label">ВАНГА<br>ФIЙКО<br>ПЕРФОРАТОР</div>
@@ -138,36 +44,29 @@
         <button class="who-btn" onclick="openVid()">КТО ЭТО?</button>
     </div>
 
-    <!-- Форма входа -->
     <div class="card">
         <h1>ГРЕХО-СМЕХ</h1>
         <button class="btn" onclick="location.href='host.html'" style="background:#27ae60; box-shadow: 0 5px 0 #1e8449; margin-bottom:20px;">СОЗДАТЬ ИГРУ</button>
-        <hr style="border:none; height: 1px; background: #0f3460; margin:15px 0;">
+        <hr style="border:none; height: 1px; background: #0f3460; margin:10px 0;">
         <input type="text" id="name" placeholder="Твоё Имя">
         <input type="text" id="code" placeholder="Код Комнаты">
         <button class="btn" onclick="join()">ВОЙТИ</button>
     </div>
 
     <script>
-        const vOverlay = document.getElementById('video-overlay');
-        const vPlayer = document.getElementById('v-player');
-
-        function openVid() { 
-            vOverlay.style.display = 'flex'; 
-            vPlayer.play().catch(e => {
-                console.log("Нужно нажать Play вручную");
-            }); 
+        let musicPlaying = false;
+        function startMenuMusic() {
+            if(!musicPlaying) {
+                const m = document.getElementById('menu-music');
+                m.volume = 0.3;
+                m.play();
+                musicPlaying = true;
+            }
         }
-
-        function closeVid() { 
-            vOverlay.style.display = 'none'; 
-            vPlayer.pause(); 
-            vPlayer.currentTime = 0; 
-        }
-
+        function openVid() { document.getElementById('video-overlay').style.display = 'flex'; document.getElementById('v-player').play(); }
+        function closeVid() { document.getElementById('video-overlay').style.display = 'none'; document.getElementById('v-player').pause(); }
         function join() { 
-            const n = document.getElementById('name').value; 
-            const c = document.getElementById('code').value.toUpperCase(); 
+            const n = document.getElementById('name').value, c = document.getElementById('code').value.toUpperCase();
             if(n && c) location.href=`player.html?name=${encodeURIComponent(n)}&code=${encodeURIComponent(c)}`; 
         }
     </script>
