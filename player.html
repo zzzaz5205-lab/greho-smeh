@@ -1,37 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ИГРОК</title>
     <style>
-        body { font-family: sans-serif; background: #3e2723; color: white; text-align: center; }
-        .input-box { background: white; border: 4px solid #fbc02d; padding: 20px; border-radius: 15px; width: 80%; margin: 20px auto; }
-        input { width: 100%; border: none; font-size: 20px; outline: none; text-align: center; }
-        .send-btn { background: #ef5350; color: white; border: none; padding: 20px 40px; border-radius: 10px; font-size: 20px; font-weight: 900; box-shadow: 0 5px 0 #b71c1c; }
+        body { font-family: sans-serif; background: #fbc02d; text-align: center; margin: 0; padding: 0; }
+        .top-bar { background: #3e2723; color: #fff; padding: 15px; font-weight: 900; font-size: 20px; }
+        .card { background: #fff; border: 4px solid #000; border-radius: 15px; margin: 20px auto; padding: 25px; width: 85%; box-shadow: 10px 10px 0 #000; }
+        input { width: 90%; padding: 15px; border: 3px solid #000; border-radius: 10px; font-size: 20px; font-weight: bold; margin-bottom: 15px; }
+        .btn { background: #ef5350; color: #fff; border: 4px solid #000; border-radius: 12px; padding: 18px; width: 100%; font-size: 22px; font-weight: 900; cursor: pointer; box-shadow: 0 5px 0 #000; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <h2 id="roomDisplay">ROOM: ...</h2>
-    <div id="game-ui">
-        <div class="input-box">
-            <input type="text" id="answerInput" placeholder="ТВОЙ ОТВЕТ...">
-        </div>
-        <button class="send-btn" onclick="send()">ОТПРАВИТЬ!</button>
+    <div class="top-bar">КОМНАТА: <span id="rCode">...</span></div>
+    
+    <div id="join-ui" class="card">
+        <input type="text" id="name" placeholder="ТВОЁ ИМЯ"><br>
+        <input type="text" id="code" placeholder="КОД КОМНАТЫ"><br>
+        <button class="btn" onclick="join()">ВОЙТИ</button>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const params = new URLSearchParams(window.location.search);
-        const name = params.get('name'), code = params.get('code');
-        document.getElementById('roomDisplay').innerText = `КОД: ${code}`;
+    <div id="wait-ui" class="hidden">
+        <h1 style="margin-top: 50px;">ТЫ В ИГРЕ!</h1>
+        <p>Выбери цвет своего монстра на большом экране...</p>
+    </div>
 
-        socket.emit('join-room', { code, name });
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    let myName = "";
 
-        function send() {
-            const answer = document.getElementById('answerInput').value;
-            socket.emit('submit-answer', { code, name, answer });
-            document.body.innerHTML = "<h1>СМОТРИ НА ЭКРАН!</h1>";
-        }
-    </script>
+    function join() {
+        myName = document.getElementById('name').value;
+        const code = document.getElementById('code').value.toUpperCase();
+        if(!myName || !code) return alert("Заполни всё!");
+        socket.emit('join-room', { code, name: myName });
+    }
+
+    socket.on('joined-success', (data) => {
+        document.getElementById('rCode').innerText = data.code; // data.code, а не объект!
+        document.getElementById('join-ui').classList.add('hidden');
+        document.getElementById('wait-ui').classList.remove('hidden');
+    });
+
+    socket.on('error-join', m => alert(m));
+</script>
 </body>
 </html>
