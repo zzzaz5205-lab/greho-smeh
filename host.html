@@ -5,29 +5,55 @@
     <title>ЭКРАН ХОСТА</title>
     <style>
         body { font-family: sans-serif; background: #1a1a2e; color: white; text-align: center; margin: 0; overflow: hidden; }
-        .top-code { position: absolute; top: 20px; right: 20px; background: #e94560; padding: 15px 40px; border-radius: 20px; font-weight: 900; border: 4px solid white; z-index: 1000; font-size: 75px; box-shadow: 0 0 30px #e94560; font-family: monospace; }
-        #lobby, #game, #final { display: none; padding: 20px; }
+        .top-code { position: absolute; top: 20px; right: 20px; background: #e94560; padding: 15px 40px; border-radius: 20px; font-weight: 900; border: 4px solid white; z-index: 1000; font-size: 60px; }
+        
+        #lobby, #game, #final, #credits { display: none; padding: 20px; }
         #lobby { display: block; }
-        #roomCode { background: #0f3460; padding: 30px 80px; border: 6px solid #e94560; display: inline-block; border-radius: 30px; font-size: 120px; color: #f1c40f; text-shadow: 5px 5px 0 #000; margin-top: 40px; font-family: monospace; }
-        .ans-card { background: #0f3460; padding: 25px; border-radius: 20px; width: 45%; border: 5px solid #e94560; font-size: 32px; min-height: 350px; display: inline-block; vertical-align: top; margin: 10px; }
-        .ans-card.solo { width: 75%; background: #444; border-color: #f1c40f; }
-        img { width: 100%; height: auto; max-height: 450px; object-fit: contain; background: white; border-radius: 10px; }
-        .player-chip { background:#e94560; padding:15px 30px; border-radius:50px; margin:10px; display: inline-block; font-weight: bold; font-size: 24px; }
+
+        /* НАСТРОЙКИ */
+        .settings-btn { position: absolute; top: 20px; left: 20px; font-size: 40px; cursor: pointer; z-index: 1001; }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #16213e; padding: 40px; border: 5px solid #e94560; border-radius: 30px; z-index: 2000; width: 400px; }
+        .modal.active { display: block; }
+
+        /* ТИТРЫ */
+        #credits { position: fixed; top: 100%; left: 0; width: 100%; height: 300%; background: #000; z-index: 5000; }
+        .credits-scroll { position: absolute; width: 100%; animation: scrollCredits 15s linear forwards; }
+        @keyframes scrollCredits { 
+            0% { top: 100%; } 
+            100% { top: -200%; } 
+        }
+
+        .ans-card { background: #0f3460; padding: 25px; border-radius: 20px; width: 42%; border: 5px solid #e94560; font-size: 32px; min-height: 250px; display: inline-block; vertical-align: top; margin: 10px; }
+        .player-chip { background:#e94560; padding:15px 30px; border-radius:50px; margin:10px; display: inline-block; font-weight: bold; font-size: 24px; transition: 0.3s; }
     </style>
 </head>
 <body onclick="startAudioContext()">
+
 <div id="room-info-display" class="top-code" style="display:none;">...</div>
+
+<!-- Модалка настроек -->
+<div id="settings-modal" class="modal">
+    <h2 style="color:#f1c40f">НАСТРОЙКИ</h2>
+    <div style="margin:20px 0;">
+        <label>РЕЖИМ ИГРЫ:</label><br><br>
+        <select id="gameMode" style="padding:15px; font-size:20px; width:100%; border-radius:10px;">
+            <option value="classic">Грехо-Смех (Классика)</option>
+            <option value="text">Смехо-Текст (Отзывы)</option>
+            <option value="draw">Рисовалка (Картинки)</option>
+            <option value="voice">Войс-Смех (Аудио)</option>
+        </select>
+    </div>
+    <button onclick="toggleSettings()" class="main-btn" style="background:#888; padding:10px 20px; border-radius:10px; color:white; border:none; cursor:pointer;">ЗАКРЫТЬ</button>
+</div>
+
 <div id="lobby">
+    <div class="settings-btn" onclick="toggleSettings()">⚙️</div>
     <div style="font-size: 60px; color: #e94560; margin: 20px;">ГРЕХО-СМЕХ</div>
-    <div id="roomCode">...</div><br>
-    <select id="gameMode" style="padding:15px; font-size:24px; border-radius:10px; margin:20px; background:#0f3460; color:white; border:2px solid #e94560;">
-        <option value="classic">Грехо-Смех</option>
-        <option value="text">Смехо-Текст</option>
-        <option value="draw">Рисовалка</option>
-    </select><br>
-    <div id="playerList"></div>
+    <div id="roomCode" style="font-size:120px; font-family:monospace; color:#f1c40f; background:#0f3460; display:inline-block; padding:20px 60px; border:5px solid #e94560; border-radius:20px;">...</div>
+    <div id="playerList" style="margin: 40px;"></div>
     <button onclick="startGame()" style="padding:25px 60px; background:#27ae60; color:white; border-radius:60px; font-size:30px; font-weight:bold; border:none; cursor:pointer;">НАЧАТЬ</button>
 </div>
+
 <div id="game">
     <h2 id="qText" style="font-size: 48px; margin: 30px;"></h2>
     <div id="voting" style="display:none;">
@@ -35,37 +61,93 @@
         <div id="card2" class="ans-card" style="border-color:#3498db"></div>
     </div>
 </div>
+
 <div id="final">
-    <h1>🏆 ПОБЕДИТЕЛЬ:</h1>
+    <h1 style="font-size: 60px;">🏆 ПОБЕДИТЕЛЬ:</h1>
     <div id="winner" style="color:#f1c40f; font-size: 100px;"></div>
-    <button onclick="location.reload()" style="padding:20px 40px; background:#e94560; color:white; border-radius:15px; border:none; cursor:pointer;">В МЕНЮ</button>
 </div>
+
+<div id="credits">
+    <div class="credits-scroll">
+        <h1 style="font-size: 80px; color:#e94560;">ГРЕХО-СМЕХ</h1>
+        <h2 style="color:#f1c40f">СПАСИБО ЗА ИГРУ!</h2>
+        <div style="font-size: 40px; margin-top:100px;">
+            Ванга Фiйко Перфоратор<br>
+            Дима Moderass<br><br>
+            Разработка: ИИ и Греха
+        </div>
+    </div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io(); let audioStarted = false;
-    const music = {
-        lobby: new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_f5f69f2001.mp3'),
-        game: new Audio('https://cdn.pixabay.com/audio/2022/01/18/audio_d19d678d8a.mp3'),
-        final: new Audio('https://cdn.pixabay.com/audio/2021/08/04/audio_c363842422.mp3')
-    };
-    function playMusic(t) { Object.values(music).forEach(m=>{m.pause();m.currentTime=0;}); music[t].loop=true; music[t].volume=0.3; music[t].play().catch(()=>{}); }
-    function startAudioContext() { if(!audioStarted){ playMusic('lobby'); audioStarted=true; } }
+    const socket = io();
+    let audioStarted = false;
+    let currentCode = "";
+    
+    function toggleSettings() { document.getElementById('settings-modal').classList.toggle('active'); }
+
+    function startAudioContext() { if(!audioStarted){ audioStarted=true; } }
+
     socket.emit('create-room');
-    socket.on('room-created', c => { document.getElementById('roomCode').innerText = c; document.getElementById('room-info-display').innerText = c; });
-    socket.on('player-joined', d => { document.getElementById('playerList').innerHTML += `<div class="player-chip">${d.emoji} ${d.name}</div>`; });
-    function startGame() { playMusic('game'); document.getElementById('room-info-display').style.display = 'block'; socket.emit('start-game', { code: document.getElementById('roomCode').innerText, mode: document.getElementById('gameMode').value }); }
-    function speak(t, cb) { window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t); m.pitch=0.4; m.rate=0.9; m.onend=cb; window.speechSynthesis.speak(m); }
-    socket.on('round-started', d => { document.getElementById('lobby').style.display="none"; document.getElementById('game').style.display="block"; document.getElementById('voting').style.display="none"; document.getElementById('qText').innerText=d.q; speak(d.q); });
-    socket.on('show-voting', d => {
-        document.getElementById('voting').style.display="block"; const c1=document.getElementById('card1'), c2=document.getElementById('card2');
-        c1.className=d.isSolo?"ans-card solo":"ans-card"; c2.style.display=d.isSolo?"none":"inline-block";
-        c1.innerHTML=d.type==='draw'?`<img src="${d.ans1}">`:d.ans1;
-        if(!d.isSolo) c2.innerHTML=d.type==='draw'?`<img src="${d.ans2}">`:d.ans2;
-        if(d.isSolo) speak("Вариант игрока. Оцените!", ()=>{ if(d.type!=='draw') speak(d.ans1); });
-        else speak("Чей ответ лучше?", ()=>{ if(d.type!=='draw') speak(d.ans1, ()=>{ setTimeout(()=>speak(d.ans2), 1000); }); });
+    socket.on('room-created', c => { 
+        currentCode = c;
+        document.getElementById('roomCode').innerText = c; 
+        document.getElementById('room-info-display').innerText = c;
     });
-    socket.on('voting-results', d => { document.getElementById('card1').innerHTML += `<br><span style="color:#f1c40f;font-size:24px;">${d.p1_emoji} ${d.p1_name} (Голосов: ${d.v1})</span>`; if(!d.isSolo) document.getElementById('card2').innerHTML += `<br><span style="color:#3498db;font-size:24px;">${d.p2_emoji} ${d.p2_name} (Голосов: ${d.v2})</span>`; });
-    socket.on('final-results', d => { playMusic('final'); document.getElementById('game').style.display="none"; document.getElementById('final').style.display="block"; document.getElementById('winner').innerText=d.players[0].emoji+" "+d.players[0].name; });
+    
+    socket.on('player-joined', p => { 
+        document.getElementById('playerList').innerHTML += `<div id="p-${p.id}" class="player-chip">${p.emoji} ${p.name}</div>`; 
+    });
+
+    socket.on('update-player-emoji', data => {
+        const pDiv = document.getElementById(`p-${data.id}`);
+        if(pDiv) pDiv.innerHTML = `${data.emoji} ${pDiv.innerText.split(' ')[1]}`;
+    });
+
+    function startGame() { 
+        document.getElementById('room-info-display').style.display = 'block';
+        socket.emit('start-game', { code: currentCode, mode: document.getElementById('gameMode').value }); 
+    }
+
+    function speak(t, cb) { window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t); m.pitch=0.4; m.onend=cb; window.speechSynthesis.speak(m); }
+
+    socket.on('round-started', d => {
+        document.getElementById('lobby').style.display="none";
+        document.getElementById('game').style.display="block";
+        document.getElementById('qText').innerText=d.q;
+        speak(d.q);
+    });
+
+    socket.on('show-voting', d => {
+        document.getElementById('voting').style.display="block";
+        const c1=document.getElementById('card1'), c2=document.getElementById('card2');
+        
+        if(d.type === 'voice') {
+            c1.innerHTML = `<button onclick="playVoice('${d.ans1}')">🔈 ИГРАТЬ ЗВУК 1</button>`;
+            c2.innerHTML = `<button onclick="playVoice('${d.ans2}')">🔈 ИГРАТЬ ЗВУК 2</button>`;
+        } else if(d.type === 'draw') {
+            c1.innerHTML = `<img src="${d.ans1}" style="width:100%">`;
+            c2.innerHTML = `<img src="${d.ans2}" style="width:100%">`;
+        } else {
+            c1.innerText = d.ans1;
+            c2.innerText = d.ans2;
+        }
+    });
+
+    function playVoice(base64) { const a = new Audio(base64); a.play(); }
+
+    socket.on('final-results', d => {
+        document.getElementById('game').style.display="none";
+        document.getElementById('final').style.display="block";
+        document.getElementById('winner').innerText = d.players[0].emoji + " " + d.players[0].name;
+        
+        setTimeout(() => {
+            document.getElementById('final').style.display="none";
+            document.getElementById('credits').style.display="block";
+            setTimeout(() => { socket.emit('finish-credits', currentCode); }, 15000);
+        }, 5000);
+    });
 </script>
 </body>
 </html>
