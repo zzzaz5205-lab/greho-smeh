@@ -2,53 +2,69 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ГРЕХО-СМЕХ | ХОСТ</title>
+    <title>ГРЕХО-СМЕХ | HOST</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
         body { 
             margin: 0; padding: 0; overflow: hidden;
-            background: #fbc02d;
-            background-image: radial-gradient(#f9a825 25%, transparent 25%), radial-gradient(#f9a825 25%, transparent 25%);
-            background-size: 80px 80px; background-position: 0 0, 40px 40px;
-            font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center;
+            background: #2196f3; /* Динамический фон */
+            font-family: 'Montserrat', sans-serif; color: #fff; text-align: center;
         }
-        .top-code-box { position: absolute; top: 15px; right: 20px; background: #fff; padding: 10px 25px; border: 5px solid #3e2723; transform: rotate(2deg); z-index: 1000; }
-        #lobby, #game, #scores, #final { display: none; padding: 20px; height: 100vh; box-sizing: border-box; }
-        #lobby { display: block; }
-        #qText { font-size: 60px; color: #fff; text-shadow: 4px 4px 0 #3e2723; }
-        .bubble { background: #fff; border: 6px solid #3e2723; border-radius: 20px; padding: 30px; width: 42%; min-height: 250px; font-size: 45px; font-weight: 900; display: flex; flex-direction: column; justify-content: center; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); }
+
+        /* ЗАКРУЧЕННЫЙ ФОН */
+        .spiral {
+            position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: repeating-conic-gradient(from 0deg, #1a237e 0deg 30deg, #0d47a1 30deg 60deg);
+            animation: rotate 60s linear infinite; z-index: -1; opacity: 0.8;
+        }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
+
+        /* ТАЙМЕР-ПОЛОСКА (КАК НА СКРИНЕ) */
+        #timer-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 25px; background: rgba(0,0,0,0.3); display: none; }
+        #timer-bar { width: 100%; height: 100%; background: linear-gradient(to right, #ffeb3b, #f44336); transition: width 1s linear; }
+
+        .top-code-box { position: absolute; top: 15px; right: 20px; background: #fff; color: #000; padding: 10px 20px; border: 4px solid #000; transform: rotate(2deg); }
+        #bigCode { font-size: 120px; background: #000; color: #ffeb3b; padding: 10px 60px; border: 5px solid #fff; display: inline-block; box-shadow: 10px 10px 0 rgba(0,0,0,0.3); }
+
+        .bubble { background: #fff; color: #000; padding: 30px; border: 6px solid #000; border-radius: 20px; width: 40%; font-size: 45px; font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.2); }
         #card1 { transform: rotate(-3deg); } #card2 { transform: rotate(3deg); }
-        .audio-btn { background: #ef5350; color: #fff; padding: 20px; border: 4px solid #3e2723; border-radius: 15px; font-size: 24px; cursor: pointer; font-weight: bold; }
-        .score-row { display: flex; align-items: center; justify-content: center; margin: 10px; }
-        .score-bar { background: #3e2723; color: #fff; font-size: 40px; padding: 10px 40px; border-radius: 15px; width: 500px; display: flex; justify-content: space-between; }
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border: 8px solid #3e2723; padding: 40px; border-radius: 30px; z-index: 2000; width: 500px; text-align: left; }
+
+        /* ПЕРСОНАЖИ В СТИЛЕ QUI-SMACK */
+        .char-chip { background: #fff; border: 4px solid #000; border-radius: 15px; padding: 10px; display: inline-block; margin: 5px; color: #000; font-weight: 900; }
+
+        /* КНОПКА ДАЛЕЕ */
+        .next-btn { background: #4caf50; border: 6px solid #000; color: #fff; padding: 20px 60px; font-size: 35px; border-radius: 50px; cursor: pointer; }
+
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; color: #000; padding: 40px; border: 8px solid #000; z-index: 2000; width: 500px; text-align: left; }
         .modal.active { display: block; }
     </style>
 </head>
 <body onclick="startAudio()">
-    <div id="corner-code" class="top-code-box" style="display:none;"><span>КОД:</span><br><b id="c-val" style="font-size:40px;">...</b></div>
+    <div class="spiral"></div>
+    <div id="timer-container"><div id="timer-bar"></div></div>
+    <div id="corner-code" class="top-code-box" style="display:none;"><span>JOIN:</span><br><b id="c-val">...</b></div>
 
     <div id="settings-modal" class="modal">
-        <h2 style="text-align:center;">⚙️ НАСТРОЙКИ</h2>
-        <label>Режим:</label><select id="gameMode" style="width:100%; padding:10px; margin-bottom:15px;"><option value="classic">Грехо-Смех</option><option value="text">Смехо-Текст</option><option value="draw">Рисовалка</option><option value="voice">Войс-Смех</option></select>
-        <label>Голос:</label><select id="voiceType" style="width:100%; padding:10px; margin-bottom:15px;"><option value="male">Мужской (Бас)</option><option value="female">Женский</option></select>
-        <label>Таймер:</label><input type="number" id="timerVal" value="30" style="width:90%; padding:10px;">
-        <br><br><button onclick="saveSettings()" style="width:100%; padding:15px; background:#4caf50; color:#fff; font-weight:bold; cursor:pointer; border:3px solid #3e2723;">СОХРАНИТЬ</button>
+        <h2>⚙️ НАСТРОЙКИ</h2>
+        <label>Голос:</label><select id="voiceType"><option value="male">МУЖСКОЙ (БАС)</option><option value="female">ЖЕНСКИЙ</option></select><br><br>
+        <label>Таймер (сек):</label><input type="number" id="timerVal" value="30"><br><br>
+        <label>Модерация:</label><input type="checkbox" id="modToggle"> <br>
+        <small id="modLink" style="color:blue; word-break: break-all;"></small><br><br>
+        <button onclick="saveSettings()" style="width:100%; padding:10px; background:#4caf50; color:#fff; font-weight:bold; cursor:pointer;">СОХРАНИТЬ</button>
     </div>
 
+    <!-- ЛОББИ -->
     <div id="lobby">
         <div onclick="toggleSet()" style="position:absolute; top:20px; left:20px; font-size:50px; cursor:pointer;">⚙️</div>
-        <h1 style="font-size: 80px; text-shadow: 4px 4px 0 #fff;">ГРЕХО-СМЕХ</h1>
-        <div style="background:#fff; border:8px solid #3e2723; padding:20px 80px; display:inline-block; transform:rotate(-1deg);">
-            <b id="bigCode" style="font-size: 140px; font-family:'Roboto Mono';">...</b>
-        </div>
-        <div id="playerList" style="margin-top: 30px;"></div>
-        <br><button onclick="startGame()" style="background:#4caf50; border:6px solid #3e2723; color:#fff; padding:20px 60px; font-size:35px; font-weight:900; border-radius:100px; cursor:pointer;">ПОГНАЛИ!</button>
+        <h1 style="font-size: 80px; text-shadow: 4px 4px 0 #000;">ГРЕХО-СМЕХ</h1>
+        <div id="bigCode">...</div>
+        <div id="playerList" style="margin-top: 50px;"></div>
+        <br><button onclick="startGame()" style="background:#4caf50; border:6px solid #000; color:#fff; padding:20px 80px; font-size:40px; font-weight:900; border-radius:100px; cursor:pointer;">ПОГНАЛИ!</button>
     </div>
 
+    <!-- ИГРА -->
     <div id="game">
-        <h1 id="roundTag" style="color:#fff;">РАУНД 1</h1>
-        <h2 id="qText"></h2>
+        <h2 id="qText" style="font-size: 60px; text-shadow: 4px 4px 0 #000;"></h2>
         <div style="display:none; justify-content:center; gap:30px; margin-top:40px;" id="voting">
             <div id="card1" class="bubble"></div>
             <div id="card2" class="bubble"></div>
@@ -56,73 +72,97 @@
     </div>
 
     <div id="scores">
-        <h1 style="font-size:60px;">ТЕКУЩИЙ СЧЁТ</h1>
+        <h1>ТЕКУЩИЙ СЧЁТ</h1>
         <div id="scoreList"></div>
-        <button onclick="socket.emit('next-after-scores', curCode)" style="padding:15px 40px; font-size:22px; cursor:pointer; margin-top:20px;">ДАЛЕЕ</button>
+        <button onclick="socket.emit('next-after-scores', curCode)" class="next-btn">ДАЛЕЕ</button>
     </div>
 
-    <div id="final"><h1>ПОБЕДИТЕЛЬ:</h1><div id="winner" style="font-size: 120px; color: #ef5350;"></div></div>
+    <div id="final"><h1>ПОБЕДИТЕЛЬ:</h1><div id="winner" style="font-size: 150px; color: #ffeb3b; text-shadow: 5px 5px 0 #000;"></div></div>
+    
+    <div id="credits" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#000; display:none; flex-direction:column; justify-content:center;">
+        <h1 style="font-size:80px; color:#ffeb3b;">ГРЕХО-СМЕХ</h1>
+        <div style="font-size:40px;">Ванга Фiйко Перфоратор<br>Дима Moderass<br>Греха и ИИ-шка</div>
+    </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io(); let curCode = "", audioInited = false;
-    let gameSettings = { timer: 30, voice: 'male', lang: 'ru', bonusX2: true };
-    const music = { lobby: new Audio('lobby.mp3'), game: new Audio('game.mp3'), final: new Audio('final.mp3') };
-
-    function playM(t) { Object.values(music).forEach(m=>{m.pause();m.currentTime=0;}); music[t].loop=true; music[t].volume=0.3; music[t].play(); }
-    function startAudio() { if(!audioInited){ playM('lobby'); audioInited=true; } }
-    function toggleSet() { document.getElementById('settings-modal').classList.toggle('active'); }
+    const socket = io(); let curCode = "", tInt, audioInited = false;
+    let gameSettings = { timer: 30, voice: 'male', moderation: false };
+    
+    function toggleSet() { 
+        document.getElementById('settings-modal').classList.toggle('active'); 
+        document.getElementById('modLink').innerText = window.location.origin + "/mod.html?code=" + curCode;
+    }
 
     function saveSettings() {
         gameSettings.voice = document.getElementById('voiceType').value;
         gameSettings.timer = parseInt(document.getElementById('timerVal').value);
+        gameSettings.moderation = document.getElementById('modToggle').checked;
         socket.emit('update-settings', { code: curCode, settings: gameSettings });
         toggleSet();
     }
 
-    socket.emit('create-room');
-    socket.on('room-created', c => { curCode = c; document.getElementById('bigCode').innerText = c; document.getElementById('c-val').innerText = c; });
-    socket.on('player-list-update', players => { document.getElementById('playerList').innerHTML = players.map(p => `<div class="player-chip">${p.emoji} ${p.name}</div>`).join(''); });
+    function startAudio() { audioInited = true; }
 
-    function startGame() { playM('game'); document.getElementById('corner-code').style.display='block'; socket.emit('start-game', { code: curCode, mode: document.getElementById('gameMode').value }); }
+    socket.emit('create-room', sessionStorage.getItem('lastCode'));
+    socket.on('room-created', c => { 
+        curCode = c; sessionStorage.setItem('lastCode', c);
+        document.getElementById('bigCode').innerText = c; document.getElementById('c-val').innerText = c; 
+    });
 
-    function speak(t, cb) {
+    socket.on('player-list-update', players => {
+        document.getElementById('playerList').innerHTML = players.map(p => `<div class="char-chip">${p.emoji} ${p.name}</div>`).join('');
+    });
+
+    function speak(t) {
         window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
         const vs = window.speechSynthesis.getVoices();
-        m.voice = vs.find(v => (gameSettings.voice==='male' ? v.name.includes('Pavel')||v.name.includes('David') : v.name.includes('Irina'))) || vs[0];
-        m.pitch = gameSettings.voice === 'male' ? 0.4 : 1.2;
-        m.rate = 0.85; m.onend = cb; window.speechSynthesis.speak(m);
+        let ruVoice = vs.find(v => v.lang === 'ru-RU' && (gameSettings.voice === 'male' ? v.name.includes('David') || v.name.includes('Pavel') : true));
+        m.voice = ruVoice || vs[0]; m.pitch = gameSettings.voice === 'male' ? 0.4 : 1.2; m.rate = 0.9;
+        window.speechSynthesis.speak(m);
     }
 
     socket.on('round-started', d => {
         document.getElementById('lobby').style.display="none"; document.getElementById('game').style.display="block"; 
         document.getElementById('scores').style.display="none"; document.getElementById('voting').style.display="none";
-        document.getElementById('roundTag').innerText = "РАУНД " + d.round;
+        document.getElementById('timer-container').style.display = "block";
         document.getElementById('qText').innerText = d.q; speak(d.q);
+        
+        let bar = document.getElementById('timer-bar');
+        bar.style.width = "100%";
+        setTimeout(() => { bar.style.transition = `width ${gameSettings.timer}s linear`; bar.style.width = "0%"; }, 100);
     });
 
     socket.on('show-voting', d => {
+        document.getElementById('timer-container').style.display = "none";
+        document.getElementById('corner-code').style.display='block';
         document.getElementById('voting').style.display="flex";
         const c1=document.getElementById('card1'), c2=document.getElementById('card2');
-        c1.className = d.isSolo ? "bubble solo" : "bubble"; c2.style.display = d.isSolo ? "none" : "flex";
-        const rend = (v, c) => { if(d.type==='draw') c.innerHTML=`<img src="${v}" style="width:100%">`; else if(d.type==='voice') c.innerHTML=`<button class="audio-btn" onclick="new Audio('${v}').play()">▶ ПРОСЛУШАТЬ</button>`; else c.innerText=v; };
-        rend(d.ans1, c1); if(!d.isSolo) rend(d.ans2, c2);
-        speak(d.isSolo ? "Оцените!" : "Чей ответ лучше?");
+        c1.innerText = d.ans1; if(!d.isSolo) { c2.style.display="flex"; c2.innerText = d.ans2; } else c2.style.display="none";
+        speak("Чей ответ лучше?");
     });
 
     socket.on('voting-results', d => {
-        document.getElementById('card1').innerHTML += `<div style="font-size:20px; color:red;">${d.p1.emoji} ${d.p1.name} (+${d.p1.lastPoints})</div>`;
-        if(!d.isSolo) document.getElementById('card2').innerHTML += `<div style="font-size:20px; color:blue;">${d.p2.emoji} ${d.p2.name} (+${d.p2.lastPoints})</div>`;
+        document.getElementById('card1').innerHTML += `<br><small>${d.p1.emoji} ${d.p1.name}</small>`;
+        if(!d.isSolo) document.getElementById('card2').innerHTML += `<br><small>${d.p2.emoji} ${d.p2.name}</small>`;
     });
 
     socket.on('show-scores', d => {
         document.getElementById('game').style.display="none"; document.getElementById('scores').style.display="block";
         document.getElementById('scoreList').innerHTML = d.players.sort((a,b)=>b.score - a.score).map((p, i) => `
-            <div class="score-row"><div style="font-size:60px; width:80px;">${i+1}</div><div class="score-bar"><span>${p.emoji} ${p.name}</span><b>${p.score}</b></div></div>
+            <div class="score-row"><div class="big-num">${i+1}</div><div class="score-bar"><span>${p.emoji} ${p.name}</span><b>${p.score}</b></div></div>
         `).join('');
     });
 
-    socket.on('final-results', d => { playM('final'); document.getElementById('scores').style.display="none"; document.getElementById('final').style.display="block"; document.getElementById('winner').innerText = d.players[0].emoji + " " + d.players[0].name; });
+    socket.on('final-results', d => {
+        document.getElementById('scores').style.display="none"; document.getElementById('final').style.display="block";
+        document.getElementById('winner').innerText = d.players[0].name;
+        setTimeout(() => { 
+            document.getElementById('final').style.display="none"; 
+            document.getElementById('credits').style.display="flex"; 
+            setTimeout(() => socket.emit('finish-credits', curCode), 15000);
+        }, 6000);
+    });
 </script>
 </body>
 </html>
