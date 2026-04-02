@@ -8,12 +8,11 @@ const io = new Server(server, { maxHttpBufferSize: 2e7, cors: { origin: "*" } })
 
 app.use(express.static(__dirname));
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
-app.get('/mod', (req, res) => res.sendFile(path.resolve(__dirname, 'mod.html'))); // Новый файл
 
 const prompts = {
     ru: {
         classic: ["Почему vangavgav лысый?", "Что Ванга скрывает под кепкой?", "Худшая фраза хирурга?", "Название для туалетной бумаги."],
-        final: ["Напиши 3 вещи, которые нельзя делать в церкви", "3 причины не доверять Диме Модерассу", "3 признака, что ты - Ванга"]
+        final: ["Напиши 3 вещи, которые нельзя делать в гостях", "3 причины не доверять Диме Модерассу", "3 признака, что ты лысеешь"]
     }
 };
 
@@ -22,18 +21,16 @@ let timers = {};
 
 io.on('connection', (socket) => {
     socket.on('create-room', (oldCode) => {
-        // Если хост переподключается к старой комнате
         if (oldCode && rooms[oldCode]) {
             rooms[oldCode].host = socket.id;
             socket.join(oldCode);
             socket.emit('room-created', oldCode);
-            io.to(oldCode).emit('player-list-update', rooms[oldCode].players);
             return;
         }
         const code = Math.random().toString(36).substring(2, 6).toUpperCase();
         rooms[code] = { 
-            host: socket.id, players: [], modId: null, mode: 'classic', round: 1, currentPairIndex: 0, pairs: [], gameStarted: false,
-            settings: { timer: 30, maxPlayers: 12, lang: 'ru', voice: 'male', bonusX2: true, moderation: false }
+            host: socket.id, players: [], round: 1, currentPairIndex: 0, pairs: [], gameStarted: false,
+            settings: { timer: 30, lang: 'ru', voice: 'male', moderation: false }
         };
         socket.join(code);
         socket.emit('room-created', code);
@@ -49,22 +46,13 @@ io.on('connection', (socket) => {
             player.id = socket.id; // Переподключение
         } else {
             if (room.gameStarted) return socket.emit('error-join', 'Игра уже идет!');
-            player = { id: socket.id, name, emoji: '❓', score: 0, lastPoints: 0, ready: false };
+            player = { id: socket.id, name, emoji: '❓', score: 0, lastPoints: 0 };
             room.players.push(player);
         }
 
         socket.join(cleanCode);
         io.to(room.host).emit('player-list-update', room.players);
         socket.emit('joined-success', { code: cleanCode, settings: room.settings });
-    });
-
-    socket.on('join-mod', (code) => {
-        const room = rooms[code.toUpperCase()];
-        if (room) {
-            room.modId = socket.id;
-            socket.join(code.toUpperCase());
-            socket.emit('mod-success');
-        }
     });
 
     socket.on('update-settings', ({ code, settings }) => {
@@ -74,10 +62,9 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('start-game', ({ code, mode }) => {
+    socket.on('start-game', (code) => {
         const room = rooms[code];
         if (!room) return;
-        room.mode = mode;
         room.gameStarted = true;
         startRound(code, 1);
     });
@@ -89,8 +76,7 @@ io.on('connection', (socket) => {
         let shuffled = [...room.players].sort(() => 0.5 - Math.random());
         room.pairs = [];
         
-        const type = (roundNum === 3) ? 'final' : room.mode;
-        const qList = prompts[room.settings.lang][type] || prompts['ru'][type];
+        const qList = (roundNum === 3) ? prompts[room.settings.lang].final : prompts[room.settings.lang].classic;
 
         for (let i = 0; i < shuffled.length; i += 2) {
             room.pairs.push({
@@ -107,56 +93,33 @@ io.on('connection', (socket) => {
         const pair = room.pairs[room.currentPairIndex];
         if (!pair) return io.to(code).emit('show-scores', { players: room.players, round: room.round });
         
-        io.to(code).emit('round-started', { 
-            mode: room.mode, round: room.round, q: pair.q, 
-            p1_id: pair.p1.id, p2_id: pair.p2 ? pair.p2.id : null, 
-            settings: room.settings 
-        });
+        io.to(code).emit('round-started', { round: room.round, q: pair.q, p1_id: pair.p1.id, p2_id: pair.p2 ? pair.p2.id : null, settings: room.settings });
 
         if(timers[code]) clearTimeout(timers[code]);
-        timers[code] = setTimeout(() => forceSubmit(code), (room.settings.timer + 1) * 1000);
+        timers[code] = setTimeout(() => forceSubmit(code), (room.settings.timer + 2) * 1000);
     }
 
     socket.on('submit-answer', ({ code, answer }) => {
         const room = rooms[code];
         const pair = room.pairs[room.currentPairIndex];
-        if (!pair) return;
+        const content = Array.isArray(answer) ? answer.join(' | ') : answer;
 
-        let content = Array.isArray(answer) ? answer.join(', ') : answer;
-        
-        // Модерация
-        if (room.settings.moderation && room.modId) {
-            io.to(room.modId).emit('mod-check', { playerId: socket.id, text: content });
-        } else {
-            applyAnswer(pair, socket.id, content, code);
-        }
-    });
-
-    socket.on('mod-action', ({ code, playerId, text, action }) => {
-        const room = rooms[code];
-        const pair = room.pairs[room.currentPairIndex];
-        const finalContent = (action === 'block') ? "ЗАБЛОКИРОВАНО" : text;
-        applyAnswer(pair, playerId, finalContent, code);
-    });
-
-    function applyAnswer(pair, playerId, content, code) {
-        if (pair.p1.id === playerId) pair.ans1 = content;
-        if (pair.p2 && pair.p2.id === playerId) pair.ans2 = content;
+        if (pair.p1.id === socket.id) pair.ans1 = content;
+        if (pair.p2 && pair.p2.id === socket.id) pair.ans2 = content;
         
         if (pair.ans1 && (!pair.p2 || pair.ans2)) {
             clearTimeout(timers[code]);
-            io.to(code).emit('show-voting', { type: rooms[code].mode, ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2, settings: rooms[code].settings });
+            io.to(code).emit('show-voting', { ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2, settings: room.settings });
             if (!pair.p2) setTimeout(() => finishPair(code), 6000);
         }
-    }
+    });
 
     socket.on('cast-vote', ({ code, voteNum }) => {
         const room = rooms[code];
         const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return;
         pair.votes.push({ voter: socket.id, voteNum });
-        const needed = room.players.length - (pair.p2 ? 2 : 1);
-        if (pair.votes.length >= Math.max(needed, 1)) finishPair(code);
+        if (pair.votes.length >= (room.players.length - (pair.p2 ? 2 : 1))) finishPair(code);
     });
 
     function finishPair(code) {
