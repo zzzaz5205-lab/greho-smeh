@@ -6,78 +6,88 @@
     <link rel="icon" href="https://fav.farm/🎮" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
-        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; perspective: 1200px; }
-        .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotateSpiral 40s linear infinite; z-index: -1; }
+        
+        body { 
+            margin: 0; padding: 0; overflow: hidden; 
+            background: #fbc02d; font-family: 'Montserrat', sans-serif; 
+            color: #3e2723; text-align: center; perspective: 1500px; 
+        }
+
+        /* ГИПНО-СПИРАЛЬ */
+        .spiral { 
+            position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; 
+            background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); 
+            animation: rotateSpiral 40s linear infinite; z-index: -1; 
+        }
         @keyframes rotateSpiral { 100% { transform: rotate(360deg); } }
-        
+
         #digital-timer { position: absolute; top: 20px; left: 30px; font-size: 85px; font-family: 'Roboto Mono'; font-weight: 900; text-shadow: 6px 6px 0 #000; color: #fff; z-index: 1000; display: none; transform: rotate(-5deg); }
+
         .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; transition: 0.5s; }
+
+        /* ИСПРАВЛЕННЫЕ НАСТРОЙКИ - СТРОГО ПО ЦЕНТРУ */
+        #settings-modal-overlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: rgba(0,0,0,0.8); z-index: 10000; 
+            align-items: center; justify-content: center; /* Центрирование дочернего .modal */
+        }
+        .modal { 
+            background: #fff; border: 8px solid #3e2723; border-radius: 30px; 
+            width: 850px; height: 380px; display: flex; overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5); text-align: left;
+        }
+        .modal-sidebar { width: 30%; background: #3e2723; padding: 15px; display: flex; flex-direction: column; gap: 5px; }
+        .tab-btn { padding: 12px; background: none; border: none; color: #fff; font-weight: 900; font-size: 16px; text-align: left; cursor: pointer; border-radius: 10px; }
+        .tab-btn.active { background: #fbc02d; color: #3e2723; }
+        .modal-body { width: 70%; padding: 20px 40px; overflow-y: auto; background: #fff; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px dashed #ddd; padding-bottom: 5px; }
         
-        /* БАБЛЫ */
+        /* ГУИШКИ ИГРЫ */
+        #voting { display: none; width: 100%; height: 450px; position: relative; margin-top: 50px; }
         .bubble { 
             background: #fff; border: 8px solid #3e2723; border-radius: 25px; 
-            padding: 25px; width: 40%; min-height: 200px; font-size: 38px; 
+            padding: 30px; width: 42%; min-height: 250px; font-size: 40px; 
             font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); 
             position: absolute; top: 50%; transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            display: flex; align-items: center; justify-content: center;
         }
         #card1 { left: 5%; transform: translateY(-50%) rotate(-3deg); }
         #card2 { right: 5%; transform: translateY(-50%) rotate(3deg); }
-        .bubble.refusal { background: #bbb !important; color: #666 !important; border-color: #666 !important; font-size: 24px; z-index: 1; }
         
-        /* АНИМАЦИИ */
+        .refusal { background: #bbb !important; color: #666 !important; border-color: #666 !important; font-size: 28px !important; }
+        .solo-center { left: 50% !important; transform: translate(-50%, -50%) rotate(0deg) scale(1.1) !important; z-index: 100; }
+        .kicked-out { transform: translate(150%, -50%) rotate(45deg) !important; opacity: 0; }
+
+        .points-badge { position: absolute; top: -30px; right: -30px; background: #ef5350; color: #fff; border: 5px solid #3e2723; width: 90px; height: 90px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 32px; animation: popBadge 0.4s forwards; z-index: 10; }
+        @keyframes popBadge { from { transform: scale(0); } to { transform: scale(1); } }
+
         @keyframes flyDownCenter {
             0% { opacity: 1; transform: translate(0, -50%) scale(1); }
             100% { transform: translate(0, 1000px) scale(0.5); opacity: 0; }
         }
         .exit-zoom { animation: flyDownCenter 1s forwards ease-in !important; left: 50% !important; margin-left: -20% !important; }
 
-        .solo-center { left: 50% !important; transform: translate(-50%, -50%) rotate(0deg) scale(1.1) !important; z-index: 100; }
-        .kicked-out { transform: translate(150%, -50%) rotate(40deg) !important; opacity: 0; }
-
-        .points-badge { position: absolute; top: -25px; right: -25px; background: #ef5350; color: #fff; border: 5px solid #3e2723; width: 85px; height: 85px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 30px; animation: popBadge 0.4s forwards; z-index: 10; }
-        @keyframes popBadge { from { transform: scale(0); } to { transform: scale(1); } }
-
         #qText { font-size: 55px; background:#fff; padding:15px 40px; border:6px solid #3e2723; transform:rotate(-1deg); transition: 0.4s; max-width: 80%; margin-top: -120px; }
         .q-vanish { opacity: 0; transform: scale(0.7) !important; }
+        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); animation: slideUp 0.6s forwards; }
+        @keyframes slideUp { from { transform: translateY(200px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); animation: slideUp 0.5s forwards; }
-        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
-        .player-node { width: 130px; height: 130px; background: #fff; border: 6px solid #3e2723; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px; font-weight: bold; box-shadow: 8px 8px 0 rgba(0,0,0,0.1); }
-
-        /* НАСТРОЙКИ */
-        #settings-modal-overlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.5); z-index: 5000; align-items: center; justify-content: center;
+        /* ТИТРЫ НА ЧЕРНОМ ФОНЕ */
+        #credits-screen { 
+            background: #000 !important; color: #fff; display: none; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 9000; overflow: hidden; flex-direction: column; align-items: center; 
         }
-        .modal { 
-            background: #fff; border: 8px solid #3e2723; border-radius: 30px; 
-            width: 70vw; height: 35vh; display: flex; overflow: hidden;
-            box-shadow: 30px 30px 0 rgba(0,0,0,0.2); text-align: left;
-        }
-        .modal-sidebar { width: 30%; background: #3e2723; padding: 15px; display: flex; flex-direction: column; gap: 5px; }
-        .tab-btn { padding: 12px; background: none; border: none; color: #fff; font-weight: 900; font-size: 16px; text-align: left; cursor: pointer; border-radius: 10px; }
-        .tab-btn.active { background: #fbc02d; color: #3e2723; }
-        .modal-body { width: 70%; padding: 20px 40px; overflow-y: auto; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px dashed #ddd; }
-
-        /* ТИТРЫ */
-        #credits-screen { background: #000 !important; color: #fff; display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 6000; overflow: hidden; }
         .credits-wrap { position: absolute; width: 100%; top: 100%; animation: scrollCredits 22s linear forwards; }
-        @keyframes scrollCredits { from { top: 100%; } to { top: -280%; } }
+        @keyframes scrollCredits { from { top: 100%; } to { top: -350%; } }
         .joke-card { background: #1a1a1a; border-left: 8px solid #fbc02d; padding: 20px; margin: 20px auto; width: 65%; text-align: left; font-size: 24px; }
-        
-        .btn-open-settings { position: absolute; top: 20px; left: 20px; padding: 12px 25px; background: #3e2723; color: #fff; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; }
     </style>
 </head>
 <body onclick="startAudio()">
     <div class="spiral"></div>
     <div id="digital-timer"></div>
-    <div id="corner-code" style="position:absolute; top:20px; right:20px; background:#fff; padding:10px; border:4px solid #3e2723; transform:rotate(2deg); font-weight:900; font-size:30px; display:none;">...</div>
-
+    
+    <!-- МОДАЛКА -->
     <div id="settings-modal-overlay">
         <div class="modal">
             <div class="modal-sidebar">
@@ -88,29 +98,38 @@
                 <button onclick="saveSettings()" style="background:#4caf50; color:#fff; padding:12px; border-radius:12px; font-weight:900; border:none; cursor:pointer;">ОК</button>
             </div>
             <div class="modal-body">
-                <div id="tab-modes" class="tab-content active"><h2>ГРЕХО-СМЕХ (Классика)</h2></div>
+                <div id="tab-modes" class="tab-content active">
+                    <h2 style="color:#3e2723">РЕЖИМЫ</h2>
+                    <div class="setting-row"><label>ГРЕХО-СМЕХ (Оригинал)</label> <input type="radio" checked></div>
+                </div>
                 <div id="tab-events" class="tab-content">
+                    <h2 style="color:#3e2723">СОБЫТИЯ</h2>
                     <div class="setting-row"><label>АДСКИЙ РЕЖИМ</label> <input type="checkbox" id="hellMode"></div>
-                    <div class="setting-row"><label>18+ РЕЖИМ</label> <input type="checkbox" id="plus18"></div>
+                    <div class="setting-row"><label>18+ РЕЖИМ (GEMINI)</label> <input type="checkbox" id="plus18"></div>
+                    <div class="setting-row"><label>БОНУС X2</label> <input type="checkbox" id="bonus2" checked></div>
                 </div>
                 <div id="tab-sounds" class="tab-content">
-                    <div class="setting-row"><label>ГОЛОС:</label> <select id="voiceType"><option value="male">МУЖСКОЙ</option><option value="female">ЖЕНСКИЙ</option></select></div>
+                    <h2 style="color:#3e2723">ЗВУКИ</h2>
+                    <div class="setting-row"><label>ГОЛОС ДИКТОРА:</label> 
+                        <select id="voiceType"><option value="male">МУЖСКОЙ (БАС)</option><option value="female">ЖЕНСКИЙ</option></select>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- ЛОББИ -->
     <div id="lobby" class="screen" style="display:flex">
-        <button class="btn-open-settings" onclick="toggleSet()">Настройки игры</button>
+        <button style="position:absolute; top:20px; left:20px; padding:12px 25px; background:#3e2723; color:#fff; border:none; border-radius:10px; font-weight:900; cursor:pointer;" onclick="toggleSet()">Настройки игры</button>
         <h1 style="font-size: 80px; text-shadow: 6px 6px 0 #fff; margin:0;">ГРЕХО-СМЕХ</h1>
-        <div style="background:#000; color:#ffeb3b; padding:15px 60px; border:8px solid #fff; font-size:100px; transform:rotate(-2deg);" id="bigCode">...</div>
+        <div style="background:#000; color:#ffeb3b; padding:15px 60px; border:8px solid #fff; font-size:100px; transform:rotate(-2deg); margin:20px;" id="bigCode">...</div>
         <div id="playerList" style="display:flex; flex-wrap:wrap; justify-content:center; margin-top:20px;"></div>
-        <button onclick="socket.emit('start-game', curCode)" style="background:#4caf50; border:6px solid #3e2723; color:#fff; padding:20px 60px; font-size:30px; border-radius:100px; cursor:pointer; margin-top:30px; font-weight:900;">ПОГНАЛИ!</button>
+        <button onclick="socket.emit('start-game', curCode)" style="background:#4caf50; border:6px solid #3e2723; color:#fff; padding:20px 60px; font-size:35px; border-radius:100px; cursor:pointer; margin-top:30px; font-weight:900;">ПОГНАЛИ!</button>
     </div>
 
     <div id="game" class="screen">
         <h2 id="qText"></h2>
-        <div id="voting" style="display:none; width:100%; height: 400px; position: relative;">
+        <div id="voting">
             <div id="card1" class="bubble"><div id="ans-text-1"></div><div id="badge-1" class="points-badge"></div></div>
             <div id="card2" class="bubble"><div id="ans-text-2"></div><div id="badge-2" class="points-badge"></div></div>
         </div>
@@ -119,7 +138,9 @@
     <div id="scores" class="screen"><h1>ТЕКУЩИЙ СЧЁТ</h1><div id="scoreList"></div></div>
     <div id="final" class="screen"><h1>ПОБЕДИТЕЛЬ</h1><div id="winner" style="font-size:120px; color:#ef5350"></div></div>
 
-    <div id="credits-screen"><div class="credits-wrap" id="credits-content"></div></div>
+    <div id="credits-screen">
+        <div class="credits-wrap" id="credits-content"></div>
+    </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -127,22 +148,29 @@
     let gameSettings = { timer: 30, voice: 'male' };
     const music = { lobby: new Audio('lobby.mp3'), game: new Audio('game.mp3'), final: new Audio('final.mp3') };
 
-    function toggleSet() { const o = document.getElementById('settings-modal-overlay'); o.style.display = (o.style.display === 'flex') ? 'none' : 'flex'; }
-    function openTab(e, t) { document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(t).classList.add('active'); e.currentTarget.classList.add('active'); }
-    function playM(t) { Object.values(music).forEach(m=>{m.pause();m.currentTime=0;}); music[t].loop=true; music[t].volume=0.1; music[t].play(); }
-    function startAudio() { if(!window.audioInited){ playM('lobby'); window.audioInited=true; } }
-
+    function toggleSet() { 
+        const overlay = document.getElementById('settings-modal-overlay');
+        overlay.style.display = (overlay.style.display === 'flex') ? 'none' : 'flex';
+    }
+    function openTab(e, t) { 
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(t).classList.add('active'); e.currentTarget.classList.add('active');
+    }
     function saveSettings() {
-        gameSettings.hellMode = document.getElementById('hellMode').checked;
-        gameSettings.eighteenPlus = document.getElementById('plus18').checked;
+        gameSettings.timer = parseInt(document.getElementById('timerVal').value);
         gameSettings.voice = document.getElementById('voiceType').value;
         socket.emit('update-settings', { code: curCode, settings: gameSettings });
         toggleSet();
     }
+    function playM(t) { Object.values(music).forEach(m=>{m.pause();m.currentTime=0;}); music[t].loop=true; music[t].volume=0.1; music[t].play(); }
+    function startAudio() { if(!window.ai){ playM('lobby'); window.ai=true; } }
 
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
-    socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; document.getElementById('corner-code').innerText = c; });
-    socket.on('player-list-update', players => { document.getElementById('playerList').innerHTML = players.map(p => `<div class="player-node"><span>${p.emoji}</span>${p.name}</div>`).join(''); });
+    socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; });
+    socket.on('player-list-update', players => {
+        document.getElementById('playerList').innerHTML = players.map(p => `<div style="background:#fff; border:5px solid #3e2723; padding:10px 20px; border-radius:15px; margin:5px; font-weight:bold;">${p.emoji} ${p.name}</div>`).join('');
+    });
 
     function speak(t, cb) {
         window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
@@ -155,11 +183,7 @@
         let tl = sec; const tEl = document.getElementById('digital-timer');
         tEl.style.display = 'block'; tEl.innerText = tl; tEl.style.color = "#fff";
         clearInterval(cdnInt);
-        cdnInt = setInterval(() => {
-            tl--; tEl.innerText = tl;
-            if(tl <= 5) tEl.style.color = "red";
-            if(tl <= 0) { clearInterval(cdnInt); tEl.style.display = 'none'; }
-        }, 1000);
+        cdnInt = setInterval(() => { tl--; tEl.innerText = tl; if(tl <= 5) tEl.style.color = "red"; if(tl <= 0) { clearInterval(cdnInt); tEl.style.display = 'none'; } }, 1000);
     }
 
     socket.on('round-started', d => {
@@ -167,12 +191,11 @@
         document.getElementById('game').style.display='flex'; document.getElementById('game').classList.remove('exit-zoom');
         document.getElementById('voting').style.display = 'none';
         const q = document.getElementById('qText'); q.innerText = d.q; q.classList.remove('q-vanish');
-        speak(d.q); runTimer(d.time); playM('game');
-        document.getElementById('corner-code').style.display = "block";
+        speak(d.q); runTimer(d.time);
     });
 
     socket.on('show-voting', d => {
-        document.getElementById('voting').style.display = "block";
+        document.getElementById('voting').style.display = 'block';
         const c1 = document.getElementById('card1'), c2 = document.getElementById('card2');
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
         c1.className = 'bubble'; c2.className = 'bubble'; b1.style.display = 'none'; b2.style.display = 'none';
@@ -185,10 +208,9 @@
 
     socket.on('voting-results', d => {
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
-        b1.innerText = d.v1; b1.style.display = 'flex'; if(!d.isSolo) { b2.innerText = d.v2; b2.style.display = 'flex'; }
+        if(!d.bothEmpty) { b1.innerText = d.v1; b1.style.display = 'flex'; if(!d.isSolo) { b2.innerText = d.v2; b2.style.display = 'flex'; } }
         setTimeout(() => {
-            b1.innerText = "+" + d.p1Points; b1.style.background = "#4caf50";
-            if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; }
+            if(!d.bothEmpty) { b1.innerText = "+" + d.p1Points; b1.style.background = "#4caf50"; if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; } }
             document.getElementById('qText').classList.add('q-vanish');
             speak(d.aiComment);
             setTimeout(() => { document.getElementById('card1').classList.add('exit-zoom'); document.getElementById('card2').classList.add('exit-zoom'); }, 1500);
@@ -200,17 +222,17 @@
         document.getElementById('scoreList').innerHTML = d.players.sort((a,b)=>b.score-a.score).map((p,i)=>`
             <div class="score-bar"><span>${i+1}. ${p.emoji} ${p.name}</span><b>${p.score}</b></div>
         `).join('');
-        runTimer(15);
+        runTimer(10);
     });
 
     socket.on('final-results', d => {
         playM('final'); document.getElementById('scores').style.display='none'; document.getElementById('final').style.display='flex'; 
         document.getElementById('winner').innerText = d.players[0].name;
-        let html = `<h1 style="font-size:80px; color:#fbc02d">ГРЕХО-СМЕХ</h1><h3>ЗАЛ СЛАВЫ:</h3>`;
+        let html = `<div style="font-size:80px; color:#fbc02d; margin-bottom:50px;">ГРЕХО-СМЕХ</div><br><h3>ЗАЛ СЛАВЫ:</h3>`;
         d.best.forEach(j => { html += `<div class="joke-card">"${j.text}"<br><small>Автор: ${j.emoji} ${j.author} (${j.votes} гол.)</small></div>`; });
         html += `<br><div style="font-size:40px; line-height:2;"><b style="color:#ef5350">АВТОРЫ:</b><br>Грексюр Поносович<br>Джемини Завозилов</div><br><h1>СПАСИБО!</h1>`;
         document.getElementById('credits-content').innerHTML = html;
-        setTimeout(() => { document.getElementById('final').style.display='none'; document.getElementById('credits-screen').style.display='block'; setTimeout(() => socket.emit('finish-credits', curCode), 22000); }, 6000);
+        setTimeout(() => { document.getElementById('final').style.display='none'; document.getElementById('credits-screen').style.display='flex'; setTimeout(() => socket.emit('finish-credits', curCode), 22000); }, 6000);
     });
 </script>
 </body>
