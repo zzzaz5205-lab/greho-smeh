@@ -6,36 +6,56 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
         body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; }
+        
         .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotate 60s linear infinite; z-index: -1; }
         @keyframes rotate { 100% { transform: rotate(360deg); } }
-        
-        #timer { position: absolute; top: 20px; left: 30px; font-family: 'Roboto Mono'; font-size: 90px; color: #fff; text-shadow: 5px 5px 0 #000; z-index: 100; }
-        .screen { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; position: absolute; width: 100%; }
+
+        #timer { position: absolute; top: 20px; left: 30px; font-family: 'Roboto Mono'; font-size: 90px; color: #fff; text-shadow: 6px 6px 0 #000; z-index: 100; }
+        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; width: 100%; }
         #lobby { display: flex; }
 
-        .char { position: absolute; width: 130px; height: 130px; border: 6px solid #000; display: flex; align-items: center; justify-content: center; transform: translate(-50%, -50%); transition: 0.8s; }
-        .cube { border-radius: 25px; } .circle { border-radius: 50%; } .poly { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
-        .eyes { width: 50%; height: 15px; background: #000; border-radius: 10px; position: relative; display: none; } /* Скрыты, пока не выбран цвет */
-        .eyes::after, .eyes::before { content:''; position:absolute; width:6px; height:6px; background:#fff; border-radius:50%; top:2px; }
+        /* МОНСТРЫ С ПРАВИЛЬНОЙ ОБВОДКОЙ */
+        .char { 
+            position: absolute; width: 140px; height: 140px; 
+            border: 8px solid #000; /* ЖЕСТКАЯ ОБВОДКА */
+            display: flex; align-items: center; justify-content: center; 
+            transform: translate(-50%, -50%); transition: background 0.5s, border-radius 0.5s, left 0.8s, top 0.8s;
+            animation: breathe 3s infinite ease-in-out;
+            box-sizing: border-box; /* Чтобы обводка не увеличивала размер */
+        }
+        .cube { border-radius: 25px; } 
+        .circle { border-radius: 50%; } 
+        .poly { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); border: none; background: #000; } 
+        /* Для пятиугольника (poly) делаем спец-обводку через вложенный блок, т.к. clip-path режет border */
+        .poly-inner { position: absolute; width: 100%; height: 100%; background: inherit; clip-path: polygon(50% 5%, 95% 39%, 79% 95%, 21% 95%, 5% 39%); }
+
+        .eyes { width: 55%; height: 16px; background: #000; border-radius: 10px; position: relative; z-index: 2; }
+        .eyes::after, .eyes::before { content:''; position:absolute; width:7px; height:7px; background:#fff; border-radius:50%; top:2px; }
         .eyes::before { left: 4px; } .eyes::after { right: 4px; }
 
-        .bubble { background: #fff; border: 6px solid #000; border-radius: 30px; padding: 30px; width: 42%; font-size: 45px; font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); }
+        .char-name { position: absolute; bottom: -40px; background: #000; color: #fff; padding: 3px 15px; border-radius: 8px; font-size: 18px; border: 2px solid #fff; }
+
+        @keyframes breathe { 0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(-2deg); } 50% { transform: translate(-50%, -50%) scale(1.08) rotate(2deg); } }
+
+        .bubble { background: #fff; border: 8px solid #000; border-radius: 35px; padding: 30px; width: 42%; font-size: 45px; font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); }
+        #bigCode { background: #000; color: #ffeb3b; padding: 15px 50px; border: 6px solid #fff; font-size: 90px; transform: rotate(-2deg); box-shadow: 15px 15px 0 rgba(0,0,0,0.2); }
+        .main-btn { background: #4caf50; border: 6px solid #000; color: #fff; padding: 20px 60px; font-size: 35px; border-radius: 100px; cursor: pointer; font-weight: 900; margin-top: 30px; }
     </style>
 </head>
-<body onclick="startMusic()">
+<body onclick="initAudio()">
     <div class="spiral"></div>
     <div id="timer"></div>
 
     <div id="lobby" class="screen">
-        <h1 style="font-size: 70px; color: #fff; text-shadow: 6px 6px 0 #000;">ГРЕХО-СМЕХ</h1>
-        <div style="background:#fff; padding:10px 40px; border:6px solid #000; font-size:80px;" id="bigCode">...</div>
+        <h1 style="font-size: 80px; color: #fff; text-shadow: 7px 7px 0 #000; margin:0;">ГРЕХО-СМЕХ</h1>
+        <div id="bigCode">...</div>
         <div id="playerList" style="position:relative; width:800px; height:600px;"></div>
-        <button onclick="socket.emit('start-game', curCode)" style="padding:20px 60px; font-size:30px; border-radius:50px; background:#4caf50; color:#fff; border:5px solid #000; cursor:pointer;">ПОГНАЛИ!</button>
+        <button onclick="socket.emit('start-game', curCode)" class="main-btn">ПОГНАЛИ!</button>
     </div>
 
     <div id="game" class="screen">
-        <h2 id="qText" style="font-size: 50px; background: #fff; padding: 20px; border: 6px solid #000;"></h2>
-        <div id="voting" style="display:none; width:100%; justify-content:center; gap:30px;">
+        <h2 id="qText" style="font-size: 55px; background: #fff; padding: 25px 50px; border: 8px solid #000; transform: rotate(-1deg); box-shadow: 15px 15px 0 rgba(0,0,0,0.1);"></h2>
+        <div id="voting" style="display:none; width:100%; justify-content:center; gap:35px; margin-top:40px;">
             <div id="card1" class="bubble" style="transform:rotate(-2deg)"></div>
             <div id="card2" class="bubble" style="transform:rotate(2deg)"></div>
         </div>
@@ -43,52 +63,73 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io(); let curCode = "", tInt;
-    function startMusic() { new Audio('lobby.mp3').play(); }
+    const socket = io(); 
+    let curCode = "", tInt, audioStarted = false;
+
+    const music = {
+        lobby: new Audio('lobby.mp3'),
+        game: new Audio('game.mp3')
+    };
+
+    function playM(track) {
+        Object.values(music).forEach(m => { m.pause(); m.currentTime = 0; });
+        if (music[track]) {
+            music[track].loop = true;
+            music[track].volume = 0.08; // ОЧЕНЬ ТИХО (8%)
+            music[track].play();
+        }
+    }
+
+    function initAudio() {
+        if(!audioStarted) {
+            playM('lobby');
+            audioStarted = true;
+        }
+    }
 
     function speak(t, cb) {
         window.speechSynthesis.cancel();
         const m = new SpeechSynthesisUtterance(t);
         const vs = window.speechSynthesis.getVoices();
         m.voice = vs.find(v => v.lang.includes('ru') && v.name.includes('David')) || vs[0];
-        m.pitch = 0.5; m.rate = 0.9; m.onend = cb;
+        m.pitch = 0.45; m.rate = 0.9; m.volume = 1.0; // ДИКТОР НА МАКСИМУМ
+        m.onend = cb;
         window.speechSynthesis.speak(m);
-    }
-
-    function startTimer(sec) {
-        let tl = sec; const el = document.getElementById('timer');
-        el.style.display = 'block'; clearInterval(tInt);
-        tInt = setInterval(() => { el.innerText = tl; tl--; if(tl<0) { clearInterval(tInt); el.style.display='none'; } }, 1000);
     }
 
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
     socket.on('room-created', c => { curCode = c; document.getElementById('bigCode').innerText = c; });
 
     socket.on('player-list-update', players => {
-        const list = document.getElementById('playerList'); list.innerHTML = "";
+        const list = document.getElementById('playerList');
+        list.innerHTML = "";
         players.forEach((p, i) => {
             const a = (i / players.length) * Math.PI * 2 - Math.PI/2;
-            const x = Math.cos(a) * 320 + 400; const y = Math.sin(a) * 250 + 300;
-            list.innerHTML += `<div class="char ${p.char.shape}" style="left:${x}px; top:${y}px; background:${p.char.color}">
-                <div class="eyes" style="display:${p.char.active ? 'block' : 'none'}"></div>
-                <b style="position:absolute; bottom:-35px; color:#000">${p.name}</b>
-            </div>`;
+            const x = Math.cos(a) * 320 + 400; const y = Math.sin(a) * 260 + 300;
+            
+            list.innerHTML += `
+                <div class="char ${p.char.shape}" style="left:${x}px; top:${y}px; background:${p.char.color}; border-color:#000;">
+                    <div class="${p.char.shape === 'poly' ? 'poly-inner' : ''}"></div>
+                    <div class="eyes" style="display:${p.char.active ? 'block' : 'none'}"></div>
+                    <div class="char-name">${p.name}</div>
+                </div>`;
         });
     });
 
     socket.on('round-started', d => {
+        playM('game');
         document.getElementById('lobby').style.display='none';
         document.getElementById('game').style.display='flex';
         document.getElementById('voting').style.display='none';
         document.getElementById('qText').innerText = d.q;
-        speak(d.q); startTimer(d.time);
+        speak(d.q);
     });
 
     socket.on('show-voting', d => {
         document.getElementById('voting').style.display='flex';
         document.getElementById('card1').innerText = d.ans1;
         document.getElementById('card2').innerText = d.ans2 || "...";
-        speak("Чей ответ лучше?"); startTimer(d.time);
+        speak("Чей ответ лучше?");
     });
 </script>
 </body>
