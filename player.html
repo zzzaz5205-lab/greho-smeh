@@ -12,20 +12,27 @@
         .btn { background: #ef5350; color: white; width: 95%; padding: 15px; margin: 10px auto; border: 4px solid #3e2723; border-radius: 12px; font-weight: 900; font-size: 18px; box-shadow: 0 4px 0 #3e2723; cursor: pointer; }
         .btn:active { transform: translateY(4px); box-shadow: 0 0 0; }
         input { width: 90%; padding: 12px; border: 3px solid #3e2723; border-radius: 10px; font-size: 18px; font-weight: bold; margin-bottom: 8px; outline: none; }
+        #p-timer { font-size: 20px; font-weight: bold; margin-top: 10px; }
         
-        /* ИСПРАВЛЕННЫЙ РАЗМЕР ГИФКИ */
-        .funny-gif { width: 50%; max-width: 200px; border: 4px solid #3e2723; border-radius: 15px; margin-top: 15px; }
-        
+        /* ГИГАНТСКАЯ ГИФКА (В 2 раза больше) */
+        .funny-gif { 
+            width: 100%; 
+            max-width: 500px; 
+            border: 6px solid #3e2723; 
+            border-radius: 15px; 
+            margin-top: 15px; 
+        }
+
         .emoji-item { font-size: 35px; padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="top-bar">КОМНАТА: <span id="room-display">...</span></div>
+    <div class="top-bar">КОМНАТА: <span id="room-display">...</span> <div id="p-timer"></div></div>
     
     <div id="status" class="screen">ПОДКЛЮЧЕНИЕ...</div>
 
     <div id="emoji-ui" class="screen hidden">
-        <h2>КТО ТЫ?</h2>
+        <h2>ВЫБЕРИ ГЕРОЯ</h2>
         <div id="grid" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
     </div>
 
@@ -58,6 +65,13 @@
 
         function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
 
+        let ptInt;
+        function startTimer(sec) {
+            clearInterval(ptInt); let tl = sec;
+            const el = document.getElementById('p-timer'); el.innerText = tl;
+            ptInt = setInterval(() => { tl--; el.innerText = tl; if(tl <= 0) clearInterval(ptInt); }, 1000);
+        }
+
         socket.emit('join-room', { code: myCode, name: myName });
 
         socket.on('joined-success', () => {
@@ -72,7 +86,7 @@
 
         socket.on('round-started', d => {
             if(myName === d.p1_name || myName === d.p2_name) {
-                showScreen('answer-ui');
+                showScreen('answer-ui'); startTimer(d.time);
                 document.getElementById('qText').innerText = d.q;
                 const area = document.getElementById('inp-area');
                 area.innerHTML = d.round === 3 ? '<input class="ansV" maxlength="40"><input class="ansV" maxlength="40"><input class="ansV" maxlength="40">' : '<input class="ansV" maxlength="40">';
@@ -87,8 +101,8 @@
 
         socket.on('show-voting', d => {
             if(myName === d.p1_name || myName === d.p2_name || d.isSolo || d.bothEmpty) { showScreen('wait-ui'); return; }
-            showScreen('vote-ui');
-            const format = (a) => Array.isArray(a) ? a.join('<br>') : a;
+            showScreen('vote-ui'); startTimer(d.time);
+            const format = (a) => Array.isArray(a) ? a.join(' / ') : a;
             document.getElementById('vote-btns').innerHTML = `
                 <button class="btn" onclick="vote(1)">${format(d.ans1)}</button>
                 <button class="btn" onclick="vote(2)" style="background:#42a5f5">${format(d.ans2)}</button>
