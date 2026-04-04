@@ -5,28 +5,46 @@
     <title>ГРЕХО-СМЕХ | HOST</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
-        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; perspective: 1000px; }
         .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotateSpiral 40s linear infinite; z-index: -1; }
         @keyframes rotateSpiral { 100% { transform: rotate(360deg); } }
         
         #digital-timer { position: absolute; top: 20px; left: 30px; font-size: 85px; font-family: 'Roboto Mono'; font-weight: 900; text-shadow: 6px 6px 0 #000; color: #fff; z-index: 1000; display: none; transform: rotate(-5deg); }
-        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; }
+        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; transition: 0.5s; }
         
-        .bubble { background: #fff; border: 8px solid #3e2723; border-radius: 25px; padding: 40px; width: 42%; font-size: 50px; font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); position: relative; transition: 0.5s; }
-        .bubble.refusal { background: #bbb; color: #666; border-color: #666; font-size: 30px; }
+        /* БАБЛЫ */
+        .bubble { 
+            background: #fff; border: 8px solid #3e2723; border-radius: 25px; 
+            padding: 40px; width: 42%; min-height: 250px; font-size: 50px; 
+            font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); 
+            position: relative; transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        .bubble.refusal { background: #bbb; color: #666; border-color: #666; font-size: 30px; z-index: 1; }
         
-        /* АНИМАЦИИ СОЛО */
-        @keyframes kickLeft { 0% { transform: scale(1) rotate(0); } 100% { transform: translateX(-150%) rotate(-20deg); opacity: 0; } }
-        @keyframes kickRight { 0% { transform: scale(1) rotate(0); } 100% { transform: translateX(150%) rotate(20deg); opacity: 0; } }
-        .kick-left { animation: kickLeft 1s forwards ease-in; }
-        .kick-right { animation: kickRight 1s forwards ease-in; }
-        
-        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); animation: slideUp 0.5s forwards; }
-        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes slideExit { to { transform: translateY(-100vh); opacity: 0; } }
-        .exit-anim { animation: slideExit 1s forwards ease-in; }
+        /* СЧЕТЧИК ГОЛОСОВ И ОЧКОВ */
+        .points-badge {
+            position: absolute; top: -20px; right: -20px;
+            background: #ef5350; color: #fff; border: 5px solid #3e2723;
+            width: 80px; height: 80px; border-radius: 50%;
+            display: none; align-items: center; justify-content: center;
+            font-size: 30px; animation: popBadge 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popBadge { from { transform: scale(0); } to { transform: scale(1); } }
 
-        .player-node { width: 140px; height: 140px; background: #fff; border: 6px solid #3e2723; border-radius: 20px; color: #3e2723; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px; font-weight: bold; }
+        /* АНИМАЦИЯ УЛЕТАНИЯ ВДАЛЬ */
+        @keyframes flyAway {
+            0% { transform: scale(1) translateZ(0); opacity: 1; }
+            100% { transform: scale(0.1) translateZ(-500px); opacity: 0; }
+        }
+        .exit-zoom { animation: flyAway 1s forwards ease-in; }
+
+        /* СПЕЦИАЛЬНЫЕ КЛАССЫ ДЛЯ СОЛО */
+        .solo-center { width: 60% !important; transform: rotate(0deg) scale(1.2) !important; z-index: 10; left: 0; }
+        .kicked-out { transform: translateX(200%) rotate(40deg) !important; opacity: 0; }
+
+        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; animation: slideUp 0.5s forwards; }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .player-node { width: 140px; height: 140px; background: #fff; border: 6px solid #3e2723; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px; font-weight: bold; }
     </style>
 </head>
 <body onclick="startAudio()">
@@ -43,8 +61,14 @@
     <div id="game" class="screen">
         <h2 id="qText" style="font-size: 60px; text-shadow: 4px 4px 0 #fff; background:#fff; border:6px solid #3e2723; padding:20px; transform:rotate(-1deg);"></h2>
         <div style="display:none; justify-content:center; gap:30px; width:100%; margin-top:50px;" id="voting">
-            <div id="card1" class="bubble"></div>
-            <div id="card2" class="bubble"></div>
+            <div id="card1" class="bubble">
+                <div id="ans-text-1"></div>
+                <div id="badge-1" class="points-badge"></div>
+            </div>
+            <div id="card2" class="bubble">
+                <div id="ans-text-2"></div>
+                <div id="badge-2" class="points-badge"></div>
+            </div>
         </div>
     </div>
 
@@ -88,8 +112,9 @@
     socket.on('round-started', d => {
         document.getElementById('lobby').style.display="none"; 
         document.getElementById('scores').style.display="none";
-        document.getElementById('scores').classList.remove('exit-anim');
+        document.getElementById('scores').classList.remove('exit-zoom');
         document.getElementById('game').style.display='flex'; 
+        document.getElementById('game').classList.remove('exit-zoom');
         document.getElementById('voting').style.display = 'none';
         document.getElementById('qText').innerText = d.q; speak(d.q);
         runTimer(d.time);
@@ -98,20 +123,52 @@
     socket.on('show-voting', d => {
         document.getElementById('voting').style.display = 'flex';
         const c1 = document.getElementById('card1'), c2 = document.getElementById('card2');
-        c1.classList.remove('kick-left', 'kick-right', 'refusal');
-        c2.classList.remove('kick-left', 'kick-right', 'refusal');
+        const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
+        
+        c1.className = 'bubble'; c2.className = 'bubble';
+        b1.style.display = 'none'; b2.style.display = 'none';
         
         if(d.isSolo) {
-            c1.innerText = d.ans1;
-            c2.innerText = "Я отказываюсь на это отвечать!";
+            document.getElementById('ans-text-1').innerText = d.ans1;
+            document.getElementById('ans-text-2').innerText = "Я отказываюсь на это отвечать!";
             c2.classList.add('refusal');
             speak("Одиночное выступление.");
-            setTimeout(() => { c2.classList.add('kick-right'); }, 2500); // Анимация "выкидывания"
+            
+            // АНИМАЦИЯ ТОЛЧКА
+            setTimeout(() => {
+                c2.classList.add('kicked-out'); // Серый улетает
+                c1.classList.add('solo-center'); // Игрок встает в центр
+            }, 2000);
         } else {
-            c1.innerText = d.ans1; c2.innerText = d.ans2;
+            document.getElementById('ans-text-1').innerText = d.ans1;
+            document.getElementById('ans-text-2').innerText = d.ans2;
             speak("Чей ответ лучше?");
         }
         runTimer(20);
+    });
+
+    socket.on('voting-results', d => {
+        const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
+        
+        // Сначала показываем количество голосов
+        b1.innerText = d.v1; b1.style.display = 'flex';
+        if(!d.isSolo) { b2.innerText = d.v2; b2.style.display = 'flex'; }
+        
+        // Через 2 секунды превращаем в баллы
+        setTimeout(() => {
+            b1.innerText = "+" + d.p1Points;
+            b1.style.background = "#4caf50";
+            if(!d.isSolo) {
+                b2.innerText = "+" + d.p2Points;
+                b2.style.background = "#4caf50";
+            }
+            speak("Результаты на экране.");
+        }, 2000);
+
+        // В самом конце - всё улетает вдаль
+        setTimeout(() => {
+            document.getElementById('game').classList.add('exit-zoom');
+        }, 4500);
     });
 
     socket.on('show-scores', d => {
@@ -121,14 +178,14 @@
             <div class="score-bar"><span>${i+1}. ${p.emoji} ${p.name}</span><b>${p.score}</b></div>
         `).join('');
         runTimer(15);
-        setTimeout(() => { document.getElementById('scores').classList.add('exit-anim'); }, 14000);
+        // За секунду до конца улетаем вдаль
+        setTimeout(() => { document.getElementById('scores').classList.add('exit-zoom'); }, 14000);
     });
 
     socket.on('final-results', d => {
         document.getElementById('scores').style.display='none';
         document.getElementById('final').style.display='flex'; 
         document.getElementById('winner').innerText = d.players[0].name;
-        speak("Победил " + d.players[0].name);
     });
     function startAudio() {}
 </script>
