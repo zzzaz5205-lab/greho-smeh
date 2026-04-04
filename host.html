@@ -3,70 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <title>ГРЕХО-СМЕХ | HOST</title>
+    <link rel="icon" href="https://fav.farm/🎮" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
-        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; perspective: 1500px; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; perspective: 1200px; }
         .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotateSpiral 40s linear infinite; z-index: -1; }
         @keyframes rotateSpiral { 100% { transform: rotate(360deg); } }
         
         #digital-timer { position: absolute; top: 20px; left: 30px; font-size: 85px; font-family: 'Roboto Mono'; font-weight: 900; text-shadow: 6px 6px 0 #000; color: #fff; z-index: 1000; display: none; transform: rotate(-5deg); }
         .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; transition: 0.5s; }
         
-        /* БАБЛЫ */
-        .bubble { 
-            background: #fff; border: 8px solid #3e2723; border-radius: 25px; 
-            padding: 25px; width: 40%; min-height: 200px; font-size: 38px; 
-            font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); 
-            position: absolute; top: 50%; transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2;
-        }
-        #card1 { left: 5%; transform: translateY(-50%) rotate(-3deg); }
-        #card2 { right: 5%; transform: translateY(-50%) rotate(3deg); }
-        .bubble.refusal { background: #bbb !important; color: #666 !important; border-color: #666 !important; }
-        
-        /* АНИМАЦИЯ УЛЕТАНИЯ ВНИЗ */
-        @keyframes flyDownFinal {
-            0% { opacity: 1; transform: translate(0, -50%) scale(1); }
-            100% { transform: translate(0, 1000px) scale(0.5); opacity: 0; }
-        }
-        .exit-zoom { animation: flyDownFinal 1s forwards ease-in !important; left: 50% !important; margin-left: -20% !important; }
-
-        .solo-center { left: 50% !important; transform: translate(-50%, -50%) rotate(0deg) scale(1.1) !important; z-index: 100; }
-        .kicked-out { transform: translate(150%, -50%) rotate(40deg) !important; opacity: 0; }
-
-        .points-badge { position: absolute; top: -25px; right: -25px; background: #ef5350; color: #fff; border: 5px solid #3e2723; width: 85px; height: 85px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 30px; animation: popBadge 0.4s forwards; z-index: 10; }
-        @keyframes popBadge { from { transform: scale(0); } to { transform: scale(1); } }
-
-        #qText { font-size: 55px; background:#fff; padding:15px 40px; border:6px solid #3e2723; transform:rotate(-1deg); transition: 0.4s; max-width: 80%; margin-top: -120px; }
-        .q-vanish { opacity: 0; transform: scale(0.7) !important; }
-
-        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); animation: slideUp 0.5s forwards; }
-        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
-        /* ЦЕНТРИРОВАННЫЕ НАСТРОЙКИ */
+        /* ЦЕНТРИРОВАННЫЕ НАСТРОЙКИ (УМЕНЬШЕННЫЕ В 2 РАЗА ПО ВЫСОТЕ) */
         #settings-modal-overlay { 
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.5); z-index: 5000; align-items: center; justify-content: center;
         }
         .modal { 
             background: #fff; border: 8px solid #3e2723; border-radius: 30px; 
-            width: 70vw; height: 70vh; display: flex; overflow: hidden;
+            width: 70vw; 
+            height: 35vh; /* ВЫСОТА УМЕНЬШЕНА В 2 РАЗА */
+            display: flex; overflow: hidden;
             box-shadow: 30px 30px 0 rgba(0,0,0,0.2); text-align: left;
         }
-        .modal-sidebar { width: 30%; background: #3e2723; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .tab-btn { padding: 15px; background: none; border: none; color: #fff; font-weight: 900; font-size: 18px; text-align: left; cursor: pointer; border-radius: 10px; }
+        .modal-sidebar { width: 30%; background: #3e2723; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .tab-btn { padding: 12px; background: none; border: none; color: #fff; font-weight: 900; font-size: 16px; text-align: left; cursor: pointer; border-radius: 10px; }
         .tab-btn.active { background: #fbc02d; color: #3e2723; }
-        .modal-body { width: 70%; padding: 40px; overflow-y: auto; }
+        .modal-body { width: 70%; padding: 20px 40px; overflow-y: auto; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        .tab-content h2 { margin-top: 0; font-size: 24px; color: #ef5350; }
 
-        /* ТИТРЫ */
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 2px dashed #ddd; }
+        .setting-row label { font-size: 18px; font-weight: 900; }
+        input[type="number"], select { padding: 5px; font-size: 16px; border: 3px solid #3e2723; border-radius: 8px; font-family: 'Montserrat'; }
+
+        /* ОСТАЛЬНЫЕ ГУИШКИ */
+        .bubble { background: #fff; border: 8px solid #3e2723; border-radius: 25px; padding: 25px; width: 40%; min-height: 180px; font-size: 35px; font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); position: absolute; top: 50%; transition: 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #card1 { left: 5%; transform: translateY(-50%) rotate(-3deg); }
+        #card2 { right: 5%; transform: translateY(-50%) rotate(3deg); }
+        .solo-center { left: 50% !important; transform: translate(-50%, -50%) rotate(0deg) scale(1.1) !important; }
+        .kicked-out { transform: translate(150%, -50%) rotate(40deg) !important; opacity: 0; }
+        .points-badge { position: absolute; top: -25px; right: -25px; background: #ef5350; color: #fff; border: 5px solid #3e2723; width: 85px; height: 85px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 30px; animation: popBadge 0.4s forwards; z-index: 10; }
+        @keyframes popBadge { from { transform: scale(0); } to { transform: scale(1); } }
+        @keyframes flyDownCenter { 0% { opacity: 1; transform: translate(0, -50%) scale(1); } 100% { transform: translate(0, 1000px) scale(0.5); opacity: 0; } }
+        .exit-zoom { animation: flyDownCenter 1s forwards ease-in !important; left: 50% !important; margin-left: -20% !important; }
+        #qText { font-size: 50px; background:#fff; padding:15px 40px; border:6px solid #3e2723; transform:rotate(-1deg); transition: 0.4s; max-width: 80%; margin-top: -120px; }
+        .q-vanish { opacity: 0; transform: scale(0.7) !important; }
+        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; animation: slideUp 0.5s forwards; }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .player-node { width: 130px; height: 130px; background: #fff; border: 6px solid #3e2723; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px; font-weight: bold; box-shadow: 8px 8px 0 rgba(0,0,0,0.1); }
+        .btn-open-settings { position: absolute; top: 20px; left: 20px; padding: 12px 25px; background: #3e2723; color: #fff; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; }
+        
         #credits-screen { background: #000 !important; color: #fff; display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 6000; overflow: hidden; }
         .credits-wrap { position: absolute; width: 100%; top: 100%; animation: scrollCredits 25s linear forwards; }
         @keyframes scrollCredits { from { top: 100%; } to { top: -280%; } }
         .joke-card { background: #1a1a1a; border-left: 8px solid #fbc02d; padding: 15px; margin: 15px auto; width: 65%; text-align: left; font-size: 22px; }
-        
-        .btn-open-settings { position: absolute; top: 20px; left: 20px; padding: 12px 25px; background: #3e2723; color: #fff; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; }
     </style>
 </head>
 <body onclick="startAudio()">
@@ -81,30 +72,26 @@
                 <button class="tab-btn" onclick="openTab(event, 'tab-sounds')">ЗВУКИ</button>
                 <button class="tab-btn" onclick="openTab(event, 'tab-general')">ОБЩЕЕ</button>
                 <div style="flex-grow:1"></div>
-                <button onclick="saveSettings()" style="background:#4caf50; color:#fff; padding:15px; border-radius:10px; font-weight:900; border:none; cursor:pointer;">СОХРАНИТЬ</button>
+                <button onclick="saveSettings()" style="background:#4caf50; color:#fff; padding:10px; border-radius:10px; font-weight:900; border:none; cursor:pointer;">ОК</button>
             </div>
             <div class="modal-body">
                 <div id="tab-modes" class="tab-content active">
-                    <h2>ИГРОВЫЕ РЕЖИМЫ</h2>
-                    <p>ГРЕХО-СМЕХ (Классика) - Включено</p>
+                    <h2>РЕЖИМЫ</h2>
+                    <div class="setting-row"><label>ГРЕХО-СМЕХ</label> <input type="radio" checked></div>
                 </div>
                 <div id="tab-events" class="tab-content">
                     <h2>СОБЫТИЯ</h2>
-                    <div>Адский режим: <input type="checkbox" id="hellMode"></div>
-                    <br>
-                    <div>18+ Режим: <input type="checkbox" id="plus18"></div>
-                    <br>
-                    <div>Бонус X2: <input type="checkbox" id="bonus2" checked></div>
+                    <div class="setting-row">Адский режим: <input type="checkbox" id="hellMode"></div>
+                    <div class="setting-row">18+ Режим: <input type="checkbox" id="plus18"></div>
+                    <div class="setting-row">Бонус X2: <input type="checkbox" id="bonus2" checked></div>
                 </div>
                 <div id="tab-sounds" class="tab-content">
                     <h2>ЗВУКИ</h2>
-                    <div>Голос: <select id="voiceType"><option value="male">МУЖСКОЙ</option><option value="female">ЖЕНСКИЙ</option></select></div>
+                    <div class="setting-row">Голос: <select id="voiceType"><option value="male">МУЖСКОЙ</option><option value="female">ЖЕНСКИЙ</option></select></div>
                 </div>
                 <div id="tab-general" class="tab-content">
-                    <h2>ОСНОВНОЕ</h2>
-                    <div>Таймер (сек): <input type="number" id="timerVal" value="30"></div>
-                    <br>
-                    <div>Модерация: <input type="checkbox" id="modToggle"></div>
+                    <h2>ОБЩЕЕ</h2>
+                    <div class="setting-row">Таймер (сек): <input type="number" id="timerVal" value="30"></div>
                 </div>
             </div>
         </div>
@@ -160,14 +147,14 @@
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
     socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; });
     socket.on('player-list-update', players => {
-        document.getElementById('playerList').innerHTML = players.map(p => `<div style="background:#fff; border:4px solid #3e2723; border-radius:15px; padding:10px 20px; margin:5px; font-weight:bold;">${p.emoji} ${p.name}</div>`).join('');
+        document.getElementById('playerList').innerHTML = players.map(p => `<div class="player-node"><span>${p.emoji}</span>${p.name}</div>`).join('');
     });
 
     function speak(t, cb) {
         window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
         const vs = window.speechSynthesis.getVoices();
         m.voice = vs.find(v => v.lang.includes('ru') && (gameSettings.voice==='male' ? v.name.includes('David') : true)) || vs[0];
-        m.pitch = 0.45; m.rate = 0.9; m.onend = cb; window.speechSynthesis.speak(m);
+        m.pitch = 0.45; m.rate = 0.9; window.speechSynthesis.speak(m);
     }
 
     function runTimer(sec) {
@@ -195,40 +182,23 @@
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
         c1.className = 'bubble'; c2.className = 'bubble';
         b1.style.display = 'none'; b2.style.display = 'none';
-        
-        const format = (a) => {
-            if (a === "EMPTY") return "<i>Молчание...</i>";
-            return Array.isArray(a) ? a.join('<br>') : a;
-        };
-
+        const format = (a) => a === "EMPTY" ? "<i>Молчание...</i>" : (Array.isArray(a) ? a.join('<br>') : a);
         document.getElementById('ans-text-1').innerHTML = format(d.ans1);
         document.getElementById('ans-text-2').innerHTML = d.isSolo ? "Я отказываюсь на это отвечать!" : format(d.ans2);
-
         if(d.isSolo || d.bothEmpty) {
             c2.classList.add('refusal');
-            if(!d.bothEmpty) {
-                setTimeout(() => { c2.classList.add('kicked-out'); c1.classList.add('solo-center'); }, 1500);
-            }
+            if(!d.bothEmpty) setTimeout(() => { c2.classList.add('kicked-out'); c1.classList.add('solo-center'); }, 1500);
         }
         runTimer(d.isSolo || d.bothEmpty ? 5 : 20);
     });
 
     socket.on('voting-results', d => {
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
-        if(!d.bothEmpty) {
-            b1.innerText = d.v1; b1.style.display = 'flex';
-            if(!d.isSolo) { b2.innerText = d.v2; b2.style.display = 'flex'; }
-        }
+        if(!d.bothEmpty) { b1.innerText = d.v1; b1.style.display = 'flex'; if(!d.isSolo) { b2.innerText = d.v2; b2.style.display = 'flex'; } }
         setTimeout(() => {
-            if(!d.bothEmpty) {
-                b1.innerText = "+" + d.p1Points; b1.style.background = "#4caf50";
-                if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; }
-            }
+            if(!d.bothEmpty) { b1.innerText = "+" + d.p1Points; b1.style.background = "#4caf50"; if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; } }
             document.getElementById('qText').classList.add('q-vanish');
-            setTimeout(() => {
-                document.getElementById('card1').classList.add('exit-zoom');
-                document.getElementById('card2').classList.add('exit-zoom');
-            }, 1200);
+            setTimeout(() => { document.getElementById('card1').classList.add('exit-zoom'); document.getElementById('card2').classList.add('exit-zoom'); }, 1200);
         }, 2000);
     });
 
@@ -244,17 +214,11 @@
         document.getElementById('scores').style.display='none';
         document.getElementById('final').style.display='flex'; 
         document.getElementById('winner').innerText = d.players[0].name;
-        
         let html = `<div class="credit-title">ГРЕХО-СМЕХ</div><br><h3>ЗАЛ СЛАВЫ:</h3>`;
         d.best.forEach(j => { html += `<div class="joke-card">"${j.text}"<br><small>Автор: ${j.emoji} ${j.author} (${j.votes} гол.)</small></div>`; });
         html += `<br><div style="font-size:40px; line-height:2;"><b style="color:#ef5350">АВТОРЫ:</b><br>Грексюр Поносович<br>Джемини Завозилов</div><br><h1>СПАСИБО!</h1>`;
         document.getElementById('credits-content').innerHTML = html;
-
-        setTimeout(() => { 
-            document.getElementById('final').style.display='none';
-            document.getElementById('credits-screen').style.display='flex';
-            setTimeout(() => socket.emit('finish-credits', curCode), 22000);
-        }, 6000);
+        setTimeout(() => { document.getElementById('final').style.display='none'; document.getElementById('credits-screen').style.display='flex'; setTimeout(() => socket.emit('finish-credits', curCode), 22000); }, 6000);
     });
     function startAudio() {}
 </script>
