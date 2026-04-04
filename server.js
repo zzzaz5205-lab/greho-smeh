@@ -7,59 +7,24 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { 
-    maxHttpBufferSize: 2e7, 
-    cors: { origin: "*" } 
-});
+const io = new Server(server, { maxHttpBufferSize: 2e7, cors: { origin: "*" } });
 
-// --- ИИ GEMINI ---
 const API_KEY = "AIzaSyCibKfIWK9szQ0bzJi8ZJ3YNaHZ99F8x64"; 
 const genAI = new GoogleGenerativeAI(API_KEY);
 const aiModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
-// --- ДЕБАГ: ПОИСК ФАЙЛОВ ---
-console.log("--- СИСТЕМА ПОИСКА ФАЙЛОВ ЗАПУЩЕНА ---");
-const currentDir = __dirname;
-console.log("Я нахожусь в:", currentDir);
+app.use(express.static(__dirname));
 
-function findFile(name) {
-    const root = path.join(currentDir, name);
-    const pub = path.join(currentDir, 'public', name);
-    const src = path.join(currentDir, 'src', name);
-    if (fs.existsSync(root)) return root;
-    if (fs.existsSync(pub)) return pub;
-    if (fs.existsSync(src)) return src;
-    return null;
+function serveHTML(res, name) {
+    const p = path.join(__dirname, name);
+    if (fs.existsSync(p)) res.sendFile(p);
+    else res.status(404).send(`Файл ${name} не найден!`);
 }
 
-// Вывод списка файлов в лог для тебя
-try {
-    console.log("Файлы в корне:", fs.readdirSync(currentDir));
-} catch(e) {}
+app.get('/', (req, res) => serveHTML(res, 'index.html'));
+app.get('/host', (req, res) => serveHTML(res, 'host.html'));
+app.get('/player', (req, res) => serveHTML(res, 'player.html'));
 
-// --- МАРШРУТЫ ---
-app.use(express.static(currentDir));
-app.use(express.static(path.join(currentDir, 'public')));
-
-app.get('/', (req, res) => {
-    const p = findFile('index.html');
-    if (p) res.sendFile(p);
-    else res.status(404).send("ОШИБКА: index.html не найден! Вытащи файлы из папок на GitHub.");
-});
-
-app.get('/host', (req, res) => {
-    const p = findFile('host.html');
-    if (p) res.sendFile(p);
-    else res.status(404).send("Файл host.html не найден!");
-});
-
-app.get('/player', (req, res) => {
-    const p = findFile('player.html');
-    if (p) res.sendFile(p);
-    else res.status(404).send("Файл player.html не найден!");
-});
-
-// --- ЛОГИКА ИГРЫ (50 ВОПРОСОВ + ИИ) ---
 const prompts = {
     ru: {
         classic: [
@@ -80,12 +45,18 @@ const prompts = {
             "Почему небо синее, а перфоратор нет?", "Дима Модерасс — президент мира. Твои действия?",
             "Оружие против лысых стримеров.", "Как выжить в подвале у Димы?",
             "Нелепое признание в любви на Твиче.", "Почему у Ванги кепка приклеена к голове?",
-            "Что Ванга Фiйко делает, когда выключают свет?", "Худшая вещь, которую можно найти в бургере."
+            "Что Ванга Фiйко делает, когда выключают свет?", "Худшая вещь, которую можно найти в бургере.",
+            "Почему у овощей нет Твиттера?", "Самый странный подарок на свадьбу Ванги.",
+            "Что Дима Moderass ест на завтрак?", "Если бы лысина могла говорить, что бы она сказала?",
+            "Почему перфоратор — лучший друг человека?", "Как объяснить бабушке, что такое кринж?",
+            "Самое глупое название для планеты.", "Что скрывает Дима за своим монитором?"
         ],
         final: [
             "3 причины не доверять Ванге Фiйко", "3 вещи под кроватью Димы",
             "3 признака, что сосед — это Ванга", "3 способа потратить маткапитал",
-            "3 вещи, которые нельзя совать в перфоратор", "3 причины, почему лысина — это круто"
+            "3 вещи, которые нельзя совать в перфоратор", "3 причины, почему лысина — это круто",
+            "3 странных запроса в истории поиска Димы", "3 находки в заброшенном подвале",
+            "3 причины, почему ИИ захватит мир", "3 способа украсть кепку Ванги"
         ]
     }
 };
@@ -93,41 +64,36 @@ const prompts = {
 const rooms = {};
 let timers = {};
 
-async function getAIQuestion(isFinal = false) {
-    try {
-        const prompt = `Придумай один вопрос для игры "Грехо-Смех". Юмор: мемный. Только текст.`;
-        const result = await aiModel.generateContent(prompt);
-        return result.response.text().trim().replace(/[*"']/g, "");
-    } catch (e) { return prompts.ru.classic[0]; }
-}
-
-async function getAIComment(q, a1, a2) {
-    try {
-        const result = await aiModel.generateContent(`Вопрос: "${q}". Ответы: "${a1}" и "${a2}". Напиши едкую реакцию (5 слов).`);
-        return result.response.text().trim().replace(/[*"']/g, "");
-    } catch (e) { return "Ну и кринж вы выдали!"; }
+async function getUniqueQuestion(room, isFinal = false) {
+    const type = isFinal ? "final" : "classic";
+    room.usedQuestions = room.usedQuestions || [];
+    let available = prompts.ru[type].filter(q => !room.usedQuestions.includes(q));
+    if (available.length === 0) { room.usedQuestions = []; available = prompts.ru[type]; }
+    const q = available[Math.floor(Math.random() * available.length)];
+    room.usedQuestions.push(q);
+    return q;
 }
 
 io.on('connection', (socket) => {
     socket.on('create-room', (oldCode) => {
         let code = (oldCode && rooms[oldCode]) ? oldCode : Math.random().toString(36).substring(2, 6).toUpperCase();
         if (!rooms[code]) {
-            rooms[code] = { host: socket.id, players: [], round: 1, currentPairIndex: 0, pairs: [], gameStarted: false, settings: { timer: 30 } };
+            rooms[code] = { host: socket.id, players: [], round: 1, currentPairIndex: 0, pairs: [], gameStarted: false, usedQuestions: [], settings: { timer: 30 } };
         } else rooms[code].host = socket.id;
         socket.join(code);
         socket.emit('room-created', code);
     });
 
     socket.on('join-room', ({ code, name }) => {
-        const cleanCode = code?.trim().toUpperCase();
-        const room = rooms[cleanCode];
-        if (!room) return socket.emit('error-join', 'Комната не найдена!');
-        room.players = room.players.filter(p => p.name.toLowerCase() !== name.toLowerCase());
+        const c = code?.trim().toUpperCase();
+        const r = rooms[c];
+        if (!r) return socket.emit('error-join', 'Комната не найдена!');
+        r.players = r.players.filter(p => p.name.toLowerCase() !== name.toLowerCase());
         const p = { id: socket.id, name, emoji: '❓', score: 0, lastPoints: 0 };
-        room.players.push(p);
-        socket.join(cleanCode);
-        socket.emit('joined-success', { code: cleanCode });
-        io.to(room.host).emit('player-list-update', room.players);
+        r.players.push(p);
+        socket.join(c);
+        socket.emit('joined-success', { code: c });
+        io.to(r.host).emit('player-list-update', r.players);
     });
 
     socket.on('start-game', (code) => {
@@ -141,7 +107,7 @@ io.on('connection', (socket) => {
         let shuf = [...room.players].sort(() => 0.5 - Math.random());
         room.pairs = [];
         for (let i = 0; i < shuf.length; i += 2) {
-            let q = (Math.random() < 0.8) ? await getAIQuestion(roundNum === 3) : prompts.ru.classic[0];
+            let q = await getUniqueQuestion(room, roundNum === 3);
             room.pairs.push({ p1: shuf[i], p2: shuf[i+1] || null, q, ans1: null, ans2: null, votes: [], finished: false });
         }
         sendPair(code);
@@ -151,9 +117,23 @@ io.on('connection', (socket) => {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair) {
             io.to(code).emit('show-scores', { players: room.players, round: room.round, time: 15 });
+            if (timers[code]) clearTimeout(timers[code]);
+            timers[code] = setTimeout(() => {
+                if (room.round < 3) startRound(code, room.round + 1);
+                else io.to(code).emit('final-results', { players: room.players.sort((a,b)=>b.score-a.score) });
+            }, 16000);
             return;
         }
         io.to(code).emit('round-started', { round: room.round, q: pair.q, p1_name: pair.p1.name, p2_name: pair.p2 ? pair.p2.name : null, time: 30 });
+        if(timers[code]) clearTimeout(timers[code]);
+        timers[code] = setTimeout(() => forceSubmit(code), 32000);
+    }
+
+    function forceSubmit(code) {
+        const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
+        if (!pair || pair.finished) return;
+        if (!pair.ans1) pair.ans1 = "..."; if (pair.p2 && !pair.ans2) pair.ans2 = "...";
+        showVoting(code, pair);
     }
 
     socket.on('submit-answer', ({ code, name, answer }) => {
@@ -161,16 +141,25 @@ io.on('connection', (socket) => {
         const txt = Array.isArray(answer) ? answer.filter(x => x).join(' | ') : answer;
         if (pair.p1.name === name) pair.ans1 = txt;
         if (pair.p2 && pair.p2.name === name) pair.ans2 = txt;
-        if (pair.ans1 && (!pair.p2 || pair.ans2)) {
-            io.to(code).emit('show-voting', { ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2, p1_name: pair.p1.name, p2_name: pair.p2 ? pair.p2.name : null, time: 20 });
-        }
+        if (pair.ans1 && (!pair.p2 || pair.ans2)) { clearTimeout(timers[code]); showVoting(code, pair); }
     });
+
+    function showVoting(code, pair) {
+        io.to(code).emit('show-voting', { ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2, p1_name: pair.p1.name, p2_name: pair.p2 ? pair.p2.name : null, time: 20 });
+        if (!pair.p2) {
+            if (timers[code]) clearTimeout(timers[code]);
+            timers[code] = setTimeout(() => { if (rooms[code]) finishPair(code); }, 10000);
+        } else {
+            if (timers[code]) clearTimeout(timers[code]);
+            timers[code] = setTimeout(() => { if (rooms[code]) finishPair(code); }, 22000);
+        }
+    }
 
     socket.on('cast-vote', ({ code, voteNum }) => {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return;
         pair.votes.push({ voter: socket.id, voteNum });
-        if (pair.votes.length >= (room.players.length - (pair.p2 ? 2 : 1))) finishPair(code);
+        if (pair.votes.length >= (room.players.length - (pair.p2 ? 2 : 1))) { clearTimeout(timers[code]); finishPair(code); }
     });
 
     async function finishPair(code) {
@@ -180,11 +169,15 @@ io.on('connection', (socket) => {
         let mult = room.round * 100;
         let p1Points = !pair.p2 ? 100 : v1 * mult, p2Points = v2 * mult;
         pair.p1.score += p1Points; if (pair.p2) pair.p2.score += p2Points;
-        const comment = await getAIComment(pair.q, pair.ans1, pair.ans2 || "");
-        io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, v1, v2, p1Points, p2Points, aiComment: comment });
+        io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, v1, v2, p1Points, p2Points });
         setTimeout(() => { if (rooms[code]) { rooms[code].currentPairIndex++; sendPair(code); } }, 8000);
     }
+    
+    socket.on('select-emoji', ({ code, name, emoji }) => {
+        const p = rooms[code]?.players.find(pl => pl.name === name);
+        if (p) { p.emoji = emoji; io.to(code).emit('player-list-update', rooms[code].players); }
+    });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Ready!'));
+server.listen(PORT, () => console.log('OK'));
