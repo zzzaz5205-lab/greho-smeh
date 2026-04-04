@@ -5,85 +5,82 @@
     <title>ГРЕХО-СМЕХ | HOST</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
-        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; perspective: 1500px; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; perspective: 1200px; }
         .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotateSpiral 40s linear infinite; z-index: -1; }
         @keyframes rotateSpiral { 100% { transform: rotate(360deg); } }
         
         #digital-timer { position: absolute; top: 20px; left: 30px; font-size: 85px; font-family: 'Roboto Mono'; font-weight: 900; text-shadow: 6px 6px 0 #000; color: #fff; z-index: 1000; display: none; transform: rotate(-5deg); }
-        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; }
+        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; transition: 0.5s; }
         
-        /* БАБЛЫ С ФИКСИРОВАННЫМ ЦЕНТРОМ */
-        #voting { display: none; width: 100%; height: 400px; position: relative; margin-top: 50px; }
+        /* БАБЛЫ */
         .bubble { 
             background: #fff; border: 8px solid #3e2723; border-radius: 25px; 
-            padding: 30px; width: 40%; min-height: 200px; font-size: 40px; 
+            padding: 25px; width: 40%; min-height: 200px; font-size: 38px; 
             font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); 
-            position: absolute; top: 50%; transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            display: flex; align-items: center; justify-content: center;
+            position: absolute; transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2;
         }
-        #card1 { left: 5%; transform: translateY(-50%) rotate(-3deg); }
-        #card2 { right: 5%; transform: translateY(-50%) rotate(3deg); }
+        #card1 { left: 5%; top: 50%; transform: translateY(-50%) rotate(-3deg); }
+        #card2 { right: 5%; top: 50%; transform: translateY(-50%) rotate(3deg); }
         .bubble.refusal { background: #bbb !important; color: #666 !important; border-color: #666 !important; }
+        
+        @keyframes flyDownCenter {
+            0% { opacity: 1; transform: translate(0, -50%) scale(1); }
+            100% { transform: translate(0, 1000px) scale(0.5); opacity: 0; }
+        }
+        .exit-zoom { animation: flyDownCenter 1s forwards ease-in !important; left: 50% !important; margin-left: -20% !important; }
 
-        /* АНИМАЦИИ СОЛО */
         .solo-center { left: 50% !important; transform: translate(-50%, -50%) rotate(0deg) scale(1.1) !important; z-index: 100; }
         .kicked-out { transform: translate(150%, -50%) rotate(40deg) !important; opacity: 0; }
 
-        /* НАСТРОЙКИ (ИСПРАВЛЕНЫ) */
-        .modal { 
-            display: none; position: fixed; top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); /* СТРОГО ЦЕНТР */
-            background: #fff; border: 8px solid #3e2723; padding: 40px; 
-            border-radius: 30px; z-index: 5000; width: 450px; text-align: left;
-            box-shadow: 20px 20px 0 rgba(0,0,0,0.3);
-        }
-        .modal.active { display: block; }
-        .setting-row { display: flex; justify-content: space-between; margin: 15px 0; font-weight: bold; }
-
-        #qText { font-size: 50px; background:#fff; padding:15px 40px; border:6px solid #3e2723; transform:rotate(-1deg); transition: 0.5s; max-width: 80%; margin-bottom: 20px; }
-        .q-vanish { opacity: 0; transform: scale(0.7) !important; }
-        .score-bar { background: #3e2723; color: #fff; font-size: 40px; padding: 15px 45px; border-radius: 20px; width: 550px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 10px; animation: slideUp 0.5s forwards; }
-        @keyframes slideUp { from { transform: translateY(100px); } to { transform: translateY(0); } }
-        
-        .points-badge { position: absolute; top: -30px; right: -30px; background: #ef5350; color: #fff; border: 5px solid #3e2723; width: 90px; height: 90px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 32px; animation: popBadge 0.4s forwards; z-index: 10; }
+        .points-badge { position: absolute; top: -25px; right: -25px; background: #ef5350; color: #fff; border: 5px solid #3e2723; width: 85px; height: 85px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 30px; animation: popBadge 0.4s forwards; z-index: 10; }
         @keyframes popBadge { from { transform: scale(0); } to { transform: scale(1); } }
-        
-        @keyframes flyDown { to { transform: translate(-50%, 200%) scale(0.5); opacity: 0; } }
-        .exit-zoom { animation: flyDown 0.8s forwards ease-in !important; left: 50% !important; }
 
-        #credits-screen { background: #000; color: #fff; display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; overflow: hidden; }
-        .credits-wrap { position: absolute; width: 100%; animation: scrl 15s linear forwards; }
-        @keyframes scrl { from { top: 100%; } to { top: -150%; } }
+        #qText { font-size: 50px; background:#fff; padding:15px 40px; border:6px solid #3e2723; transform:rotate(-1deg); transition: 0.4s; max-width: 80%; margin-top: -120px; }
+        .q-vanish { opacity: 0; transform: scale(0.7) !important; }
+
+        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); animation: slideUp 0.5s forwards; }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .player-node { width: 130px; height: 130px; background: #fff; border: 6px solid #3e2723; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px; font-weight: bold; box-shadow: 8px 8px 0 rgba(0,0,0,0.1); }
+
+        /* КНОПКА НАСТРОЕК */
+        .btn-settings { position: absolute; top: 20px; left: 20px; padding: 15px 25px; background: #3e2723; color: #fff; border: none; border-radius: 10px; font-weight: 900; font-size: 18px; cursor: pointer; z-index: 1001; box-shadow: 4px 4px 0 #000; }
+
+        /* МОДАЛКА */
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border: 8px solid #3e2723; padding: 30px; border-radius: 25px; z-index: 5000; width: 450px; text-align: left; }
+        .modal.active { display: block; }
+        .setting-row { display: flex; justify-content: space-between; margin: 15px 0; align-items: center; }
+
+        #credits-screen { background: #000; color: #fff; display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 5000; overflow: hidden; flex-direction: column; align-items: center; }
+        .credits-wrap { position: absolute; width: 100%; top: 100%; animation: scrollUp 18s linear forwards; }
+        @keyframes scrollUp { from { top: 100%; } to { top: -150%; } }
     </style>
 </head>
 <body onclick="startAudio()">
     <div class="spiral"></div>
     <div id="digital-timer"></div>
-
+    
     <div id="settings-modal" class="modal">
-        <h2 style="text-align:center">⚙️ НАСТРОЙКИ</h2>
-        <div class="setting-row">ТАЙМЕР: <input type="number" id="timerVal" value="30" style="width:50px"></div>
-        <div class="setting-row">18+ РЕЖИМ: <input type="checkbox" id="plus18"></div>
+        <h2 style="text-align:center; color: #ef5350">НАСТРОЙКИ</h2>
+        <div class="setting-row">ТАЙМЕР: <input type="number" id="timerVal" value="30" style="width:50px; padding:5px"></div>
         <div class="setting-row">АДСКИЙ РЕЖИМ: <input type="checkbox" id="hellMode"></div>
         <div class="setting-row">БОНУС X2: <input type="checkbox" id="bonus2"></div>
-        <button onclick="saveSettings()" style="width:100%; background:#4caf50; padding:12px; color:#fff; border:4px solid #3e2723; cursor:pointer; font-weight:bold; border-radius:10px;">СОХРАНИТЬ</button>
+        <div class="setting-row">18+ (GEMINI): <input type="checkbox" id="plus18"></div>
+        <button onclick="saveSettings()" style="width:100%; background:#4caf50; padding:15px; color:#fff; border:4px solid #3e2723; cursor:pointer; font-weight:bold; border-radius:10px;">СОХРАНИТЬ</button>
     </div>
 
     <div id="lobby" class="screen" style="display:flex">
-        <div onclick="document.getElementById('settings-modal').classList.add('active')" style="position:absolute; top:20px; left:20px; font-size:50px; cursor:pointer;">⚙️</div>
-        <h1 style="font-size: 80px; text-shadow: 6px 6px 0 #fff;">ГРЕХО-СМЕХ</h1>
+        <button class="btn-settings" onclick="toggleSet()">Настройки игры</button>
+        <h1 style="font-size: 80px; text-shadow: 6px 6px 0 #fff; margin:0;">ГРЕХО-СМЕХ</h1>
         <div style="background:#000; color:#ffeb3b; padding:15px 60px; border:8px solid #fff; font-size:100px; transform:rotate(-2deg);" id="bigCode">...</div>
-        <div id="playerList" style="display:flex; flex-wrap:wrap; justify-content:center; margin-top:20px;"></div>
+        <div id="playerList" style="display:flex; flex-wrap:wrap; justify-content:center; margin-top:30px;"></div>
         <button onclick="socket.emit('start-game', curCode)" style="background:#4caf50; border:6px solid #3e2723; color:#fff; padding:25px 70px; font-size:35px; border-radius:100px; cursor:pointer; margin-top:30px; font-weight:900;">ПОГНАЛИ!</button>
-    </div>
-
-    <div id="tutorial" class="screen">
-        <h2 id="tut-text" style="background:#fff; padding:40px; border:8px solid #3e2723; border-radius:20px; font-size:35px; max-width:80%;"></h2>
     </div>
 
     <div id="game" class="screen">
         <h2 id="qText"></h2>
-        <div id="voting">
+        <div id="voting" style="display:none; width:100%; height: 400px; position: relative;">
             <div id="card1" class="bubble"><div id="ans-text-1"></div><div id="badge-1" class="points-badge"></div></div>
             <div id="card2" class="bubble"><div id="ans-text-2"></div><div id="badge-2" class="points-badge"></div></div>
         </div>
@@ -92,30 +89,44 @@
     <div id="scores" class="screen"><h1>ТЕКУЩИЙ СЧЁТ</h1><div id="scoreList"></div></div>
     <div id="final" class="screen"><h1>ПОБЕДИТЕЛЬ</h1><div id="winner" style="font-size:120px; color:#ef5350"></div></div>
 
-    <div id="credits-screen"><div class="credits-wrap"><h1>ГРЕХО-СМЕХ</h1><br>Ванга Фiйко Перфоратор<br>Дима Moderass<br>Греха и ИИ-шка<br><br>СПАСИБО ЗА ИГРУ!</div></div>
+    <div id="credits-screen">
+        <div class="credits-wrap">
+            <h1 style="font-size: 80px; color: #fbc02d">ГРЕХО-СМЕХ</h1>
+            <div style="font-size: 40px; margin: 40px 0; line-height: 2;">
+                <b style="color:#ef5350">АМБАССАДОР:</b><br>Ванга Фiйко Перфоратор<br><br>
+                <b style="color:#ef5350">МОДЕРАЦИЯ:</b><br>Дима Moderass<br><br>
+                <b style="color:#ef5350">РАЗРАБОТКА:</b><br>Греха и Gemini 3 Flash<br><br>
+                <b style="color:#ef5350">СПАСИБО ЗА ИГРУ!</b>
+            </div>
+        </div>
+    </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io(); let curCode = "", cdnInt;
-    let gameSettings = { timer: 30, voice: 'male' };
+    let gameSettings = { timer: 30, voice: 'male', hellMode: false, bonusX2: false, eighteenPlus: false };
 
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
-    socket.on('room-created', c => { curCode = c; document.getElementById('bigCode').innerText = c; });
+    socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; });
     socket.on('player-list-update', players => {
-        document.getElementById('playerList').innerHTML = players.map(p => `<div style="background:#fff; border:4px solid #3e2723; border-radius:15px; padding:10px 20px; margin:5px; font-weight:bold;">${p.emoji} ${p.name}</div>`).join('');
+        document.getElementById('playerList').innerHTML = players.map(p => `<div class="player-node"><span>${p.emoji}</span>${p.name}</div>`).join('');
     });
 
+    function toggleSet() { document.getElementById('settings-modal').classList.toggle('active'); }
     function saveSettings() {
-        gameSettings = { timer: parseInt(document.getElementById('timerVal').value), eighteenPlus: document.getElementById('plus18').checked, hellMode: document.getElementById('hellMode').checked, bonus2: document.getElementById('bonus2').checked };
+        gameSettings.timer = parseInt(document.getElementById('timerVal').value);
+        gameSettings.hellMode = document.getElementById('hellMode').checked;
+        gameSettings.bonusX2 = document.getElementById('bonus2').checked;
+        gameSettings.eighteenPlus = document.getElementById('plus18').checked;
         socket.emit('update-settings', { code: curCode, settings: gameSettings });
-        document.getElementById('settings-modal').classList.remove('active');
+        toggleSet();
     }
 
-    function speak(t, cb) {
+    function speak(t) {
         window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
         const vs = window.speechSynthesis.getVoices();
         m.voice = vs.find(v => v.lang.includes('ru') && v.name.includes('David')) || vs[0];
-        m.pitch = 0.45; m.rate = 0.9; m.onend = cb; window.speechSynthesis.speak(m);
+        m.pitch = 0.45; m.rate = 0.9; window.speechSynthesis.speak(m);
     }
 
     function runTimer(sec) {
@@ -129,20 +140,10 @@
         }, 1000);
     }
 
-    socket.on('start-tutorial', d => {
-        document.getElementById('lobby').style.display='none'; document.getElementById('tutorial').style.display='flex';
-        const rules = ["Добро пожаловать в Грехо-Смех!", "Пишите смешные ответы на мои вопросы.", "Голосуйте за лучших и побеждайте!", "Поехали!"];
-        let i = 0;
-        function next() {
-            if(i<rules.length) { document.getElementById('tut-text').innerText = rules[i]; speak(rules[i], () => { i++; setTimeout(next, 800); }); }
-            else socket.emit('tutorial-finished', curCode);
-        }
-        next();
-    });
-
     socket.on('round-started', d => {
-        document.getElementById('tutorial').style.display="none"; document.getElementById('scores').style.display="none";
+        document.getElementById('lobby').style.display="none"; document.getElementById('scores').style.display="none";
         document.getElementById('game').style.display='flex'; document.getElementById('game').classList.remove('exit-zoom');
+        document.getElementById('voting').style.display = 'none';
         const q = document.getElementById('qText'); q.innerText = d.q; q.classList.remove('q-vanish');
         speak(d.q); runTimer(d.time);
     });
@@ -154,44 +155,59 @@
         c1.className = 'bubble'; c2.className = 'bubble';
         b1.style.display = 'none'; b2.style.display = 'none';
         
-        const format = (a) => Array.isArray(a) ? a.join('<br>') : a;
+        const format = (a) => {
+            if (a === "EMPTY") return "<i>Молчание...</i>";
+            return Array.isArray(a) ? a.join('<br>') : a;
+        };
 
-        if(d.isSolo) {
-            document.getElementById('ans-text-1').innerHTML = format(d.ans1);
-            document.getElementById('ans-text-2').innerText = "Я отказываюсь на это отвечать!";
+        document.getElementById('ans-text-1').innerHTML = format(d.ans1);
+        document.getElementById('ans-text-2').innerHTML = d.isSolo ? "Я отказываюсь на это отвечать!" : format(d.ans2);
+
+        if(d.isSolo || d.bothEmpty) {
             c2.classList.add('refusal');
-            setTimeout(() => { c2.classList.add('kicked-out'); c1.classList.add('solo-center'); }, 1500);
-        } else {
-            document.getElementById('ans-text-1').innerHTML = format(d.ans1);
-            document.getElementById('ans-text-2').innerHTML = format(d.ans2);
-            speak("Чей ответ лучше?");
+            if(!d.bothEmpty) {
+                setTimeout(() => { c2.classList.add('kicked-out'); c1.classList.add('solo-center'); }, 1500);
+            }
         }
-        runTimer(20);
+        runTimer(d.isSolo || d.bothEmpty ? 5 : 20);
     });
 
     socket.on('voting-results', d => {
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
-        b1.innerText = d.v1; b1.style.display = 'flex';
-        if(!d.isSolo) { b2.innerText = d.v2; b2.style.display = 'flex'; }
-        
+        if(!d.bothEmpty) {
+            b1.innerText = d.v1; b1.style.display = 'flex';
+            if(!d.isSolo) { b2.innerText = d.v2; b2.style.display = 'flex'; }
+        }
         setTimeout(() => {
-            b1.innerText = "+" + d.p1Points; b1.style.background = "#4caf50";
-            if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; }
+            if(!d.bothEmpty) {
+                b1.innerText = "+" + d.p1Points; b1.style.background = "#4caf50";
+                if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; }
+            }
             document.getElementById('qText').classList.add('q-vanish');
-            setTimeout(() => { document.getElementById('card1').classList.add('exit-zoom'); if(!d.isSolo) document.getElementById('card2').classList.add('exit-zoom'); }, 1200);
+            setTimeout(() => {
+                document.getElementById('card1').classList.add('exit-zoom');
+                document.getElementById('card2').classList.add('exit-zoom');
+            }, 1200);
         }, 2000);
     });
 
     socket.on('show-scores', d => {
         document.getElementById('game').style.display='none'; document.getElementById('scores').style.display='flex';
-        document.getElementById('scoreList').innerHTML = d.players.sort((a,b)=>b.score-a.score).map((p,i)=>`<div class="score-bar"><span>${i+1}. ${p.emoji} ${p.name}</span><b>${p.score}</b></div>`).join('');
-        runTimer(15);
+        document.getElementById('scoreList').innerHTML = d.players.sort((a,b)=>b.score-a.score).map((p,i)=>`
+            <div class="score-bar"><span>${i+1}. ${p.emoji} ${p.name}</span><b>${p.score}</b></div>
+        `).join('');
+        runTimer(d.time);
     });
 
     socket.on('final-results', d => {
-        document.getElementById('scores').style.display='none'; document.getElementById('final').style.display='flex'; 
+        document.getElementById('scores').style.display='none';
+        document.getElementById('final').style.display='flex'; 
         document.getElementById('winner').innerText = d.players[0].name;
-        setTimeout(() => { document.getElementById('final').style.display='none'; document.getElementById('credits-screen').style.display='flex'; setTimeout(() => socket.emit('finish-credits', curCode), 15000); }, 6000);
+        setTimeout(() => { 
+            document.getElementById('final').style.display='none';
+            document.getElementById('credits-screen').style.display='flex';
+            setTimeout(() => socket.emit('finish-credits', curCode), 18000);
+        }, 6000);
     });
     function startAudio() {}
 </script>
