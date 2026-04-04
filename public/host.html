@@ -2,64 +2,100 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="style.css">
-    <title>Грехо-Смех | HOST</title>
+    <title>ГРЕХО-СМЕХ | HOST</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
+        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; }
+        .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotate 60s linear infinite; z-index: -1; }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
+        .screen { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; }
+        #timer { position: absolute; top: 20px; left: 30px; font-size: 80px; color: white; text-shadow: 4px 4px 0 #000; }
+        #bigCode { font-size: 100px; background: #000; color: #ffeb3b; padding: 10px 60px; border: 5px solid #fff; display: inline-block; transform: rotate(-2deg); }
+        .bubble { background: #fff; border: 6px solid #000; border-radius: 20px; padding: 30px; width: 40%; font-size: 45px; font-weight: 900; }
+        .main-btn { background: #4caf50; border: 6px solid #000; color: #fff; padding: 20px 60px; font-size: 35px; border-radius: 100px; cursor: pointer; }
+    </style>
 </head>
-<body>
-    <div class="card" id="main">
-        <div id="lobby">
-            <h1>ГРЕХО-СМЕХ</h1>
-            <h2 id="room-code">Генерируем код...</h2>
-            <div id="players"></div>
-            <button onclick="startGame()">НАЧАТЬ ИГРУ</button>
-            <p>Нажмите на экран, чтобы включить диктора</p>
-        </div>
+<body onclick="startAudio()">
+    <div class="spiral"></div>
+    <div id="timer"></div>
 
-        <div id="game" class="hidden">
-            <div class="timer-bar" id="timer-bar"></div>
-            <h2 id="round-title">Раунд 1</h2>
-            <h1 id="question">Тут будет вопрос</h1>
-            <div id="voting-zone" class="answer-pair"></div>
+    <!-- ЛОББИ -->
+    <div id="lobby" class="screen" style="display:flex">
+        <h1 style="font-size: 80px; text-shadow: 4px 4px 0 #fff;">ГРЕХО-СМЕХ</h1>
+        <div id="bigCode">...</div>
+        <div id="playerList" style="margin-top:20px; font-size:30px;">Ждем игроков...</div>
+        <button onclick="startGame()" class="main-btn" style="margin-top:40px">ПОГНАЛИ!</button>
+    </div>
+
+    <!-- ИГРА -->
+    <div id="game" class="screen">
+        <h2 id="qText" style="font-size: 60px; background: #fff; padding: 20px; border: 5px solid #000;"></h2>
+        <div id="voting" style="display:none; justify-content: center; gap: 40px; width: 100%;">
+            <div id="card1" class="bubble" style="transform:rotate(-3deg)"></div>
+            <div id="card2" class="bubble" style="transform:rotate(3deg)"></div>
         </div>
+        <div id="aiComment" style="font-size:30px; margin-top:30px; color:white; text-shadow:2px 2px #000"></div>
+    </div>
+
+    <!-- СЧЁТ -->
+    <div id="scores" class="screen">
+        <h1>ТЕКУЩИЙ СЧЁТ</h1>
+        <div id="scoreList"></div>
+        <button onclick="socket.emit('next-after-scores', curCode)" class="main-btn">ДАЛЕЕ</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="client.js"></script>
     <script>
-        let myCode = "";
+        const socket = io();
+        let curCode = "", tInt, audioStarted = false;
+
+        function startAudio() { audioStarted = true; }
+
         socket.emit('create-room');
+        socket.on('room-created', c => { curCode = c; document.getElementById('bigCode').innerText = c; });
 
-        socket.on('room-created', code => {
-            myCode = code;
-            document.getElementById('room-code').innerText = "КОД: " + code;
+        socket.on('player-list-update', players => {
+            document.getElementById('playerList').innerHTML = players.map(p => p.name).join(', ');
         });
 
-        socket.on('update-players', players => {
-            document.getElementById('players').innerHTML = players.map(p => `<h3>${p.name}</h3>`).join('');
-        });
-
-        function startGame() {
-            socket.emit('start-game', myCode);
-            speak("Игра начинается. Приготовьтесь грешить и смеяться.");
+        function speak(t) {
+            if(!audioStarted) return;
+            window.speechSynthesis.cancel();
+            const m = new SpeechSynthesisUtterance(t);
+            const vs = window.speechSynthesis.getVoices();
+            m.voice = vs.find(v => v.lang.includes('ru') && v.name.includes('David')) || vs[0];
+            m.pitch = 0.5; m.rate = 0.9;
+            window.speechSynthesis.speak(m);
         }
 
-        socket.on('round-started', data => {
-            document.getElementById('lobby').classList.add('hidden');
-            document.getElementById('game').classList.remove('hidden');
-            document.getElementById('question').innerText = "Отвечайте на вопросы!";
-            speak("Раунд " + data.round + ". Посмотрите в свои телефоны и ответьте на вопросы.");
+        function startGame() { socket.emit('start-game', curCode); }
+
+        socket.on('round-started', d => {
+            document.getElementById('lobby').style.display = "none";
+            document.getElementById('scores').style.display = "none";
+            document.getElementById('game').style.display = "flex";
+            document.getElementById('voting').style.display = "none";
+            document.getElementById('qText').innerText = d.q;
+            document.getElementById('aiComment').innerText = "";
+            speak(d.q);
         });
 
-        socket.on('start-voting', data => {
-            document.getElementById('question').innerText = data.question;
-            document.getElementById('voting-zone').innerHTML = data.answers.map(a => `
-                <div class="ans-card">${a.text}</div>
-            `).join('');
-            speak("Вопрос. " + data.question + ". Чей ответ лучше?");
+        socket.on('show-voting', d => {
+            document.getElementById('voting').style.display = "flex";
+            document.getElementById('card1').innerText = d.ans1;
+            document.getElementById('card2').innerText = d.ans2;
+            speak("Чей ответ смешнее?");
         });
 
-        socket.on('voting-results', data => {
-            speak("Голосование окончено. Посмотрим, кто заработал очки.");
+        socket.on('voting-results', d => {
+            document.getElementById('aiComment').innerText = d.aiComment;
+            speak(d.aiComment);
+        });
+
+        socket.on('show-scores', data => {
+            document.getElementById('game').style.display = "none";
+            document.getElementById('scores').style.display = "flex";
+            document.getElementById('scoreList').innerHTML = data.players.map(p => `<h2>${p.name}: ${p.score}</h2>`).join('');
         });
     </script>
 </body>
