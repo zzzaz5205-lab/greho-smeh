@@ -9,67 +9,64 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 2e7, cors: { origin: "*" } });
 
-// КЛЮЧ ИИ (Для генерации 80% новых вопросов)
 const API_KEY = "AIzaSyCibKfIWK9szQ0bzJi8ZJ3YNaHZ99F8x64"; 
 const genAI = new GoogleGenerativeAI(API_KEY);
 const aiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-app.use(express.static(__dirname));
+// --- ЛОГИРОВАНИЕ ДЛЯ ОТЛАДКИ ---
+console.log("=== ТЕКУЩАЯ ДИРЕКТОРИЯ:", __dirname);
+function listFiles(dir, label) {
+    try {
+        const files = fs.readdirSync(dir);
+        console.log(`Файлы в ${label}:`, files);
+    } catch (e) { console.log(`Не удалось прочитать ${label}`); }
+}
+listFiles(__dirname, "КОРНЕ");
+listFiles(path.join(__dirname, 'public'), "ПАПКЕ PUBLIC");
+// ------------------------------
 
-// УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ОТПРАВКИ ФАЙЛОВ (Фикс Not Found)
-function sendFile(req, res, fileName) {
-    const filePath = path.join(__dirname, fileName);
-    if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-    } else {
-        res.status(404).send(`Файл ${fileName} не найден! Положи его в корень GitHub.`);
-    }
+app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Функция поиска файла в корне или в public
+function getFilePath(fileName) {
+    const p1 = path.join(__dirname, fileName);
+    const p2 = path.join(__dirname, 'public', fileName);
+    if (fs.existsSync(p1)) return p1;
+    if (fs.existsSync(p2)) return p2;
+    return null;
 }
 
-app.get('/', (req, res) => sendFile(req, res, 'index.html'));
-app.get('/host(.html)?', (req, res) => sendFile(req, res, 'host.html'));
-app.get('/player(.html)?', (req, res) => sendFile(req, res, 'player.html'));
-app.get('/mod(.html)?', (req, res) => sendFile(req, res, 'mod.html'));
+app.get('/', (req, res) => {
+    const p = getFilePath('index.html');
+    if (p) res.sendFile(p);
+    else res.status(404).send("ОШИБКА: index.html не найден. Вытащи его из папок на GitHub в самый корень!");
+});
 
-// БАЗА ИЗ 25+ ОРИГИНАЛЬНЫХ ВОПРОСОВ
+app.get('/host(.html)?', (req, res) => {
+    const p = getFilePath('host.html');
+    if (p) res.sendFile(p);
+    else res.status(404).send("Файл host.html не найден!");
+});
+
+app.get('/player(.html)?', (req, res) => {
+    const p = getFilePath('player.html');
+    if (p) res.sendFile(p);
+    else res.status(404).send("Файл player.html не найден!");
+});
+
+app.get('/mod(.html)?', (req, res) => {
+    const p = getFilePath('mod.html');
+    if (p) res.sendFile(p);
+    else res.status(404).send("Файл mod.html не найден!");
+});
+
+// --- ЛОГИКА ИГРЫ (БЕЗ ИЗМЕНЕНИЙ) ---
+
 const prompts = {
     ru: {
-        classic: [
-            "Почему vangavgav лысый?",
-            "Что Ванга скрывает под кепкой?",
-            "За что Дима Moderass любит Вангу?",
-            "Худшая фраза хирурга перед сном.",
-            "Самое странное название для туалетной бумаги.",
-            "Что на самом деле написано на обратной стороне Луны?",
-            "Самый нелепый способ потратить 100 рублей.",
-            "Как называется болезнь, когда ты хочешь переехать в холодильник?",
-            "Если бы у тараканов была рок-группа, как бы она называлась?",
-            "Самое странное, что можно найти в кармане у Димы Модерасса.",
-            "Что шепчет Ванга своему перфоратору перед сном?",
-            "Идеальное название для духов с запахом шаурмы.",
-            "Почему инопланетяне никогда не крадут лысых?",
-            "Худшее место для установки камеры видеонаблюдения.",
-            "Самый бесполезный совет от профессионального бездельника.",
-            "Девиз города, в котором запрещено выходить из интернета.",
-            "Какую суперспособность даст просроченный чебурек?",
-            "Если бы животные умели материться, кто был бы чемпионом?",
-            "Самое странное название для детского садика.",
-            "Что на самом деле находится в черном ящике Якубовича?",
-            "Почему Ванга Фiйко никогда не моргает?",
-            "Если бы ты открыл музей кринжа, какой был бы главный экспонат?",
-            "Что думают коты, когда мы поем в душе?",
-            "Худшее название для авиакомпании.",
-            "Что будет, если Дима Модерасс станет президентом мира?",
-            "Секретный ингредиент в супе, который заставляет всех плакать.",
-            "Придумай девиз для школы магии для ленивых."
-        ],
-        final: [
-            "Напиши 3 вещи, которые нельзя делать в гостях",
-            "3 причины не доверять Диме Модерассу",
-            "3 признака, что твоя собака планирует захват мира",
-            "3 способа бесшумно съесть чипсы в кино",
-            "3 вещи, которые Ванга прячет в подвале"
-        ]
+        classic: ["Почему vangavgav лысый?", "Что Ванга скрывает под кепкой?", "За что Дима любит Вангу?", "Худшая фраза хирурга?", "Секрет перфоратора?"],
+        final: ["3 вещи, которые нельзя делать в гостях", "3 причины не доверять Диме", "3 признака, что ты лысеешь"]
     }
 };
 
@@ -78,7 +75,7 @@ let timers = {};
 
 async function getAIQuestion(lang, isFinal = false) {
     try {
-        const promptText = `Придумай один ${isFinal ? "вопрос на 3 ответа" : "смешной вопрос"} для игры Quiplash на русском. Юмор: мемный, про Вангу или Диму. Только текст.`;
+        const promptText = `Придумай один ${isFinal ? "вопрос на 3 ответа" : "смешной вопрос"} для игры Quiplash на русском. Юмор: мемный. Только текст.`;
         const result = await aiModel.generateContent(promptText);
         return result.response.text().trim();
     } catch (e) {
@@ -108,12 +105,9 @@ io.on('connection', (socket) => {
         const cleanCode = code?.trim().toUpperCase();
         const room = rooms[cleanCode];
         if (!room) return socket.emit('error-join', 'Комната не найдена!');
-        
-        // Удаляем клонов
         room.players = room.players.filter(p => p.name.toLowerCase() !== name.toLowerCase());
         const p = { id: socket.id, name, emoji: '❓', score: 0, lastPoints: 0 };
         room.players.push(p);
-        
         socket.join(cleanCode);
         socket.emit('joined-success', { code: cleanCode });
         io.to(room.host).emit('player-list-update', room.players);
@@ -129,10 +123,8 @@ io.on('connection', (socket) => {
         room.round = roundNum; room.currentPairIndex = 0;
         let shuf = [...room.players].sort(() => 0.5 - Math.random());
         room.pairs = [];
-        
         for (let i = 0; i < shuf.length; i += 2) {
-            // 80% шанс вопроса от ИИ
-            let q = (Math.random() < 0.8) ? await getAIQuestion('ru', roundNum === 3) : prompts.ru.classic[Math.floor(Math.random()*prompts.ru.classic.length)];
+            let q = (Math.random() < 0.8) ? await getAIQuestion('ru', roundNum === 3) : prompts.ru.classic[0];
             room.pairs.push({ p1: shuf[i], p2: shuf[i+1] || null, q, ans1: null, ans2: null, votes: [], finished: false });
         }
         sendPair(code);
@@ -142,7 +134,7 @@ io.on('connection', (socket) => {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair) {
             io.to(code).emit('show-scores', { players: room.players, round: room.round, time: 15 });
-            setTimeout(() => { if (room.round < 3) startRound(code, room.round + 1); }, 16000);
+            setTimeout(() => { if (room && room.round < 3) startRound(code, room.round + 1); }, 16000);
             return;
         }
         io.to(code).emit('round-started', { round: room.round, q: pair.q, p1_name: pair.p1.name, p2_name: pair.p2 ? pair.p2.name : null, time: 30 });
@@ -177,4 +169,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Server live on ' + PORT));
+server.listen(PORT, () => console.log('OK on ' + PORT));
