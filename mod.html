@@ -1,18 +1,88 @@
 <!DOCTYPE html>
-<html>
-<head><title>MODERATOR</title></head>
-<body style="background:#1a1a2e; color:#fff; text-align:center;">
-    <h1>МОДЕРАЦИЯ</h1>
-    <div id="q"></div>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    const socket = io(); const params = new URLSearchParams(window.location.search);
-    socket.emit('join-mod', params.get('code'));
-    socket.on('mod-check', d => {
-        const div = document.createElement('div');
-        div.innerHTML = `<p>${d.name}: ${d.answer}</p><button onclick="socket.emit('mod-action',{code:'${d.code}',name:'${d.name}',answer:'${d.answer}',action:'pass'})">OK</button><button onclick="socket.emit('mod-action',{code:'${d.code}',name:'${d.name}',answer:'${d.answer}',action:'block'})">БАН</button>`;
-        document.getElementById('q').appendChild(div);
-    });
-</script>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>МОДЕРАТОР | ГРЕХО-СМЕХ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #1a1a2e; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 20px; }
+        h1 { color: #fbc02d; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #3e2723; padding-bottom: 10px; }
+        
+        #status { font-size: 20px; margin: 20px; padding: 10px; background: #16213e; border-radius: 10px; border: 2px solid #3498db; color: #3498db; }
+        
+        .card { 
+            background: #fff; color: #000; border-radius: 20px; 
+            margin: 20px auto; padding: 25px; max-width: 600px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 5px solid #3e2723;
+            animation: slideIn 0.4s ease-out;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .player-name { font-weight: 900; font-size: 22px; color: #ef5350; margin-bottom: 10px; }
+        .answer-text { font-size: 26px; font-weight: bold; background: #eee; padding: 15px; border-radius: 10px; margin-bottom: 20px; word-break: break-all; }
+        
+        .btn-group { display: flex; gap: 15px; justify-content: center; }
+        .btn { 
+            flex: 1; padding: 18px; border-radius: 12px; border: none; 
+            font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.2s; 
+            box-shadow: 0 5px 0 rgba(0,0,0,0.3);
+        }
+        .btn:active { transform: translateY(4px); box-shadow: none; }
+        
+        .btn-ok { background: #4caf50; color: #fff; }
+        .btn-ok:hover { background: #45a049; }
+        .btn-ban { background: #f44336; color: #fff; }
+        .btn-ban:hover { background: #da190b; }
+
+        #queue:empty::after { content: "Ожидание ответов игроков..."; opacity: 0.5; font-style: italic; display: block; margin-top: 100px; }
+    </style>
+</head>
+<body>
+    <h1>Панель Модерации</h1>
+    <div id="status">Подключение к комнате...</div>
+    <div id="queue"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code')?.toUpperCase();
+
+        if (code) {
+            socket.emit('join-mod', code);
+        } else {
+            document.getElementById('status').innerText = "ОШИБКА: Код комнаты не указан";
+            document.getElementById('status').style.borderColor = "red";
+        }
+
+        socket.on('mod-success', () => {
+            document.getElementById('status').innerText = "МОДЕРАЦИЯ АКТИВНА: КОМНАТА " + code;
+            document.getElementById('status').style.color = "#4caf50";
+            document.getElementById('status').style.borderColor = "#4caf50";
+        });
+
+        socket.on('mod-check', d => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = `
+                <div class="player-name">${d.name} пишет:</div>
+                <div class="answer-text">${d.answer}</div>
+                <div class="btn-group">
+                    <button class="btn btn-ok" onclick="action('${d.name}', '${d.answer}', 'pass', this)">ПРОПУСТИТЬ</button>
+                    <button class="btn btn-ban" onclick="action('${d.name}', '${d.answer}', 'block', this)">БАН</button>
+                </div>
+            `;
+            document.getElementById('queue').appendChild(div);
+        });
+
+        function action(name, answer, act, btn) {
+            socket.emit('mod-action', { code, name, answer, action: act });
+            btn.closest('.card').style.opacity = "0.5";
+            btn.closest('.card').style.pointerEvents = "none";
+            setTimeout(() => btn.closest('.card').remove(), 300);
+        }
+
+        socket.on('error-join', m => alert(m));
+    </script>
 </body>
 </html>
