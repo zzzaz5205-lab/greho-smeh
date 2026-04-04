@@ -2,74 +2,115 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ГРЕХО-СМЕХ | HOST</title>
+    <title>ГРЕХО-СМЕХ | ЭКРАН ХОСТА</title>
     <link rel="icon" href="https://fav.farm/🎮" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
         
-        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; perspective: 1200px; }
-        
+        body { 
+            margin: 0; padding: 0; overflow: hidden; 
+            background: #fbc02d; font-family: 'Montserrat', sans-serif; 
+            color: #3e2723; text-align: center; perspective: 1500px; 
+        }
+
         /* ГИПНО-СПИРАЛЬ */
-        .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotateSpiral 40s linear infinite; z-index: -1; }
+        .spiral { 
+            position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; 
+            background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); 
+            animation: rotateSpiral 40s linear infinite; z-index: -1; 
+        }
         @keyframes rotateSpiral { 100% { transform: rotate(360deg); } }
-        
-        #digital-timer { position: absolute; top: 20px; left: 30px; font-size: 85px; font-family: 'Roboto Mono'; font-weight: 900; text-shadow: 6px 6px 0 #000; color: #fff; z-index: 1000; display: none; transform: rotate(-5deg); }
-        
+
+        /* ТАЙМЕР */
+        #digital-timer { 
+            position: absolute; top: 20px; left: 30px; 
+            font-size: 85px; font-family: 'Roboto Mono'; font-weight: 900; 
+            text-shadow: 6px 6px 0 #000; color: #fff; z-index: 1000; display: none; 
+            transform: rotate(-5deg); 
+        }
+
+        /* КОД В УГЛУ */
+        .top-code-box { 
+            position: absolute; top: 15px; right: 20px; 
+            background: #fff; color: #000; padding: 10px 25px; 
+            border: 5px solid #3e2723; transform: rotate(2deg); 
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.1); z-index: 100;
+        }
+        .top-code-box b { font-size: 45px; font-family: 'Roboto Mono'; }
+
         /* ЭКРАНЫ */
         .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; transition: 0.5s; }
 
-        /* ОВЕРЛЕЙ НАСТРОЕК - ТЕПЕРЬ СТРОГО ПО ЦЕНТРУ */
+        /* ОКНО НАСТРОЕК (ЦЕНТРИРОВАНИЕ И ФИКСИРОВАННАЯ ВЫСОТА) */
         #settings-modal-overlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.7); z-index: 10000; /* Самый высокий слой */
-            align-items: center; justify-content: center;
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: rgba(0,0,0,0.7); z-index: 10000; align-items: center; justify-content: center;
         }
-        
         .modal { 
             background: #fff; border: 8px solid #3e2723; border-radius: 30px; 
-            width: 800px; height: 450px; display: flex; overflow: hidden;
-            box-shadow: 25px 25px 0 rgba(0,0,0,0.3); text-align: left;
+            width: 800px; height: 380px !important; /* ВЫСОТА В 2 РАЗА НИЖЕ */
+            display: flex; overflow: hidden; box-shadow: 25px 25px 0 rgba(0,0,0,0.3); text-align: left;
         }
+        .modal-sidebar { width: 30%; background: #3e2723; padding: 15px; display: flex; flex-direction: column; gap: 5px; height: 100%; box-sizing: border-box; }
+        .modal-body { width: 70%; padding: 20px 40px; overflow-y: auto; background: #fff; height: 100%; box-sizing: border-box; }
         
-        .modal-sidebar { width: 30%; background: #3e2723; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .tab-btn { padding: 15px; background: none; border: none; color: #fff; font-weight: 900; font-size: 18px; text-align: left; cursor: pointer; border-radius: 12px; transition: 0.2s; }
-        .tab-btn.active { background: #fbc02d; color: #3e2723; transform: translateX(10px); }
-        
-        .modal-body { width: 70%; padding: 30px 40px; overflow-y: auto; background: #fff; }
+        .tab-btn { padding: 12px; background: none; border: none; color: #fff; font-weight: 900; font-size: 16px; text-align: left; cursor: pointer; border-radius: 10px; transition: 0.2s; }
+        .tab-btn.active { background: #fbc02d; color: #3e2723; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
-        /* СТИЛЬНЫЕ НАСТРОЙКИ */
-        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px dashed #ddd; }
-        .setting-row label { font-size: 20px; font-weight: 900; color: #3e2723; }
         
-        input[type="checkbox"] { width: 30px; height: 30px; cursor: pointer; accent-color: #ef5350; }
-        input[type="number"], select { padding: 8px; font-size: 18px; border: 3px solid #3e2723; border-radius: 10px; font-family: 'Montserrat'; font-weight: 900; background: #f5f5f5; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 2px dashed #ddd; }
+        .setting-row label { font-size: 18px; font-weight: 900; color: #3e2723; }
+        input[type="checkbox"] { width: 25px; height: 25px; cursor: pointer; }
+        input[type="number"], select { padding: 5px; font-size: 16px; border: 3px solid #3e2723; border-radius: 8px; font-family: 'Montserrat'; font-weight: 900; }
 
         /* ГУИШКИ ИГРЫ */
-        .bubble { background: #fff; border: 8px solid #3e2723; border-radius: 25px; padding: 25px; width: 40%; min-height: 180px; font-size: 35px; font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); position: absolute; top: 50%; transition: 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55); display: flex; align-items: center; justify-content: center; }
+        #voting { display: none; width: 100%; height: 450px; position: relative; margin-top: 50px; }
+        .bubble { 
+            background: #fff; border: 8px solid #3e2723; border-radius: 25px; 
+            padding: 30px; width: 42%; min-height: 250px; font-size: 40px; 
+            font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); 
+            position: absolute; top: 50%; transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            display: flex; align-items: center; justify-content: center;
+        }
         #card1 { left: 5%; transform: translateY(-50%) rotate(-3deg); }
         #card2 { right: 5%; transform: translateY(-50%) rotate(3deg); }
+        
+        .refusal { background: #bbb !important; color: #666 !important; border-color: #666 !important; font-size: 28px !important; }
         .solo-center { left: 50% !important; transform: translate(-50%, -50%) rotate(0deg) scale(1.1) !important; z-index: 100; }
-        .kicked-out { transform: translate(150%, -50%) rotate(40deg) !important; opacity: 0; }
-        
-        .score-bar { background: #3e2723; color: #fff; font-size: 40px; padding: 12px 40px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 10px; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); animation: slideUp 0.5s forwards; }
-        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
-        .player-node { width: 130px; height: 130px; background: #fff; border: 6px solid #3e2723; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px; font-weight: bold; box-shadow: 8px 8px 0 rgba(0,0,0,0.1); }
-        .btn-open-settings { position: absolute; top: 20px; left: 20px; padding: 15px 30px; background: #3e2723; color: #fff; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; box-shadow: 4px 4px 0 #000; }
+        .kicked-out { transform: translate(150%, -50%) rotate(45deg) !important; opacity: 0; }
+
+        .points-badge { position: absolute; top: -30px; right: -30px; background: #ef5350; color: #fff; border: 5px solid #3e2723; width: 90px; height: 90px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 32px; animation: popBadge 0.4s forwards; z-index: 10; }
+        @keyframes popBadge { from { transform: scale(0); } to { transform: scale(1); } }
+
+        /* УЛЕТАНИЕ ВНИЗ */
+        @keyframes flyDownCenter {
+            0% { opacity: 1; transform: translate(0, -50%) scale(1); }
+            100% { transform: translate(0, 1000px) scale(0.5); opacity: 0; }
+        }
+        .exit-zoom { animation: flyDownCenter 1s forwards ease-in !important; left: 50% !important; margin-left: -20% !important; }
+
+        /* ВОПРОС И СЧЕТ */
+        #qText { font-size: 55px; background:#fff; padding:15px 40px; border:6px solid #3e2723; transform:rotate(-1deg); transition: 0.4s; max-width: 80%; margin-top: -120px; }
+        .q-vanish { opacity: 0; transform: scale(0.7) !important; }
+        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); animation: slideUp 0.6s forwards; }
+        @keyframes slideUp { from { transform: translateY(200px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .player-node { background: #fff; border: 5px solid #3e2723; padding: 15px; border-radius: 20px; margin: 10px; font-weight: bold; }
+        .btn-open-settings { position: absolute; top: 20px; left: 20px; padding: 12px 25px; background: #3e2723; color: #fff; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; }
 
         /* ТИТРЫ */
-        #credits-screen { background: #000 !important; color: #fff; display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9000; overflow: hidden; }
-        .credits-wrap { position: absolute; width: 100%; top: 100%; animation: scrollCredits 25s linear forwards; }
+        #credits-screen { background: #000 !important; color: #fff; display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9000; overflow: hidden; flex-direction: column; align-items: center; }
+        .credits-wrap { position: absolute; width: 100%; top: 100%; animation: scrollCredits 22s linear forwards; }
         @keyframes scrollCredits { from { top: 100%; } to { top: -280%; } }
-        .joke-card { background: #1a1a1a; border-left: 10px solid #fbc02d; padding: 20px; margin: 20px auto; width: 65%; text-align: left; font-size: 24px; }
+        .joke-card { background: #1a1a1a; border-left: 8px solid #fbc02d; padding: 20px; margin: 20px auto; width: 65%; text-align: left; font-size: 24px; }
     </style>
 </head>
 <body onclick="startAudio()">
     <div class="spiral"></div>
     <div id="digital-timer"></div>
-    
+    <div id="corner-code" class="top-code-box" style="display:none;"><span>КОД:</span><b id="c-val">...</b></div>
+
     <!-- МОДАЛКА НАСТРОЕК -->
     <div id="settings-modal-overlay">
         <div class="modal">
@@ -79,22 +120,21 @@
                 <button class="tab-btn" onclick="openTab(event, 'tab-sounds')">ЗВУКИ</button>
                 <button class="tab-btn" onclick="openTab(event, 'tab-general')">ОБЩЕЕ</button>
                 <div style="flex-grow:1"></div>
-                <button onclick="saveSettings()" style="background:#4caf50; color:#fff; padding:15px; border-radius:15px; font-weight:900; border:none; cursor:pointer; box-shadow: 0 4px 0 #2e7d32;">СОХРАНИТЬ</button>
+                <button onclick="saveSettings()" style="background:#4caf50; color:#fff; padding:12px; border-radius:12px; font-weight:900; border:none; cursor:pointer;">ОК</button>
             </div>
             <div class="modal-body">
                 <div id="tab-modes" class="tab-content active">
-                    <h2 style="color:#3e2723">ВЫБОР РЕЖИМА</h2>
-                    <div class="setting-row"><label>ГРЕХО-СМЕХ (Оригинал)</label> <input type="radio" name="m" checked></div>
-                    <p style="opacity:0.5">Другие режимы скоро...</p>
+                    <h2 style="color:#3e2723">РЕЖИМЫ</h2>
+                    <div class="setting-row"><label>ГРЕХО-СМЕХ (Оригинал)</label> <input type="radio" checked></div>
                 </div>
                 <div id="tab-events" class="tab-content">
                     <h2 style="color:#3e2723">СОБЫТИЯ</h2>
-                    <div class="setting-row"><label>АДСКИЙ РЕЖИМ (Тряска)</label> <input type="checkbox" id="hellMode"></div>
+                    <div class="setting-row"><label>АДСКИЙ РЕЖИМ</label> <input type="checkbox" id="hellMode"></div>
                     <div class="setting-row"><label>18+ РЕЖИМ (GEMINI)</label> <input type="checkbox" id="plus18"></div>
-                    <div class="setting-row"><label>БОНУС X2 (3 РАУНД)</label> <input type="checkbox" id="bonus2" checked></div>
+                    <div class="setting-row"><label>БОНУС X2</label> <input type="checkbox" id="bonus2" checked></div>
                 </div>
                 <div id="tab-sounds" class="tab-content">
-                    <h2 style="color:#3e2723">ГОЛОС И ЗВУК</h2>
+                    <h2 style="color:#3e2723">ЗВУКИ</h2>
                     <div class="setting-row"><label>ДИКТОР:</label> 
                         <select id="voiceType">
                             <option value="male">МУЖСКОЙ (БАС)</option>
@@ -104,12 +144,7 @@
                 </div>
                 <div id="tab-general" class="tab-content">
                     <h2 style="color:#3e2723">ОБЩЕЕ</h2>
-                    <div class="setting-row"><label>ТАЙМЕР (СЕК):</label> <input type="number" id="timerVal" value="30" min="10" max="120"></div>
-                    <div class="setting-row">
-                        <label>МОДЕРАЦИЯ:</label> 
-                        <input type="checkbox" id="modToggle" onchange="document.getElementById('mB').style.display=this.checked?'block':'none'">
-                    </div>
-                    <button id="mB" onclick="copyM()" style="display:none; width:100%; background:#2196f3; color:#fff; padding:10px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">СКОПИРОВАТЬ ССЫЛКУ</button>
+                    <div class="setting-row"><label>ТАЙМЕР (СЕК):</label> <input type="number" id="timerVal" value="30"></div>
                 </div>
             </div>
         </div>
@@ -124,17 +159,22 @@
         <button onclick="socket.emit('start-game', curCode)" style="background:#4caf50; border:6px solid #3e2723; color:#fff; padding:25px 70px; font-size:35px; border-radius:100px; cursor:pointer; margin-top:30px; font-weight:900;">ПОГНАЛИ!</button>
     </div>
 
+    <!-- ИГРА -->
     <div id="game" class="screen">
-        <h2 id="qText" style="font-size:55px; background:#fff; padding:20px; border:6px solid #3e2723; transform:rotate(-1deg)"></h2>
-        <div id="voting" style="display:none; width:100%; height: 400px; position: relative;">
+        <h2 id="qText"></h2>
+        <div id="voting">
             <div id="card1" class="bubble"><div id="ans-text-1"></div><div id="badge-1" class="points-badge"></div></div>
             <div id="card2" class="bubble"><div id="ans-text-2"></div><div id="badge-2" class="points-badge"></div></div>
         </div>
     </div>
 
+    <!-- СЧЁТ -->
     <div id="scores" class="screen"><h1>ТЕКУЩИЙ СЧЁТ</h1><div id="scoreList"></div></div>
+
+    <!-- ФИНАЛ -->
     <div id="final" class="screen"><h1>ПОБЕДИТЕЛЬ</h1><div id="winner" style="font-size:120px; color:#ef5350"></div></div>
 
+    <!-- ТИТРЫ -->
     <div id="credits-screen">
         <div class="credits-wrap" id="credits-content"></div>
     </div>
@@ -142,7 +182,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io(); let curCode = "", cdnInt;
-    let gameSettings = { timer: 30, voice: 'male', hellMode: false, bonusX2: true, eighteenPlus: false, moderation: false };
+    let gameSettings = { timer: 30, voice: 'male' };
 
     function toggleSet() { 
         const overlay = document.getElementById('settings-modal-overlay');
@@ -156,35 +196,25 @@
         evt.currentTarget.classList.add('active');
     }
 
-    function copyM() { 
-        const link = window.location.origin + "/mod?code=" + curCode;
-        navigator.clipboard.writeText(link); alert("Ссылка скопирована!"); 
-    }
-
     function saveSettings() {
         gameSettings.timer = parseInt(document.getElementById('timerVal').value);
-        gameSettings.hellMode = document.getElementById('hellMode').checked;
-        gameSettings.bonusX2 = document.getElementById('bonus2').checked;
-        gameSettings.eighteenPlus = document.getElementById('plus18').checked;
         gameSettings.voice = document.getElementById('voiceType').value;
-        gameSettings.moderation = document.getElementById('modToggle').checked;
         socket.emit('update-settings', { code: curCode, settings: gameSettings });
         toggleSet();
     }
 
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
-    socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; });
+    socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; document.getElementById('c-val').innerText = c; });
     
     socket.on('player-list-update', players => {
         document.getElementById('playerList').innerHTML = players.map(p => `<div class="player-node"><span>${p.emoji}</span>${p.name}</div>`).join('');
     });
 
-    function speak(t, cb) {
+    function speak(t) {
         window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
         const vs = window.speechSynthesis.getVoices();
-        m.voice = vs.find(v => v.lang.includes('ru') && (gameSettings.voice==='male' ? (v.name.includes('David') || v.name.includes('Pavel')) : true)) || vs[0];
-        m.pitch = gameSettings.voice === 'male' ? 0.45 : 1.2; m.rate = 0.9;
-        m.onend = cb; window.speechSynthesis.speak(m);
+        m.voice = vs.find(v => v.lang.includes('ru') && (gameSettings.voice==='male' ? v.name.includes('David') : true)) || vs[0];
+        m.pitch = 0.45; m.rate = 0.9; window.speechSynthesis.speak(m);
     }
 
     function runTimer(sec) {
@@ -212,11 +242,9 @@
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
         c1.className = 'bubble'; c2.className = 'bubble';
         b1.style.display = 'none'; b2.style.display = 'none';
-        
         const format = (a) => a === "EMPTY" ? "<i>Молчание...</i>" : (Array.isArray(a) ? a.join('<br>') : a);
         document.getElementById('ans-text-1').innerHTML = format(d.ans1);
         document.getElementById('ans-text-2').innerHTML = d.isSolo ? "Я отказываюсь на это отвечать!" : format(d.ans2);
-
         if(d.isSolo || d.bothEmpty) {
             c2.classList.add('refusal');
             if(!d.bothEmpty) setTimeout(() => { c2.classList.add('kicked-out'); c1.classList.add('solo-center'); }, 1500);
@@ -239,24 +267,18 @@
         document.getElementById('scoreList').innerHTML = d.players.sort((a,b)=>b.score-a.score).map((p,i)=>`
             <div class="score-bar"><span>${i+1}. ${p.emoji} ${p.name}</span><b>${p.score}</b></div>
         `).join('');
-        runTimer(10); // Счёт висит 10 сек
+        runTimer(d.time);
     });
 
     socket.on('final-results', d => {
         document.getElementById('scores').style.display='none';
         document.getElementById('final').style.display='flex'; 
         document.getElementById('winner').innerText = d.players[0].name;
-        
-        let html = `<div style="font-size:80px; color:#fbc02d; margin-bottom:50px;">ГРЕХО-СМЕХ</div><h3>ЗАЛ СЛАВЫ:</h3>`;
+        let html = `<h1 style="font-size:80px; color:#fbc02d; margin-bottom:50px;">ГРЕХО-СМЕХ</h1><h3>ЗАЛ СЛАВЫ:</h3>`;
         d.best.forEach(j => { html += `<div class="joke-card">"${j.text}"<br><small>Автор: ${j.emoji} ${j.author} (${j.votes} гол.)</small></div>`; });
         html += `<br><div style="font-size:40px; line-height:2;"><b style="color:#ef5350">АВТОРЫ:</b><br>Грексюр Поносович<br>Джемини Завозилов</div><br><h1>СПАСИБО!</h1>`;
         document.getElementById('credits-content').innerHTML = html;
-
-        setTimeout(() => { 
-            document.getElementById('final').style.display='none';
-            document.getElementById('credits-screen').style.display='flex';
-            setTimeout(() => socket.emit('finish-credits', curCode), 22000);
-        }, 6000);
+        setTimeout(() => { document.getElementById('final').style.display='none'; document.getElementById('credits-screen').style.display='flex'; setTimeout(() => socket.emit('finish-credits', curCode), 22000); }, 6000);
     });
     function startAudio() {}
 </script>
