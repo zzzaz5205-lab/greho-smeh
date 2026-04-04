@@ -4,99 +4,133 @@
     <meta charset="UTF-8">
     <title>ГРЕХО-СМЕХ | HOST</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
         body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; }
-        .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotate 60s linear infinite; z-index: -1; }
-        @keyframes rotate { 100% { transform: rotate(360deg); } }
-        .screen { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; }
-        #timer { position: absolute; top: 20px; left: 30px; font-size: 80px; color: white; text-shadow: 4px 4px 0 #000; }
-        #bigCode { font-size: 100px; background: #000; color: #ffeb3b; padding: 10px 60px; border: 5px solid #fff; display: inline-block; transform: rotate(-2deg); }
-        .bubble { background: #fff; border: 6px solid #000; border-radius: 20px; padding: 30px; width: 40%; font-size: 45px; font-weight: 900; }
-        .main-btn { background: #4caf50; border: 6px solid #000; color: #fff; padding: 20px 60px; font-size: 35px; border-radius: 100px; cursor: pointer; }
+        .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotateSpiral 40s linear infinite; z-index: -1; }
+        @keyframes rotateSpiral { 100% { transform: rotate(360deg); } }
+        
+        #digital-timer { position: absolute; top: 20px; left: 30px; font-size: 85px; font-family: 'Roboto Mono'; font-weight: 900; text-shadow: 6px 6px 0 #000; color: #fff; z-index: 1000; display: none; transform: rotate(-5deg); }
+        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; }
+        
+        .bubble { background: #fff; border: 8px solid #3e2723; border-radius: 25px; padding: 40px; width: 42%; font-size: 50px; font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); position: relative; transition: 0.5s; }
+        .bubble.refusal { background: #bbb; color: #666; border-color: #666; font-size: 30px; }
+        
+        /* АНИМАЦИИ СОЛО */
+        @keyframes kickLeft { 0% { transform: scale(1) rotate(0); } 100% { transform: translateX(-150%) rotate(-20deg); opacity: 0; } }
+        @keyframes kickRight { 0% { transform: scale(1) rotate(0); } 100% { transform: translateX(150%) rotate(20deg); opacity: 0; } }
+        .kick-left { animation: kickLeft 1s forwards ease-in; }
+        .kick-right { animation: kickRight 1s forwards ease-in; }
+        
+        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); animation: slideUp 0.5s forwards; }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideExit { to { transform: translateY(-100vh); opacity: 0; } }
+        .exit-anim { animation: slideExit 1s forwards ease-in; }
+
+        .player-node { width: 140px; height: 140px; background: #fff; border: 6px solid #3e2723; border-radius: 20px; color: #3e2723; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px; font-weight: bold; }
     </style>
 </head>
 <body onclick="startAudio()">
     <div class="spiral"></div>
-    <div id="timer"></div>
-
-    <!-- ЛОББИ -->
+    <div id="digital-timer"></div>
+    
     <div id="lobby" class="screen" style="display:flex">
-        <h1 style="font-size: 80px; text-shadow: 4px 4px 0 #fff;">ГРЕХО-СМЕХ</h1>
-        <div id="bigCode">...</div>
-        <div id="playerList" style="margin-top:20px; font-size:30px;">Ждем игроков...</div>
-        <button onclick="startGame()" class="main-btn" style="margin-top:40px">ПОГНАЛИ!</button>
+        <h1 style="font-size: 80px; text-shadow: 6px 6px 0 #fff;">ГРЕХО-СМЕХ</h1>
+        <div style="background:#000; color:#ffeb3b; padding:15px 60px; border:8px solid #fff; font-size:100px; transform:rotate(-2deg);" id="bigCode">...</div>
+        <div id="playerList" style="display:flex; flex-wrap:wrap; justify-content:center; margin-top:30px;"></div>
+        <button onclick="socket.emit('start-game', curCode)" style="background:#4caf50; border:6px solid #3e2723; color:#fff; padding:25px 70px; font-size:35px; border-radius:100px; cursor:pointer; margin-top:30px; font-weight:900;">ПОГНАЛИ!</button>
     </div>
 
-    <!-- ИГРА -->
     <div id="game" class="screen">
-        <h2 id="qText" style="font-size: 60px; background: #fff; padding: 20px; border: 5px solid #000;"></h2>
-        <div id="voting" style="display:none; justify-content: center; gap: 40px; width: 100%;">
-            <div id="card1" class="bubble" style="transform:rotate(-3deg)"></div>
-            <div id="card2" class="bubble" style="transform:rotate(3deg)"></div>
+        <h2 id="qText" style="font-size: 60px; text-shadow: 4px 4px 0 #fff; background:#fff; border:6px solid #3e2723; padding:20px; transform:rotate(-1deg);"></h2>
+        <div style="display:none; justify-content:center; gap:30px; width:100%; margin-top:50px;" id="voting">
+            <div id="card1" class="bubble"></div>
+            <div id="card2" class="bubble"></div>
         </div>
-        <div id="aiComment" style="font-size:30px; margin-top:30px; color:white; text-shadow:2px 2px #000"></div>
     </div>
 
-    <!-- СЧЁТ -->
     <div id="scores" class="screen">
-        <h1>ТЕКУЩИЙ СЧЁТ</h1>
+        <h1 style="font-size:80px; text-shadow: 6px 6px 0 #fff;">ТЕКУЩИЙ СЧЁТ</h1>
         <div id="scoreList"></div>
-        <button onclick="socket.emit('next-after-scores', curCode)" class="main-btn">ДАЛЕЕ</button>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        let curCode = "", tInt, audioStarted = false;
+    <div id="final" class="screen"><h1>ПОБЕДИТЕЛЬ</h1><div id="winner" style="font-size:120px; color:#ef5350"></div></div>
 
-        function startAudio() { audioStarted = true; }
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io(); let curCode = "", cdnInt;
+    let gameSettings = { timer: 30, voice: 'male' };
 
-        socket.emit('create-room');
-        socket.on('room-created', c => { curCode = c; document.getElementById('bigCode').innerText = c; });
+    socket.emit('create-room', sessionStorage.getItem('lastCode'));
+    socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; });
 
-        socket.on('player-list-update', players => {
-            document.getElementById('playerList').innerHTML = players.map(p => p.name).join(', ');
-        });
+    socket.on('player-list-update', players => {
+        document.getElementById('playerList').innerHTML = players.map(p => `<div class="player-node"><span>${p.emoji}</span>${p.name}</div>`).join('');
+    });
 
-        function speak(t) {
-            if(!audioStarted) return;
-            window.speechSynthesis.cancel();
-            const m = new SpeechSynthesisUtterance(t);
-            const vs = window.speechSynthesis.getVoices();
-            m.voice = vs.find(v => v.lang.includes('ru') && v.name.includes('David')) || vs[0];
-            m.pitch = 0.5; m.rate = 0.9;
-            window.speechSynthesis.speak(m);
+    function speak(t) {
+        window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
+        const vs = window.speechSynthesis.getVoices();
+        m.voice = vs.find(v => v.lang.includes('ru') && v.name.includes('David')) || vs[0];
+        m.pitch = 0.45; m.rate = 0.9; window.speechSynthesis.speak(m);
+    }
+
+    function runTimer(sec) {
+        let tl = sec; const tEl = document.getElementById('digital-timer');
+        tEl.style.display = 'block'; tEl.innerText = tl; tEl.style.color = "#fff";
+        clearInterval(cdnInt);
+        cdnInt = setInterval(() => {
+            tl--; tEl.innerText = tl;
+            if(tl <= 5) tEl.style.color = "red";
+            if(tl <= 0) { clearInterval(cdnInt); tEl.style.display = 'none'; }
+        }, 1000);
+    }
+
+    socket.on('round-started', d => {
+        document.getElementById('lobby').style.display="none"; 
+        document.getElementById('scores').style.display="none";
+        document.getElementById('scores').classList.remove('exit-anim');
+        document.getElementById('game').style.display='flex'; 
+        document.getElementById('voting').style.display = 'none';
+        document.getElementById('qText').innerText = d.q; speak(d.q);
+        runTimer(d.time);
+    });
+
+    socket.on('show-voting', d => {
+        document.getElementById('voting').style.display = 'flex';
+        const c1 = document.getElementById('card1'), c2 = document.getElementById('card2');
+        c1.classList.remove('kick-left', 'kick-right', 'refusal');
+        c2.classList.remove('kick-left', 'kick-right', 'refusal');
+        
+        if(d.isSolo) {
+            c1.innerText = d.ans1;
+            c2.innerText = "Я отказываюсь на это отвечать!";
+            c2.classList.add('refusal');
+            speak("Одиночное выступление.");
+            setTimeout(() => { c2.classList.add('kick-right'); }, 2500); // Анимация "выкидывания"
+        } else {
+            c1.innerText = d.ans1; c2.innerText = d.ans2;
+            speak("Чей ответ лучше?");
         }
+        runTimer(20);
+    });
 
-        function startGame() { socket.emit('start-game', curCode); }
+    socket.on('show-scores', d => {
+        document.getElementById('game').style.display='none'; 
+        document.getElementById('scores').style.display='flex';
+        document.getElementById('scoreList').innerHTML = d.players.sort((a,b)=>b.score-a.score).map((p,i)=>`
+            <div class="score-bar"><span>${i+1}. ${p.emoji} ${p.name}</span><b>${p.score}</b></div>
+        `).join('');
+        runTimer(15);
+        setTimeout(() => { document.getElementById('scores').classList.add('exit-anim'); }, 14000);
+    });
 
-        socket.on('round-started', d => {
-            document.getElementById('lobby').style.display = "none";
-            document.getElementById('scores').style.display = "none";
-            document.getElementById('game').style.display = "flex";
-            document.getElementById('voting').style.display = "none";
-            document.getElementById('qText').innerText = d.q;
-            document.getElementById('aiComment').innerText = "";
-            speak(d.q);
-        });
-
-        socket.on('show-voting', d => {
-            document.getElementById('voting').style.display = "flex";
-            document.getElementById('card1').innerText = d.ans1;
-            document.getElementById('card2').innerText = d.ans2;
-            speak("Чей ответ смешнее?");
-        });
-
-        socket.on('voting-results', d => {
-            document.getElementById('aiComment').innerText = d.aiComment;
-            speak(d.aiComment);
-        });
-
-        socket.on('show-scores', data => {
-            document.getElementById('game').style.display = "none";
-            document.getElementById('scores').style.display = "flex";
-            document.getElementById('scoreList').innerHTML = data.players.map(p => `<h2>${p.name}: ${p.score}</h2>`).join('');
-        });
-    </script>
+    socket.on('final-results', d => {
+        document.getElementById('scores').style.display='none';
+        document.getElementById('final').style.display='flex'; 
+        document.getElementById('winner').innerText = d.players[0].name;
+        speak("Победил " + d.players[0].name);
+    });
+    function startAudio() {}
+</script>
 </body>
 </html>
