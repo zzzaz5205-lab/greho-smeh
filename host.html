@@ -12,37 +12,40 @@
         #digital-timer { position: absolute; top: 20px; left: 30px; font-size: 85px; font-family: 'Roboto Mono'; font-weight: 900; text-shadow: 6px 6px 0 #000; color: #fff; z-index: 1000; display: none; transform: rotate(-5deg); }
         .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; transition: 0.5s; }
         
-        /* БАБЛЫ */
         .bubble { 
             background: #fff; border: 8px solid #3e2723; border-radius: 25px; 
-            padding: 30px; width: 40%; min-height: 180px; font-size: 38px; 
+            padding: 25px; width: 40%; min-height: 180px; font-size: 35px; 
             font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); 
             position: absolute; transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            display: flex; align-items: center; justify-content: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         #card1 { left: 5%; top: 50%; transform: translateY(-50%) rotate(-3deg); }
         #card2 { right: 5%; top: 50%; transform: translateY(-50%) rotate(3deg); }
-        .bubble.refusal { background: #bbb; color: #666; border-color: #666; font-size: 24px; z-index: 1; }
+        .bubble.refusal { background: #bbb !important; color: #666 !important; border-color: #666 !important; }
         
-        /* АНИМАЦИИ СОЛО */
+        /* НОВАЯ АНИМАЦИЯ УЛЕТАНИЯ ВНИЗ */
+        @keyframes flyDown {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, 200%) scale(0.5); opacity: 0; }
+        }
+        .exit-zoom { animation: flyDown 1s forwards ease-in !important; }
+
         .solo-center { left: 50% !important; transform: translate(-50%, -50%) rotate(0deg) scale(1.1) !important; z-index: 100; }
         .kicked-out { transform: translate(150%, -50%) rotate(40deg) !important; opacity: 0; }
 
-        .points-badge { position: absolute; top: -25px; right: -25px; background: #ef5350; color: #fff; border: 5px solid #3e2723; width: 85px; height: 85px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 30px; animation: popBadge 0.4s forwards; }
+        .points-badge { position: absolute; top: -25px; right: -25px; background: #ef5350; color: #fff; border: 5px solid #3e2723; width: 85px; height: 85px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 28px; animation: popBadge 0.4s forwards; z-index: 10; }
         @keyframes popBadge { from { transform: scale(0); } to { transform: scale(1); } }
-        
-        /* УЛЕТАНИЕ ВДАЛЬ */
-        @keyframes flyAway { to { transform: translate(-50%, -50%) scale(0.05) translateZ(-800px); opacity: 0; } }
-        .exit-zoom { animation: flyAway 0.9s forwards ease-in; }
 
-        /* ВОПРОС */
-        #qText { font-size: 55px; background:#fff; padding:15px 40px; border:6px solid #3e2723; transform:rotate(-1deg); transition: 0.4s; max-width: 80%; margin-top: -100px; }
-        .q-vanish { opacity: 0; transform: scale(0.7) rotate(0deg) !important; }
+        #qText { font-size: 50px; background:#fff; padding:15px 40px; border:6px solid #3e2723; transform:rotate(-1deg); transition: 0.4s; max-width: 80%; margin-top: -120px; }
+        .q-vanish { opacity: 0; transform: scale(0.7) !important; }
 
-        /* СЧЕТ */
-        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); animation: slideUp 0.5s forwards; }
+        .score-bar { background: #3e2723; color: #fff; font-size: 40px; padding: 12px 40px; border-radius: 20px; width: 550px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 10px; animation: slideUp 0.5s forwards; }
         @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .player-node { width: 130px; height: 130px; background: #fff; border: 5px solid #3e2723; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px; font-weight: bold; }
+
+        /* ТИТРЫ */
+        #credits-screen { background: #000; color: #fff; display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 5000; overflow: hidden; }
+        .credits-wrap { position: absolute; width: 100%; animation: scrollUp 15s linear forwards; }
+        @keyframes scrollUp { from { top: 100%; } to { top: -120%; } }
     </style>
 </head>
 <body onclick="startAudio()">
@@ -51,7 +54,7 @@
     
     <div id="lobby" class="screen" style="display:flex">
         <h1 style="font-size: 80px; text-shadow: 6px 6px 0 #fff;">ГРЕХО-СМЕХ</h1>
-        <div style="background:#000; color:#ffeb3b; padding:15px 60px; border:8px solid #fff; font-size:100px;" id="bigCode">...</div>
+        <div style="background:#000; color:#ffeb3b; padding:15px 60px; border:8px solid #fff; font-size:100px; transform:rotate(-2deg);" id="bigCode">...</div>
         <div id="playerList" style="display:flex; flex-wrap:wrap; justify-content:center; margin-top:20px;"></div>
         <button onclick="socket.emit('start-game', curCode)" style="background:#4caf50; border:6px solid #3e2723; color:#fff; padding:20px 60px; font-size:30px; border-radius:100px; cursor:pointer; margin-top:30px; font-weight:900;">ПОГНАЛИ!</button>
     </div>
@@ -64,12 +67,18 @@
         </div>
     </div>
 
-    <div id="scores" class="screen">
-        <h1 style="font-size:80px; text-shadow: 6px 6px 0 #fff;">ТЕКУЩИЙ СЧЁТ</h1>
-        <div id="scoreList"></div>
-    </div>
-
+    <div id="scores" class="screen"><h1>ТЕКУЩИЙ СЧЁТ</h1><div id="scoreList"></div></div>
     <div id="final" class="screen"><h1>ПОБЕДИТЕЛЬ</h1><div id="winner" style="font-size:120px; color:#ef5350"></div></div>
+
+    <div id="credits-screen">
+        <div class="credits-wrap">
+            <h1 style="font-size:80px; color:#fbc02d">ГРЕХО-СМЕХ</h1>
+            <h3>СПАСИБО ЗА ИГРУ</h3>
+            <p style="font-size:30px">Ванга Фiйко Перфоратор<br>Дима Moderass<br>Греха и Gemini 3 Flash</p>
+            <br><br>
+            <p>ДО НОВЫХ ВСТРЕЧ!</p>
+        </div>
+    </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -77,9 +86,14 @@
     
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
     socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; });
-    socket.on('player-list-update', players => {
-        document.getElementById('playerList').innerHTML = players.map(p => `<div class="player-node"><span>${p.emoji}</span>${p.name}</div>`).join('');
-    });
+    socket.on('player-list-update', players => { document.getElementById('playerList').innerHTML = players.map(p => `<div style="background:#fff; border:3px solid #3e2723; padding:10px 20px; margin:5px; border-radius:15px;">${p.emoji} ${p.name}</div>`).join(''); });
+
+    const phrases = {
+        start: ["Добро пожаловать в Грехо-Смех!", "Погнали! Посмотрим, кто тут самый остроумный.", "Раунд начинается, приготовьте ваши пальчики!"],
+        vote: ["Чей ответ лучше? Голосуем!", "Время выбирать! Кто тут мастер юмора?", "Один ответ смешной, а другой... ну вы видите."],
+        results: ["Опа! Вот и автор.", "Результаты на экране!", "Кто-то получил баллы, а кто-то - кринж."],
+        empty: ["Этот игрок решил, что молчание - золото.", "Похоже, у кого-то закончились идеи.", "Двойная лень! Никто не получает баллов."]
+    };
 
     function speak(t) {
         window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
@@ -102,10 +116,9 @@
     socket.on('round-started', d => {
         document.getElementById('lobby').style.display="none"; document.getElementById('scores').style.display="none";
         document.getElementById('game').style.display='flex'; document.getElementById('game').classList.remove('exit-zoom');
-        document.getElementById('voting').style.display = 'none';
-        const q = document.getElementById('qText');
-        q.innerText = d.q; q.classList.remove('q-vanish');
-        speak(d.q); runTimer(d.time);
+        const q = document.getElementById('qText'); q.innerText = d.q; q.classList.remove('q-vanish');
+        speak(phrases.start[Math.floor(Math.random()*phrases.start.length)]);
+        setTimeout(() => speak(d.q), 1500); runTimer(d.time);
     });
 
     socket.on('show-voting', d => {
@@ -114,56 +127,71 @@
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
         c1.className = 'bubble'; c2.className = 'bubble';
         b1.style.display = 'none'; b2.style.display = 'none';
-        
-        if(d.isSolo) {
-            document.getElementById('ans-text-1').innerText = d.ans1;
+
+        const formatAns = (ans) => Array.isArray(ans) ? ans.join('<br>') : ans;
+
+        if(d.isSolo || d.ans1 === "EMPTY") {
+            document.getElementById('ans-text-1').innerHTML = d.ans1 === "EMPTY" ? "<i>Молчание...</i>" : formatAns(d.ans1);
+            if(d.ans1 === "EMPTY") c1.classList.add('refusal');
+            
             document.getElementById('ans-text-2').innerText = "Я отказываюсь на это отвечать!";
             c2.classList.add('refusal');
-            speak("Одиночное выступление.");
-            setTimeout(() => {
-                c2.classList.add('kicked-out'); 
-                c1.classList.add('solo-center'); 
-            }, 1800);
+            
+            if(!d.bothEmpty) {
+                setTimeout(() => { c2.classList.add('kicked-out'); c1.classList.add('solo-center'); }, 1500);
+                speak(d.ans1 === "EMPTY" ? phrases.empty[0] : "Одиночное выступление.");
+            } else {
+                speak(phrases.empty[2]);
+            }
         } else {
-            document.getElementById('ans-text-1').innerText = d.ans1;
-            document.getElementById('ans-text-2').innerText = d.ans2;
-            speak("Чей ответ лучше?");
+            document.getElementById('ans-text-1').innerHTML = formatAns(d.ans1);
+            document.getElementById('ans-text-2').innerHTML = formatAns(d.ans2);
+            speak(phrases.vote[Math.floor(Math.random()*phrases.vote.length)]);
         }
-        runTimer(20);
+        runTimer(d.time === 5 ? 5 : 20);
     });
 
     socket.on('voting-results', d => {
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
-        b1.innerText = d.v1; b1.style.display = 'flex';
-        if(!d.isSolo) { b2.innerText = d.v2; b2.style.display = 'flex'; }
+        if(!d.bothEmpty) {
+            b1.innerText = d.v1; b1.style.display = 'flex';
+            if(!d.isSolo) { b2.innerText = d.v2; b2.style.display = 'flex'; }
+        }
         
         setTimeout(() => {
-            b1.innerText = "+" + d.p1Points; b1.style.background = "#4caf50";
-            if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; }
-            
-            // ВОПРОС ПРОСТО ИСЧЕЗАЕТ
+            if(!d.bothEmpty) {
+                b1.innerText = "+" + d.p1Points; b1.style.background = "#4caf50";
+                if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; }
+            }
+            speak(phrases.results[Math.floor(Math.random()*phrases.results.length)]);
             document.getElementById('qText').classList.add('q-vanish');
-            
-            setTimeout(() => {
-                document.getElementById('card1').classList.add('exit-zoom');
-                if(!d.isSolo) document.getElementById('card2').classList.add('exit-zoom');
-            }, 1500);
+            setTimeout(() => { 
+                document.getElementById('card1').classList.add('exit-zoom'); 
+                document.getElementById('card2').classList.add('exit-zoom');
+            }, 1200);
         }, 2000);
     });
 
     socket.on('show-scores', d => {
-        document.getElementById('game').style.display='none'; 
-        document.getElementById('scores').style.display='flex';
+        document.getElementById('game').style.display='none'; document.getElementById('scores').style.display='flex';
+        document.getElementById('scores').classList.remove('exit-zoom');
         document.getElementById('scoreList').innerHTML = d.players.sort((a,b)=>b.score-a.score).map((p,i)=>`
             <div class="score-bar"><span>${i+1}. ${p.emoji} ${p.name}</span><b>${p.score}</b></div>
         `).join('');
-        runTimer(15);
+        runTimer(5);
+        setTimeout(() => document.getElementById('scores').classList.add('exit-zoom'), 4000);
     });
 
     socket.on('final-results', d => {
         document.getElementById('scores').style.display='none';
         document.getElementById('final').style.display='flex'; 
         document.getElementById('winner').innerText = d.players[0].name;
+        speak("Игра окончена! Победил " + d.players[0].name);
+        setTimeout(() => { 
+            document.getElementById('final').style.display='none';
+            document.getElementById('credits-screen').style.display='flex';
+            setTimeout(() => socket.emit('finish-credits', curCode), 15000);
+        }, 6000);
     });
     function startAudio() {}
 </script>
