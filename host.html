@@ -6,58 +6,63 @@
     <link rel="icon" href="https://fav.farm/🎮" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Roboto+Mono:wght@700&display=swap');
-        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; perspective: 1200px; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #fbc02d; font-family: 'Montserrat', sans-serif; color: #3e2723; text-align: center; perspective: 1500px; }
         .spiral { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, #f9a825 0deg 20deg, #fbc02d 20deg 40deg); animation: rotateSpiral 40s linear infinite; z-index: -1; }
         @keyframes rotateSpiral { 100% { transform: rotate(360deg); } }
         
         #digital-timer { position: absolute; top: 20px; left: 30px; font-size: 85px; font-family: 'Roboto Mono'; font-weight: 900; text-shadow: 6px 6px 0 #000; color: #fff; z-index: 1000; display: none; transform: rotate(-5deg); }
         .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; transition: 0.5s; }
 
-        /* --- ФИНАЛЬНЫЙ ФИКС НАСТРОЕК --- */
+        /* НАСТРОЙКИ - ФИКС ЦЕНТРА И ВЫСОТЫ */
         #settings-modal-overlay { 
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-            background: rgba(0,0,0,0.75); z-index: 10000; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.7); z-index: 10000; align-items: center; justify-content: center;
         }
         .modal { 
             background: #fff; border: 8px solid #3e2723; border-radius: 30px; 
-            width: 850px; height: 400px; /* Идеальная высота */
-            display: flex; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            width: 800px; height: 380px !important; display: flex; overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5); text-align: left;
         }
-        /* Сайдбар слева */
-        .modal-sidebar { 
-            width: 30%; background: #3e2723; padding: 15px; 
-            display: flex; flex-direction: column; gap: 8px; 
-        }
-        .tab-btn { 
-            padding: 15px; background: none; border: none; color: #fff; 
-            font-weight: 900; font-size: 16px; text-align: left; cursor: pointer; 
-            border-radius: 12px; transition: 0.2s; 
-        }
+        .modal-sidebar { width: 30%; background: #3e2723; padding: 15px; display: flex; flex-direction: column; gap: 5px; }
+        .tab-btn { padding: 12px; background: none; border: none; color: #fff; font-weight: 900; font-size: 16px; text-align: left; cursor: pointer; border-radius: 10px; }
         .tab-btn.active { background: #fbc02d; color: #3e2723; }
-        
-        /* Тело настроек справа */
-        .modal-body { width: 70%; padding: 30px 40px; overflow-y: auto; text-align: left; background: #fff; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        
-        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px dashed #ddd; padding-bottom: 10px; }
-        .setting-row label { font-size: 20px; font-weight: 900; }
-        input[type="number"], select { padding: 8px; font-size: 18px; border: 3px solid #3e2723; border-radius: 10px; font-family: 'Montserrat'; font-weight: bold; background: #eee; }
-        input[type="checkbox"] { width: 25px; height: 25px; cursor: pointer; }
+        .modal-body { width: 70%; padding: 20px 40px; overflow-y: auto; background: #fff; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px dashed #ddd; }
 
-        /* ОСТАЛЬНЫЕ ЭЛЕМЕНТЫ */
-        .bubble { background: #fff; border: 8px solid #3e2723; border-radius: 25px; padding: 25px; width: 40%; min-height: 200px; font-size: 35px; font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); position: absolute; top: 50%; transition: 0.8s; display: flex; align-items: center; justify-content: center; text-align: center; }
+        /* БАБЛЫ С РИСУНКАМИ */
+        .bubble { 
+            background: #fff; border: 8px solid #3e2723; border-radius: 25px; 
+            padding: 25px; width: 40%; min-height: 200px; font-size: 35px; 
+            font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); 
+            position: absolute; top: 50%; transition: all 0.8s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        /* РИСУНКИ В 2 РАЗА МЕНЬШЕ */
+        .bubble img { 
+            max-height: 180px; /* Уменьшено с 400px */
+            width: auto; 
+            border-radius: 15px; 
+        }
+
         #card1 { left: 5%; transform: translateY(-50%) rotate(-3deg); }
         #card2 { right: 5%; transform: translateY(-50%) rotate(3deg); }
-        .solo-center { left: 50% !important; transform: translate(-50%, -50%) scale(1.1) !important; }
+        .solo-center { left: 50% !important; transform: translate(-50%, -50%) rotate(0deg) scale(1.1) !important; z-index: 100; }
         .kicked-out { transform: translate(150%, -50%) rotate(40deg) !important; opacity: 0; }
-        .score-bar { background: #3e2723; color: #fff; font-size: 40px; padding: 12px 40px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 10px; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); animation: slideUp 0.5s forwards; }
+        @keyframes flyDown { 0% { opacity: 1; } 100% { transform: translate(0, 1000px) scale(0.5); opacity: 0; } }
+        .exit-zoom { animation: flyDown 1s forwards ease-in !important; left: 50% !important; margin-left: -20% !important; }
+
+        .points-badge { position: absolute; top: -25px; right: -25px; background: #ef5350; color: #fff; border: 5px solid #3e2723; width: 85px; height: 85px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 30px; animation: popBadge 0.4s forwards; z-index: 10; }
+        @keyframes popBadge { from { transform: scale(0); } to { transform: scale(1); } }
+        #qText { font-size: 50px; background:#fff; padding:15px 40px; border:6px solid #3e2723; transform:rotate(-1deg); transition: 0.4s; max-width: 80%; margin-top: -120px; }
+        .q-vanish { opacity: 0; transform: scale(0.7) !important; }
+        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; animation: slideUp 0.5s forwards; }
         @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .btn-open-settings { position: absolute; top: 20px; left: 20px; padding: 15px 30px; background: #3e2723; color: #fff; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; }
-        #credits-screen { background: #000 !important; color: #fff; display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9000; overflow: hidden; flex-direction: column; align-items: center; }
+        .player-node { width: 130px; height: 130px; background: #fff; border: 6px solid #3e2723; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px; font-weight: bold; box-shadow: 8px 8px 0 rgba(0,0,0,0.1); }
+        
+        #credits-screen { background: #000 !important; color: #fff !important; display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9000; overflow: hidden; flex-direction: column; align-items: center; }
         .credits-wrap { position: absolute; width: 100%; top: 100%; animation: scrollCredits 25s linear forwards; }
         @keyframes scrollCredits { from { top: 100%; } to { top: -450%; } }
-        .joke-card { background: #1a1a1a; border-left: 8px solid #fbc02d; padding: 15px; margin: 15px auto; width: 65%; text-align: left; font-size: 22px; color: #fff; }
+        .joke-card { background: #1a1a1a; border-left: 8px solid #fbc02d; padding: 20px; margin: 20px auto; width: 65%; text-align: left; font-size: 24px; color: #fff; }
     </style>
 </head>
 <body onclick="startAudio()">
@@ -72,60 +77,48 @@
                 <button class="tab-btn" onclick="openTab(event, 'tab-sounds')">ЗВУКИ</button>
                 <button class="tab-btn" onclick="openTab(event, 'tab-general')">ОБЩЕЕ</button>
                 <div style="flex-grow:1"></div>
-                <button onclick="saveSettings()" style="background:#4caf50; color:#fff; padding:15px; border-radius:10px; font-weight:900; border:none; cursor:pointer;">ОК</button>
+                <button onclick="saveSettings()" style="background:#4caf50; color:#fff; padding:10px; border-radius:10px; font-weight:900; border:none; cursor:pointer;">ОК</button>
             </div>
             <div class="modal-body">
-                <!-- Вкладка Режимы -->
                 <div id="tab-modes" class="tab-content active">
-                    <h2 style="color:#3e2723">РЕЖИМЫ ИГРЫ</h2>
+                    <h2>РЕЖИМЫ</h2>
                     <div class="setting-row"><label>ГРЕХО-СМЕХ (Текст)</label> <input type="radio" name="m" value="classic" checked></div>
                     <div class="setting-row"><label>ГРЕХ-РИСУНКОВ</label> <input type="radio" name="m" value="draw"></div>
                     <div class="setting-row"><label>ГРЕХ-ВОКАЛА</label> <input type="radio" name="m" value="voice"></div>
                 </div>
-                <!-- Вкладка События -->
                 <div id="tab-events" class="tab-content">
-                    <h2 style="color:#3e2723">СОБЫТИЯ</h2>
-                    <div class="setting-row"><label>АДСКИЙ РЕЖИМ</label> <input type="checkbox" id="hellMode"></div>
-                    <div class="setting-row"><label>18+ РЕЖИМ</label> <input type="checkbox" id="plus18"></div>
-                    <div class="setting-row"><label>БОНУС X2</label> <input type="checkbox" id="bonus2" checked></div>
+                    <h2>СОБЫТИЯ</h2>
+                    <div class="setting-row">Адский режим: <input type="checkbox" id="hellMode"></div>
+                    <div class="setting-row">18+ Режим: <input type="checkbox" id="plus18"></div>
+                    <div class="setting-row">Бонус X2: <input type="checkbox" id="bonus2" checked></div>
                 </div>
-                <!-- Вкладка Звуки -->
                 <div id="tab-sounds" class="tab-content">
-                    <h2 style="color:#3e2723">ЗВУКИ</h2>
-                    <div class="setting-row"><label>ДИКТОР:</label> 
-                        <select id="voiceType">
-                            <option value="male">МУЖСКОЙ (БАС)</option>
-                            <option value="female">ЖЕНСКИЙ</option>
-                        </select>
-                    </div>
+                    <h2>ЗВУКИ</h2>
+                    <div class="setting-row">Голос Диктора: <select id="voiceType"><option value="male">МУЖСКОЙ</option><option value="female">ЖЕНСКИЙ</option></select></div>
                 </div>
-                <!-- Вкладка Общее -->
                 <div id="tab-general" class="tab-content">
-                    <h2 style="color:#3e2723">ОБЩИЕ НАСТРОЙКИ</h2>
-                    <div class="setting-row"><label>ТАЙМЕР (СЕК):</label> <input type="number" id="timerVal" value="30"></div>
-                    <div class="setting-row">
-                        <label>МОДЕРАЦИЯ:</label> 
-                        <input type="checkbox" id="modToggle" onchange="document.getElementById('mB').style.display=this.checked?'block':'none'">
-                    </div>
-                    <button id="mB" onclick="copyM()" style="display:none; width:100%; background:#2196f3; color:#fff; padding:10px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">СКОПИРОВАТЬ ССЫЛКУ</button>
+                    <h2>ОБЩЕЕ</h2>
+                    <div class="setting-row">Таймер (сек): <input type="number" id="timerVal" value="30"></div>
+                    <div class="setting-row">Модерация: <input type="checkbox" id="modToggle" onchange="document.getElementById('mB').style.display=this.checked?'block':'none'"></div>
+                    <button id="mB" onclick="copyM()" style="display:none; width:100%; background:#2196f3; color:#fff; padding:10px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">КОПИРОВАТЬ ССЫЛКУ</button>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="lobby" class="screen" style="display:flex">
-        <button class="btn-open-settings" onclick="toggleSet()">Настройки игры</button>
+        <button style="position:absolute; top:20px; left:20px; padding:12px 25px; background:#3e2723; color:#fff; border-radius:10px; font-weight:900; cursor:pointer;" onclick="toggleSet()">Настройки игры</button>
         <h1 style="font-size: 80px; text-shadow: 6px 6px 0 #fff; margin:0;">ГРЕХО-СМЕХ</h1>
         <div style="background:#000; color:#ffeb3b; padding:15px 60px; border:8px solid #fff; font-size:100px; transform:rotate(-2deg); margin:20px;" id="bigCode">...</div>
         <div id="playerList" style="display:flex; flex-wrap:wrap; justify-content:center; margin-top:20px;"></div>
-        <button onclick="socket.emit('start-game', curCode)" style="background:#4caf50; border:6px solid #3e2723; color:#fff; padding:25px 70px; font-size:35px; border-radius:100px; cursor:pointer; margin-top:30px; font-weight:900;">ПОГНАЛИ!</button>
+        <button onclick="socket.emit('start-game', curCode)" style="background:#4caf50; border:6px solid #3e2723; color:#fff; padding:20px 60px; font-size:35px; border-radius:100px; cursor:pointer; margin-top:30px; font-weight:900;">ПОГНАЛИ!</button>
     </div>
 
     <div id="game" class="screen">
-        <h2 id="qText" style="font-size:50px; background:#fff; padding:20px; border:6px solid #3e2723; transform:rotate(-1deg)"></h2>
+        <h2 id="qText"></h2>
         <div id="voting" style="height:400px; width:100%; position:relative;">
-            <div id="card1" class="bubble"><div id="ans-text-1"></div><div id="badge-1" style="position:absolute; top:-20px; right:-20px; background:#ef5350; color:#fff; width:70px; height:70px; border-radius:50%; display:none; align-items:center; justify-content:center; font-size:24px; border:4px solid #3e2723;"></div></div>
-            <div id="card2" class="bubble"><div id="ans-text-2"></div><div id="badge-2" style="position:absolute; top:-20px; right:-20px; background:#ef5350; color:#fff; width:70px; height:70px; border-radius:50%; display:none; align-items:center; justify-content:center; font-size:24px; border:4px solid #3e2723;"></div></div>
+            <div id="card1" class="bubble"><div id="ans-text-1"></div><div id="badge-1" class="points-badge"></div></div>
+            <div id="card2" class="bubble"><div id="ans-text-2"></div><div id="badge-2" class="points-badge"></div></div>
         </div>
     </div>
 
@@ -146,14 +139,11 @@
         const o = document.getElementById('settings-modal-overlay');
         o.style.display = (o.style.display === 'flex') ? 'none' : 'flex';
     }
-    
-    function openTab(e, tabName) {
+    function openTab(e, t) { 
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabName).classList.add('active');
-        e.currentTarget.classList.add('active');
+        document.getElementById(t).classList.add('active'); e.currentTarget.classList.add('active');
     }
-
     function saveSettings() {
         const mode = document.querySelector('input[name="m"]:checked').value;
         gameSettings.timer = parseInt(document.getElementById('timerVal').value);
@@ -165,14 +155,13 @@
         socket.emit('update-settings', { code: curCode, settings: gameSettings, mode });
         toggleSet();
     }
-
     function copyM() { const link = window.location.origin + "/mod?code=" + curCode; navigator.clipboard.writeText(link); alert("Ссылка скопирована!"); }
     function playM(t) { Object.values(music).forEach(m=>{m.pause();m.currentTime=0;}); music[t].loop=true; music[t].volume=0.1; music[t].play(); }
     function startAudio() { if(!window.ai){ playM('lobby'); window.ai=true; } }
 
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
     socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; });
-    socket.on('player-list-update', players => { document.getElementById('playerList').innerHTML = players.map(p => `<div style="background:#fff; border:4px solid #3e2723; border-radius:15px; padding:10px 20px; margin:5px; font-weight:bold;">${p.emoji} ${p.name}</div>`).join(''); });
+    socket.on('player-list-update', players => { document.getElementById('playerList').innerHTML = players.map(p => `<div class="player-node"><span>${p.emoji}</span>${p.name}</div>`).join(''); });
 
     function speak(t, cb) {
         window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
@@ -182,15 +171,16 @@
     }
 
     function runTimer(sec) {
-        let tl = sec; const tEl = document.getElementById('digital-timer');
-        tEl.style.display = 'block'; tEl.innerText = tl;
+        let tl = sec; const tEl = document.getElementById('digital-timer'); tEl.style.display = 'block'; tEl.innerText = tl;
         clearInterval(cdnInt); cdnInt = setInterval(() => { tl--; tEl.innerText = tl; if(tl <= 0) { clearInterval(cdnInt); tEl.style.display = 'none'; } }, 1000);
     }
 
     socket.on('round-started', d => {
         document.getElementById('lobby').style.display="none"; document.getElementById('scores').style.display="none";
-        document.getElementById('game').style.display='flex'; document.getElementById('voting').style.display = 'none';
-        document.getElementById('qText').innerText = d.q; speak(d.q); runTimer(d.time); playM('game');
+        document.getElementById('game').style.display='flex'; document.getElementById('game').classList.remove('exit-zoom');
+        document.getElementById('voting').style.display = 'none';
+        const q = document.getElementById('qText'); q.innerText = d.q; q.style.opacity = "1";
+        speak(d.q); runTimer(d.time); playM('game');
     });
 
     socket.on('show-voting', d => {
@@ -200,7 +190,7 @@
         c1.className = 'bubble'; c2.className = 'bubble'; b1.style.display = 'none'; b2.style.display = 'none';
         
         const rend = (val, card) => {
-            if(d.type === 'draw') card.innerHTML = `<img src="${val}" style="width:100%; border-radius:15px;">`;
+            if(d.type === 'draw') card.innerHTML = `<img src="${val}">`;
             else if(d.type === 'voice') card.innerHTML = `<button style="background:#ef5350; color:#fff; border:none; padding:15px; border-radius:10px; font-weight:bold; cursor:pointer;" onclick="new Audio('${val}').play()">▶ СЛУШАТЬ</button>`;
             else card.innerText = Array.isArray(val) ? val.join('\n') : val;
         };
@@ -213,13 +203,13 @@
 
     socket.on('voting-results', d => {
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
-        b1.innerText = d.v1; b1.style.display = 'flex';
-        if(!d.isSolo) { b2.innerText = d.v2; b2.style.display = 'flex'; }
-        setTimeout(() => {
-            b1.innerText = "+" + d.p1Points; b1.style.background = "#4caf50";
-            if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; }
-            setTimeout(() => { document.getElementById('card1').classList.add('exit-zoom'); document.getElementById('card2').classList.add('exit-zoom'); }, 1500);
-        }, 2000);
+        b1.innerText = "+" + d.p1Points; b1.style.display = 'flex';
+        if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; b2.style.display = 'flex'; }
+        setTimeout(() => { 
+            document.getElementById('card1').classList.add('exit-zoom'); 
+            document.getElementById('card2').classList.add('exit-zoom'); 
+            document.getElementById('qText').style.opacity = "0";
+        }, 3000);
     });
 
     socket.on('show-scores', d => {
