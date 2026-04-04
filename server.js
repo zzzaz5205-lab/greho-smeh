@@ -45,7 +45,11 @@ io.on('connection', (socket) => {
     socket.on('create-room', (oldCode) => {
         let code = (oldCode && rooms[oldCode]) ? oldCode : Math.random().toString(36).substring(2, 6).toUpperCase();
         if (!rooms[code]) {
-            rooms[code] = { host: socket.id, players: [], round: 1, currentPairIndex: 0, pairs: [], gameStarted: false, usedQuestions: [], settings: { timer: 30, voice: 'male', hellMode: false, bonusX2: false, moderation: false } };
+            rooms[code] = { 
+                host: socket.id, players: [], round: 1, currentPairIndex: 0, pairs: [], 
+                gameStarted: false, usedQuestions: [], allJokes: [], // Статистика для титров
+                settings: { timer: 30, voice: 'male', hellMode: false, bonusX2: false, eighteenPlus: false } 
+            };
         } else rooms[code].host = socket.id;
         socket.join(code);
         socket.emit('room-created', code);
@@ -91,7 +95,12 @@ io.on('connection', (socket) => {
             if (timers[code]) clearTimeout(timers[code]);
             timers[code] = setTimeout(() => {
                 if (room.round < 3) startRound(code, room.round + 1);
-                else io.to(code).emit('final-results', { players: room.players.sort((a,b)=>b.score-a.score) });
+                else {
+                    // Конец игры: сортируем шутки для титров
+                    const best = [...room.allJokes].sort((a,b) => b.votes - a.votes).slice(0, 5);
+                    const worst = room.allJokes.filter(j => j.votes === 0).slice(0, 5);
+                    io.to(code).emit('final-results', { players: room.players.sort((a,b)=>b.score-a.score), best, worst });
+                }
             }, 16000);
             return;
         }
@@ -110,12 +119,9 @@ io.on('connection', (socket) => {
     socket.on('submit-answer', ({ code, name, answer }) => {
         const room = rooms[code]; const pair = room?.pairs[room.currentPairIndex];
         if (!pair) return;
-        // Если все инпуты пустые — ставим EMPTY
-        let isActuallyEmpty = Array.isArray(answer) ? answer.every(val => val.trim() === "") : answer.trim() === "";
-        const finalAns = isActuallyEmpty ? "EMPTY" : (Array.isArray(answer) ? answer : answer);
-
-        if (pair.p1.name === name) pair.ans1 = finalAns;
-        if (pair.p2 && pair.p2.name === name) pair.ans2 = finalAns;
+        const txt = Array.isArray(answer) ? answer.filter(x => x).join(' | ') : (answer || "EMPTY");
+        if (pair.p1.name === name) pair.ans1 = txt;
+        if (pair.p2 && pair.p2.name === name) pair.ans2 = txt;
         if (pair.ans1 && (!pair.p2 || pair.ans2)) { clearTimeout(timers[code]); showVoting(code, pair); }
     });
 
@@ -138,24 +144,29 @@ io.on('connection', (socket) => {
         if (pair.votes.length >= (room.players.length - (pair.p2 ? 2 : 1))) { clearTimeout(timers[code]); finishPair(code); }
     });
 
-    async function finishPair(code) {
+    function finishPair(code) {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return; pair.finished = true;
         let v1 = pair.votes.filter(v => v.voteNum === 1).length, v2 = pair.votes.filter(v => v.voteNum === 2).length;
         let mult = room.round * 100;
         let p1Points = (pair.ans1 === "EMPTY") ? 0 : (!pair.p2 ? 100 : v1 * mult);
         let p2Points = (pair.ans2 === "EMPTY") ? 0 : (v2 * mult);
+        
+        // Сохраняем для титров
+        if (pair.ans1 !== "EMPTY") room.allJokes.push({ text: pair.ans1, author: pair.p1.name, votes: v1, emoji: pair.p1.emoji });
+        if (pair.p2 && pair.ans2 !== "EMPTY") room.allJokes.push({ text: pair.ans2, author: pair.p2.name, votes: v2, emoji: pair.p2.emoji });
+
         pair.p1.score += p1Points; if (pair.p2) pair.p2.score += p2Points;
         io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, bothEmpty: (pair.ans1 === "EMPTY" && pair.ans2 === "EMPTY"), v1, v2, p1Points, p2Points });
         setTimeout(() => { if (rooms[code]) { rooms[code].currentPairIndex++; sendPair(code); } }, 8000);
     }
-
-    socket.on('finish-credits', (code) => { io.to(code).emit('go-to-menu'); delete rooms[code]; });
+    
     socket.on('select-emoji', ({ code, name, emoji }) => {
         const p = rooms[code]?.players.find(pl => pl.name === name);
         if (p) { p.emoji = emoji; io.to(code).emit('player-list-update', rooms[code].players); }
     });
+    socket.on('finish-credits', (code) => { io.to(code).emit('go-to-menu'); delete rooms[code]; });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Ready'));
+server.listen(PORT, () => console.log('Live'));
