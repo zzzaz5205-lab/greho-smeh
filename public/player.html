@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Грехо-Смех | Телефон</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div id="wait-screen">
+            <h2 id="status">Подключение...</h2>
+        </div>
+
+        <div id="answer-screen" class="hidden">
+            <h3 id="q-text"></h3>
+            <input type="text" id="answer-input" placeholder="Твой ответ...">
+            <button onclick="sendAnswer()">ОТПРАВИТЬ</button>
+        </div>
+
+        <div id="vote-screen" class="hidden">
+            <h3>КТО СМЕШНЕЕ?</h3>
+            <div id="options"></div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const urlParams = new URLSearchParams(window.location.search);
+        const name = urlParams.get('name');
+        const code = urlParams.get('code');
+
+        socket.emit('join-room', { code, name });
+
+        socket.on('joined-success', () => {
+            document.getElementById('status').innerText = "Ты в лобби! Жди начала игры.";
+        });
+
+        socket.on('round-start', data => {
+            document.getElementById('wait-screen').classList.add('hidden');
+            document.getElementById('vote-screen').classList.add('hidden');
+            document.getElementById('answer-screen').classList.remove('hidden');
+            document.getElementById('q-text').innerText = data.question;
+            document.getElementById('answer-input').value = '';
+        });
+
+        function sendAnswer() {
+            const answer = document.getElementById('answer-input').value;
+            if(answer) {
+                socket.emit('submit-answer', { code, answer });
+                document.getElementById('answer-screen').classList.add('hidden');
+                document.getElementById('wait-screen').classList.remove('hidden');
+                document.getElementById('status').innerText = "Ответ принят! Ждём остальных.";
+            }
+        }
+
+        socket.on('start-voting', answers => {
+            document.getElementById('wait-screen').classList.add('hidden');
+            document.getElementById('vote-screen').classList.remove('hidden');
+            const options = document.getElementById('options');
+            options.innerHTML = '';
+            
+            // Показываем все ответы, кроме своего (анонимно)
+            answers.forEach(ans => {
+                const btn = document.createElement('div');
+                btn.className = 'answer-card';
+                btn.innerText = ans.text;
+                btn.onclick = () => {
+                    socket.emit('cast-vote', { code, targetId: ans.playerId });
+                    document.getElementById('vote-screen').classList.add('hidden');
+                    document.getElementById('wait-screen').classList.remove('hidden');
+                    document.getElementById('status').innerText = "Голос учтён!";
+                };
+                options.appendChild(btn);
+            });
+        });
+
+        socket.on('results', () => {
+            document.getElementById('status').innerText = "Смотри на главный экран!";
+        });
+
+        socket.on('error', msg => alert(msg));
+    </script>
+</body>
+</html>
