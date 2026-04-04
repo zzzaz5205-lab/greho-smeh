@@ -1,243 +1,106 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ИГРОК | ГРЕХО-СМЕХ</title>
-    <link rel="icon" href="https://fav.farm/🎮" />
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
-        
-        body { 
-            font-family: sans-serif; 
-            background: #fbc02d; /* Горчичный */
-            color: #3e2723; 
-            text-align: center; 
-            margin: 0; 
-            overflow: hidden;
-            touch-action: manipulation;
-        }
-
-        /* ТАЙМЕР В УГЛУ */
-        #p-timer { 
-            position: absolute; top: 10px; right: 10px; 
-            background: #3e2723; color: #fff; 
-            padding: 5px 15px; border-radius: 10px; 
-            font-weight: bold; font-family: monospace; 
-            font-size: 20px; display: none; z-index: 1000;
-        }
-
-        .top-bar { 
-            background: #3e2723; 
-            color: #fff; 
-            padding: 15px; 
-            font-weight: 900; 
-            font-size: 20px; 
-            font-family: 'Montserrat', sans-serif;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-
-        .screen { display: block; padding: 20px; box-sizing: border-box; height: calc(100vh - 60px); overflow-y: auto; }
+        body { font-family: sans-serif; background: #fbc02d; color: #3e2723; text-align: center; margin: 0; overflow: hidden; touch-action: manipulation; }
+        .top-bar { background: #3e2723; color: #fff; padding: 10px; font-weight: 900; font-size: 18px; }
+        .screen { display: block; padding: 20px; box-sizing: border-box; }
         .hidden { display: none !important; }
-
-        /* КНОПКИ */
-        .btn { 
-            background: #ef5350; color: white; 
-            width: 90%; padding: 20px; margin: 10px auto; 
-            border: 4px solid #3e2723; border-radius: 15px; 
-            font-weight: 900; font-size: 22px; 
-            box-shadow: 0 6px 0 #3e2723; cursor: pointer;
-            text-transform: uppercase; font-family: 'Montserrat', sans-serif;
-        }
-        .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #3e2723; }
-
-        /* ИНПУТЫ */
-        input { 
-            width: 90%; padding: 15px; border: 4px solid #3e2723; 
-            border-radius: 12px; font-size: 18px; font-weight: bold; 
-            margin-bottom: 10px; outline: none; box-sizing: border-box;
-        }
-
-        /* СЕТКА ЭМОДЗИ */
-        .emoji-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 10px; }
-        .emoji-item { 
-            font-size: 35px; background: #fff; border: 3px solid #3e2723; 
-            border-radius: 12px; width: 60px; height: 60px; 
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-        }
-
-        .q-display { 
-            background: #fff; border: 4px solid #3e2723; 
-            padding: 15px; margin-bottom: 20px; border-radius: 15px; 
-            font-size: 20px; font-weight: 900; transform: rotate(-1deg);
-        }
-
-        /* ГИФКА */
-        .funny-gif { 
-            width: 80%; max-width: 300px; border: 6px solid #3e2723; 
-            border-radius: 20px; margin-top: 20px; 
-        }
-
-        #status-msg { font-size: 22px; font-weight: 900; margin-top: 30px; }
+        .btn { background: #ef5350; color: white; width: 90%; padding: 15px; margin: 10px auto; border: 4px solid #3e2723; border-radius: 12px; font-weight: 900; font-size: 20px; box-shadow: 0 4px 0 #3e2723; cursor: pointer; }
+        .btn:active { transform: translateY(4px); box-shadow: 0 0 0; }
+        input { width: 90%; padding: 12px; border: 3px solid #3e2723; border-radius: 10px; font-size: 18px; font-weight: bold; margin-bottom: 8px; outline: none; }
+        #p-timer { font-size: 20px; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
+    <div class="top-bar">КОМНАТА: <span id="room-display">...</span> <div id="p-timer"></div></div>
+    
+    <div id="status" class="screen">ПОДКЛЮЧЕНИЕ...</div>
 
-    <div id="p-timer">00</div>
-    <div class="top-bar">КОМНАТА: <span id="room-display">...</span></div>
-
-    <!-- ЭКРАН 1: ВЫБОР ГЕРОЯ -->
     <div id="emoji-ui" class="screen hidden">
-        <h2 style="font-family: 'Montserrat';">КТО ТЫ СЕГОДНЯ?</h2>
-        <div id="grid" class="emoji-grid"></div>
+        <h2>ВЫБЕРИ ГЕРОЯ</h2>
+        <div id="grid" style="display:flex; flex-wrap:wrap; justify-content:center; gap:5px;"></div>
     </div>
 
-    <!-- ЭКРАН 2: ОЖИДАНИЕ (С ГИФКОЙ) -->
     <div id="wait-ui" class="screen hidden">
-        <div id="status-msg">Смотри на экран!</div>
-        <img src="cat.gif" class="funny-gif">
+        <h2 id="status-msg">Смотри на экран!</h2>
+        <img src="cat.gif" style="width:70%; border:4px solid #3e2723; border-radius:15px;">
     </div>
 
-    <!-- ЭКРАН 3: ОТВЕТ -->
     <div id="answer-ui" class="screen hidden">
-        <div id="qText" class="q-display"></div>
+        <div id="qText" style="background:#fff; border:3px solid #3e2723; padding:10px; border-radius:10px; margin-bottom:15px; font-weight:bold;"></div>
         <div id="inp-area"></div>
-        <button class="btn" onclick="sendAns()" style="background:#4caf50; box-shadow: 0 6px 0 #2e7d32;">ОТПРАВИТЬ</button>
+        <button class="btn" onclick="sendAns()" style="background:#4caf50;">ОТПРАВИТЬ</button>
     </div>
 
-    <!-- ЭКРАН 4: ГОЛОСОВАНИЕ -->
     <div id="vote-ui" class="screen hidden">
-        <h2 style="font-family: 'Montserrat';">КТО СМЕШНЕЕ?</h2>
-        <button id="b1" class="btn"></button>
-        <button id="b2" class="btn" style="background:#42a5f5; box-shadow: 0 6px 0 #1565c0;"></button>
+        <h2>ГОЛОСУЕМ!</h2>
+        <div id="vote-btns"></div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         const params = new URLSearchParams(window.location.search);
-        
-        // Получаем данные из URL или из памяти (если обновили страницу)
         let myName = params.get('name') || localStorage.getItem('pName');
         let myCode = (params.get('code') || localStorage.getItem('pCode'))?.toUpperCase();
 
         if (!myName || !myCode) { location.href = 'index.html'; }
-
-        // Сохраняем для переподключения
-        localStorage.setItem('pName', myName);
-        localStorage.setItem('pCode', myCode);
-
+        localStorage.setItem('pName', myName); localStorage.setItem('pCode', myCode);
         document.getElementById('room-display').innerText = myCode;
 
-        const emojis = ['🤡','👽','🤖','👻','🐙','🐸','🐱','🍌','💩','🦄','🐼','🦊','🐷','🐧','🦖','🍦','🍔','🍕','🎸','🚀','💎','🎲','🍄','🧶','🦷'];
+        function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            if (id !== 'answer-ui' && id !== 'vote-ui') document.getElementById('p-timer').style.display = 'none';
-        }
-
-        // Таймер
         let ptInt;
         function startTimer(sec) {
-            clearInterval(ptInt);
-            let tl = sec;
-            const el = document.getElementById('p-timer');
-            el.style.display = 'block';
-            el.innerText = tl;
-            ptInt = setInterval(() => {
-                tl--;
-                el.innerText = tl;
-                if(tl <= 0) { clearInterval(ptInt); el.style.display = 'none'; }
-            }, 1000);
+            clearInterval(ptInt); let tl = sec;
+            const el = document.getElementById('p-timer'); el.innerText = tl;
+            ptInt = setInterval(() => { tl--; el.innerText = tl; if(tl <= 0) clearInterval(ptInt); }, 1000);
         }
 
-        // Подключение
         socket.emit('join-room', { code: myCode, name: myName });
 
         socket.on('joined-success', () => {
             showScreen('emoji-ui');
-            const g = document.getElementById('grid');
-            g.innerHTML = "";
-            emojis.forEach(e => {
-                const d = document.createElement('div');
-                d.className = 'emoji-item';
-                d.innerText = e;
-                d.onclick = () => {
-                    socket.emit('select-emoji', { code: myCode, name: myName, emoji: e });
-                    document.getElementById('status-msg').innerText = "Ждём начала игры...";
-                    showScreen('wait-ui');
-                };
+            const g = document.getElementById('grid'); g.innerHTML = "";
+            ['🤡','👽','🤖','👻','🐙','🐸','🐱','🍌','💩','🦄','🐼','🦊','🐷','🐧','🦖'].forEach(e => {
+                const d = document.createElement('div'); d.style.fontSize="40px"; d.style.padding="10px"; d.innerText = e;
+                d.onclick = () => { socket.emit('select-emoji', { code: myCode, name: myName, emoji: e }); showScreen('wait-ui'); };
                 g.appendChild(d);
             });
         });
 
         socket.on('round-started', d => {
-            let myTurn = (myName === d.p1_name || myName === d.p2_name);
-            
+            const myTurn = (myName === d.p1_name || myName === d.p2_name);
             if(myTurn) {
-                showScreen('answer-ui');
-                startTimer(d.time);
+                showScreen('answer-ui'); startTimer(d.time);
                 document.getElementById('qText').innerText = d.q;
                 const area = document.getElementById('inp-area');
-                if (d.round === 3) {
-                    area.innerHTML = `
-                        <input class="ansV" maxlength="40" placeholder="Первая шутка...">
-                        <input class="ansV" maxlength="40" placeholder="Вторая шутка...">
-                        <input class="ansV" maxlength="40" placeholder="Третья шутка...">
-                    `;
-                } else {
-                    area.innerHTML = '<input class="ansV" maxlength="40" placeholder="Пиши здесь...">';
-                }
-            } else {
-                document.getElementById('status-msg').innerText = "Смотри на большой экран!";
-                showScreen('wait-ui');
-            }
+                area.innerHTML = d.round === 3 ? '<input class="ansV" maxlength="40"><input class="ansV" maxlength="40"><input class="ansV" maxlength="40">' : '<input class="ansV" maxlength="40">';
+            } else { showScreen('wait-ui'); }
         });
 
         function sendAns() {
-            const inps = Array.from(document.querySelectorAll('.ansV'));
-            const values = inps.map(i => i.value.trim()).filter(v => v !== "");
-            
-            if(values.length === 0) return alert("Напиши хоть что-то!");
-
-            socket.emit('submit-answer', { code: myCode, name: myName, answer: values });
-            document.getElementById('status-msg').innerText = "Принято! Ждём остальных.";
+            const val = Array.from(document.querySelectorAll('.ansV')).map(i => i.value.trim());
+            socket.emit('submit-answer', { code: myCode, name: myName, answer: val });
             showScreen('wait-ui');
         }
 
         socket.on('show-voting', d => {
-            let inDuel = (myName === d.p1_name || myName === d.p2_name);
-            
-            if(inDuel || d.isSolo) {
-                document.getElementById('status-msg').innerText = d.isSolo ? "ОДИНОЧНОЕ ВЫСТУПЛЕНИЕ" : "ТВОЙ ОТВЕТ НА ЭКРАНЕ!";
-                showScreen('wait-ui');
-                return;
-            }
-
-            showScreen('vote-ui');
-            startTimer(d.time);
-            
-            const b1 = document.getElementById('b1');
-            const b2 = document.getElementById('b2');
-
-            b1.innerText = d.ans1;
-            b1.onclick = () => { socket.emit('cast-vote', { code: myCode, voteNum: 1 }); showScreen('wait-ui'); };
-            
-            b2.innerText = d.ans2;
-            b2.onclick = () => { socket.emit('cast-vote', { code: myCode, voteNum: 2 }); showScreen('wait-ui'); };
+            if(myName === d.p1_name || myName === d.p2_name || d.isSolo || d.bothEmpty) { showScreen('wait-ui'); return; }
+            showScreen('vote-ui'); startTimer(d.time);
+            document.getElementById('vote-btns').innerHTML = `
+                <button class="btn" onclick="vote(1)">${Array.isArray(d.ans1)?d.ans1.join(' / '):d.ans1}</button>
+                <button class="btn" onclick="vote(2)" style="background:#42a5f5">${Array.isArray(d.ans2)?d.ans2.join(' / '):d.ans2}</button>
+            `;
         });
 
-        socket.on('go-to-menu', () => {
-            localStorage.clear();
-            location.href = 'index.html';
-        });
-
-        socket.on('error-join', m => {
-            alert(m);
-            localStorage.clear();
-            location.href = 'index.html';
-        });
+        function vote(n) { socket.emit('cast-vote', { code: myCode, voteNum: n }); showScreen('wait-ui'); }
+        socket.on('go-to-menu', () => { localStorage.clear(); location.href = 'index.html'; });
+        socket.on('error-join', m => { alert(m); location.href = 'index.html'; });
     </script>
 </body>
 </html>
