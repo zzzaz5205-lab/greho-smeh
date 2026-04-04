@@ -3,84 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Грехо-Смех | Телефон</title>
     <link rel="stylesheet" href="style.css">
+    <title>Контроллер</title>
 </head>
 <body>
-    <div class="container">
-        <div id="wait-screen">
-            <h2 id="status">Подключение...</h2>
+    <div class="card">
+        <div id="answering" class="hidden">
+            <h3 id="q-text">Вопрос...</h3>
+            <input type="text" id="ans-input" placeholder="Твой ответ">
+            <button onclick="submitAns()">ОТПРАВИТЬ</button>
         </div>
 
-        <div id="answer-screen" class="hidden">
-            <h3 id="q-text"></h3>
-            <input type="text" id="answer-input" placeholder="Твой ответ...">
-            <button onclick="sendAnswer()">ОТПРАВИТЬ</button>
+        <div id="voting" class="hidden">
+            <h3>ГОЛОСУЙ!</h3>
+            <div id="vote-options"></div>
         </div>
 
-        <div id="vote-screen" class="hidden">
-            <h3>КТО СМЕШНЕЕ?</h3>
-            <div id="options"></div>
+        <div id="wait">
+            <h2 id="status">Ждем начала...</h2>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
     <script>
-        const socket = io();
-        const urlParams = new URLSearchParams(window.location.search);
-        const name = urlParams.get('name');
-        const code = urlParams.get('code');
+        const params = new URLSearchParams(window.location.search);
+        const name = params.get('name');
+        const code = params.get('code');
+        let currentQuestions = [];
 
         socket.emit('join-room', { code, name });
 
-        socket.on('joined-success', () => {
-            document.getElementById('status').innerText = "Ты в лобби! Жди начала игры.";
+        socket.on('round-started', data => {
+            currentQuestions = data.pairs.filter(p => p.p1 === socket.id || p.p2 === socket.id);
+            showNextQuestion();
         });
 
-        socket.on('round-start', data => {
-            document.getElementById('wait-screen').classList.add('hidden');
-            document.getElementById('vote-screen').classList.add('hidden');
-            document.getElementById('answer-screen').classList.remove('hidden');
-            document.getElementById('q-text').innerText = data.question;
-            document.getElementById('answer-input').value = '';
-        });
-
-        function sendAnswer() {
-            const answer = document.getElementById('answer-input').value;
-            if(answer) {
-                socket.emit('submit-answer', { code, answer });
-                document.getElementById('answer-screen').classList.add('hidden');
-                document.getElementById('wait-screen').classList.remove('hidden');
-                document.getElementById('status').innerText = "Ответ принят! Ждём остальных.";
+        function showNextQuestion() {
+            if (currentQuestions.length > 0) {
+                const q = currentQuestions.shift();
+                document.getElementById('wait').classList.add('hidden');
+                document.getElementById('answering').classList.remove('hidden');
+                document.getElementById('q-text').innerText = q.question;
+            } else {
+                document.getElementById('answering').classList.add('hidden');
+                document.getElementById('wait').classList.remove('hidden');
+                document.getElementById('status').innerText = "Ждем остальных...";
             }
         }
 
-        socket.on('start-voting', answers => {
-            document.getElementById('wait-screen').classList.add('hidden');
-            document.getElementById('vote-screen').classList.remove('hidden');
-            const options = document.getElementById('options');
-            options.innerHTML = '';
-            
-            // Показываем все ответы, кроме своего (анонимно)
-            answers.forEach(ans => {
-                const btn = document.createElement('div');
-                btn.className = 'answer-card';
-                btn.innerText = ans.text;
-                btn.onclick = () => {
-                    socket.emit('cast-vote', { code, targetId: ans.playerId });
-                    document.getElementById('vote-screen').classList.add('hidden');
-                    document.getElementById('wait-screen').classList.remove('hidden');
-                    document.getElementById('status').innerText = "Голос учтён!";
-                };
-                options.appendChild(btn);
-            });
+        function submitAns() {
+            const answer = document.getElementById('ans-input').value;
+            const q = document.getElementById('q-text').innerText;
+            socket.emit('submit-answer', { code, question: q, answer });
+            document.getElementById('ans-input').value = "";
+            showNextQuestion();
+        }
+
+        socket.on('start-voting', data => {
+            const isMeDuelling = (data.p1 === socket.id || data.p2 === socket.id);
+            if (isMeDuelling) {
+                document.getElementById('wait').classList.remove('hidden');
+                document.getElementById('status').innerText = "Вы в дуэли! Вы не можете голосовать.";
+                document.getElementById('voting').classList.add('hidden');
+            } else {
+                document.getElementById('wait').classList.add('hidden');
+                document.getElementById('voting').classList.remove('hidden');
+                document.getElementById('vote-options').innerHTML = data.answers.map(a => `
+                    <button onclick="vote('${a.playerId}')">${a.text}</button>
+                `).join('');
+            }
         });
 
-        socket.on('results', () => {
-            document.getElementById('status').innerText = "Смотри на главный экран!";
-        });
-
-        socket.on('error', msg => alert(msg));
+        function vote(id) {
+            socket.emit('cast-vote', { code, targetPlayerId: id });
+            document.getElementById('voting').classList.add('hidden');
+            document.getElementById('wait').classList.remove('hidden');
+            document.getElementById('status').innerText = "Голос принят!";
+        }
     </script>
 </body>
 </html>
