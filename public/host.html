@@ -2,73 +2,64 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ГРЕХО-СМЕХ | Экран</title>
     <link rel="stylesheet" href="style.css">
+    <title>Грехо-Смех | HOST</title>
 </head>
 <body>
-    <div class="container">
+    <div class="card" id="main">
         <div id="lobby">
-            <h1>Код комнаты:</h1>
-            <div id="display-code" class="room-code">----</div>
-            <h3>Игроки в лобби:</h3>
-            <ul id="player-list"></ul>
-            <button id="start-btn" class="hidden" onclick="startGame()">НАЧАТЬ ИГРУ</button>
+            <h1>ГРЕХО-СМЕХ</h1>
+            <h2 id="room-code">Генерируем код...</h2>
+            <div id="players"></div>
+            <button onclick="startGame()">НАЧАТЬ ИГРУ</button>
+            <p>Нажмите на экран, чтобы включить диктора</p>
         </div>
 
-        <div id="game-screen" class="hidden">
-            <h2 id="round-num"></h2>
-            <h1 id="question-text"></h1>
-            <div id="host-message">Ожидаем ответы игроков...</div>
-            <div id="results-area"></div>
+        <div id="game" class="hidden">
+            <div class="timer-bar" id="timer-bar"></div>
+            <h2 id="round-title">Раунд 1</h2>
+            <h1 id="question">Тут будет вопрос</h1>
+            <div id="voting-zone" class="answer-pair"></div>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
     <script>
-        const socket = io();
-        let roomCode = '';
-
+        let myCode = "";
         socket.emit('create-room');
+
         socket.on('room-created', code => {
-            roomCode = code;
-            document.getElementById('display-code').innerText = code;
+            myCode = code;
+            document.getElementById('room-code').innerText = "КОД: " + code;
         });
 
-        socket.on('player-update', players => {
-            const list = document.getElementById('player-list');
-            list.innerHTML = players.map(p => `<li>${p.name}</li>`).join('');
-            if(players.length >= 2) document.getElementById('start-btn').classList.remove('hidden');
+        socket.on('update-players', players => {
+            document.getElementById('players').innerHTML = players.map(p => `<h3>${p.name}</h3>`).join('');
         });
 
         function startGame() {
-            socket.emit('start-game', roomCode);
+            socket.emit('start-game', myCode);
+            speak("Игра начинается. Приготовьтесь грешить и смеяться.");
         }
 
-        socket.on('round-start', data => {
+        socket.on('round-started', data => {
             document.getElementById('lobby').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            document.getElementById('round-num').innerText = `Раунд ${data.round}`;
-            document.getElementById('question-text').innerText = data.question;
-            document.getElementById('host-message').innerText = "Все отвечают на своих телефонах!";
-            document.getElementById('results-area').innerHTML = '';
+            document.getElementById('game').classList.remove('hidden');
+            document.getElementById('question').innerText = "Отвечайте на вопросы!";
+            speak("Раунд " + data.round + ". Посмотрите в свои телефоны и ответьте на вопросы.");
         });
 
-        socket.on('start-voting', answers => {
-            document.getElementById('host-message').innerText = "Голосуем!";
+        socket.on('start-voting', data => {
+            document.getElementById('question').innerText = data.question;
+            document.getElementById('voting-zone').innerHTML = data.answers.map(a => `
+                <div class="ans-card">${a.text}</div>
+            `).join('');
+            speak("Вопрос. " + data.question + ". Чей ответ лучше?");
         });
 
-        socket.on('results', players => {
-            document.getElementById('host-message').innerText = "Текущий счет:";
-            const area = document.getElementById('results-area');
-            area.innerHTML = players.map(p => `<div>${p.name}: ${p.score}</div>`).join('');
-        });
-
-        socket.on('final-scores', players => {
-            document.getElementById('question-text').innerText = "ИГРА ОКОНЧЕНА!";
-            document.getElementById('host-message').innerText = "Финальный результат:";
-            const area = document.getElementById('results-area');
-            area.innerHTML = players.sort((a,b) => b.score - a.score)
-                .map(p => `<h2>🏆 ${p.name}: ${p.score}</h2>`).join('');
+        socket.on('voting-results', data => {
+            speak("Голосование окончено. Посмотрим, кто заработал очки.");
         });
     </script>
 </body>
