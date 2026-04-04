@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Грехо-Смех</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>ГРЕХО-СМЕХ</h1>
+        <div id="start-menu">
+            <button onclick="location.href='host.html'">СОЗДАТЬ ИГРУ (ХОСТ)</button>
+            <hr>
+            <input type="text" id="name" placeholder="Твоё имя">
+            <input type="text" id="code" placeholder="Код комнаты (4 буквы)">
+            <button onclick="joinGame()">ВОЙТИ В ИГРУ</button>
+        </div>
+    </div>
+
+    <script>
+        function joinGame() {
+            const name = document.getElementById('name').value;
+            const code = document.getElementById('code').value.toUpperCase();
+            if(name && code) {
+                location.href = `player.html?name=${name}&code=${code}`;
+            }
+        }
+    </script>
+</body>
+</html>
