@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ГРЕХО-СМЕХ | ВАНГА</title>
-    <!-- Иконка геймпада во вкладке -->
+    <title>ГРЕХО-СМЕХ | ВХОД</title>
     <link rel="icon" href="https://fav.farm/🎮" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
         
         body { 
             margin: 0; padding: 0;
-            background: #fbc02d; /* Фирменный горчичный цвет */
+            background: #fbc02d; /* Горчичный фон */
             background-image: radial-gradient(#f9a825 20%, transparent 20%), radial-gradient(#f9a825 20%, transparent 20%);
             background-size: 50px 50px;
             background-position: 0 0, 25px 25px;
@@ -45,7 +44,7 @@
             color: #fff; 
             font-family: 'Montserrat', sans-serif;
             font-weight: 900; 
-            font-size: 20px; 
+            font-size: 18px; 
             text-transform: uppercase; 
             text-shadow: 2px 2px 0 #000; 
             margin-bottom: 5px;
@@ -60,12 +59,11 @@
             box-shadow: 8px 8px 0 rgba(0,0,0,0.2); 
         }
 
-        /* КНОПКА "КТО ОН?" */
         .who-btn { 
             background: #6d4c41; 
             color: white; 
             border: none; 
-            padding: 6px 15px; 
+            padding: 8px 20px; 
             border-radius: 20px; 
             cursor: pointer; 
             margin-top: 10px; 
@@ -76,7 +74,7 @@
         }
         .who-btn:active { transform: translateY(2px); box-shadow: none; }
 
-        /* ГИГАНТСКОЕ ОКНО ВИДЕО */
+        /* ОКНО С ВИДЕО (ОГРОМНОЕ) */
         #video-overlay { 
             display: none; 
             position: fixed; 
@@ -163,19 +161,16 @@
 </head>
 <body onclick="playMenuM()">
 
-    <!-- Фоновая музыка -->
+    <!-- ФОНОВАЯ МУЗЫКА -->
     <audio id="m-music" src="menu.mp3" loop></audio>
 
-    <!-- Видео плеер -->
+    <!-- ПЛЕЕР ВИДЕО -->
     <div id="video-overlay">
         <span class="close-vid" onclick="closeV()">&times;</span>
-        <video id="v-player" controls preload="auto">
-            <source src="https://cdn.discordapp.com/attachments/1093516468131479583/1489189505691947069/9b3f18d2-e0c6-4f75-bdda-21d9c93ef113.mp4?ex=69cf834d&is=69ce31cd&hm=f8602763e529f0abeb52e58f9dcf1862b6382c35937fa11335e0b8c2c4a63832&" type="video/mp4">
-            Ваш браузер не поддерживает видео.
-        </video>
+        <video id="v-player" src="https://cdn.discordapp.com/attachments/1093516468131479583/1489189505691947069/9b3f18d2-e0c6-4f75-bdda-21d9c93ef113.mp4?ex=69cf834d&is=69ce31cd&hm=f8602763e529f0abeb52e58f9dcf1862b6382c35937fa11335e0b8c2c4a63832&" controls></video>
     </div>
-
-    <!-- Блок Ванги -->
+    
+    <!-- БЛОК ВАНГИ -->
     <div class="vanga-box">
         <a href="https://www.twitch.tv/vangavgav" target="_blank" class="vanga-link">
             <div class="vanga-label">ВАНГА ФIЙКО</div>
@@ -184,11 +179,11 @@
         <button class="who-btn" onclick="openV()">КТО ОН?</button>
     </div>
 
-    <!-- Основное меню -->
+    <!-- МЕНЮ ВХОДА -->
     <div class="card">
         <h1>ГРЕХО-СМЕХ</h1>
         
-        <button class="btn" onclick="location.href='host.html'" style="background:#4caf50; box-shadow: 0 6px 0 #2e7d32;">
+        <button class="btn" onclick="location.href='host.html'" style="background:#4caf50; box-shadow: 0 6px 0 #2e7d32; margin-bottom:20px;">
             СОЗДАТЬ ИГРУ
         </button>
 
@@ -205,12 +200,12 @@
         const socket = io();
         let mPlaying = false;
 
-        // Запуск музыки при первом клике
+        // Запуск музыки при первом клике (политика браузеров)
         function playMenuM() { 
             if(!mPlaying) { 
-                const m = document.getElementById('m-music'); 
-                m.volume = 0.2; 
-                m.play().catch(e => console.log("Музыка ждет клика")); 
+                const m = document.getElementById('m-music');
+                m.volume = 0.2;
+                m.play().catch(e => console.log("Музыка ждет клика"));
                 mPlaying = true; 
             } 
         }
@@ -232,21 +227,19 @@
             const c = document.getElementById('code').value.trim().toUpperCase();
             if(!n || !c) return alert("Заполни все поля!");
             
-            // Отправляем запрос серверу на проверку комнаты
+            // Проверяем комнату через сервер перед переходом
             socket.emit('join-room', { code: c, name: n });
         }
 
-        // Если сервер подтвердил вход
+        // Если сервер пустил
         socket.on('joined-success', (data) => {
             const n = document.getElementById('name').value.trim();
-            // Переходим в player.html с правильными параметрами
-            location.href = `player.html?name=${encodeURIComponent(n)}&code=${encodeURIComponent(data.code)}`;
+            // Переходим в player.html, передаем только строку кода
+            location.href = `player.html?name=${encodeURIComponent(n)}&code=${data.code}`;
         });
 
-        // Если сервер выдал ошибку (комнаты нет или игра идет)
-        socket.on('error-join', (msg) => {
-            alert(msg);
-        });
+        // Если ошибка
+        socket.on('error-join', m => alert(m));
     </script>
 </body>
 </html>
