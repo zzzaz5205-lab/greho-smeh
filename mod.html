@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><title>MODERATOR</title></head>
+<body style="background:#1a1a2e; color:#fff; text-align:center;">
+    <h1>МОДЕРАЦИЯ</h1>
+    <div id="q"></div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io(); const params = new URLSearchParams(window.location.search);
+    socket.emit('join-mod', params.get('code'));
+    socket.on('mod-check', d => {
+        const div = document.createElement('div');
+        div.innerHTML = `<p>${d.name}: ${d.answer}</p><button onclick="socket.emit('mod-action',{code:'${d.code}',name:'${d.name}',answer:'${d.answer}',action:'pass'})">OK</button><button onclick="socket.emit('mod-action',{code:'${d.code}',name:'${d.name}',answer:'${d.answer}',action:'block'})">БАН</button>`;
+        document.getElementById('q').appendChild(div);
+    });
+</script>
+</body>
+</html>
