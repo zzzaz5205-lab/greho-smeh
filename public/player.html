@@ -1,95 +1,230 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ГРЕХО-СМЕХ | PLAYER</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ИГРОК | ГРЕХО-СМЕХ</title>
+    <link rel="icon" href="https://fav.farm/🎮" />
     <style>
-        body { font-family: sans-serif; background: #3e2723; color: white; text-align: center; padding: 20px; }
-        .btn { background: #ef5350; color: white; width: 100%; padding: 20px; border: 4px solid #000; border-radius: 15px; font-weight: bold; font-size: 20px; }
-        input { width: 90%; padding: 15px; border: 3px solid #fbc02d; border-radius: 10px; font-size: 18px; margin-bottom: 10px; }
-        .hidden { display: none; }
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
+        
+        body { 
+            font-family: sans-serif; 
+            background: #fbc02d; /* Фирменный желтый цвет Смехлыста */
+            color: #3e2723; 
+            text-align: center; 
+            margin: 0; 
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        .top-bar { 
+            background: #3e2723; 
+            color: #fff; 
+            padding: 15px; 
+            font-weight: 900; 
+            font-size: 20px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .btn { 
+            background: #ef5350; 
+            color: white; 
+            width: 90%; 
+            padding: 20px; 
+            margin: 10px auto; 
+            border: 4px solid #3e2723; 
+            border-radius: 15px; 
+            font-weight: 900; 
+            font-size: 22px; 
+            box-shadow: 0 6px 0 #b71c1c; 
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: 'Montserrat', sans-serif;
+            display: block;
+        }
+        .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #b71c1c; }
+
+        .emoji-grid { 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            gap: 10px; 
+            padding: 20px; 
+        }
+        .emoji-item { 
+            font-size: 40px; 
+            background: #fff; 
+            border: 3px solid #3e2723; 
+            border-radius: 15px; 
+            width: 70px; 
+            height: 70px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        input { 
+            width: 85%; 
+            padding: 20px; 
+            border: 4px solid #3e2723; 
+            border-radius: 15px; 
+            font-size: 20px; 
+            font-weight: bold; 
+            margin-top: 20px;
+            outline: none;
+        }
+
+        .q-display {
+            background: #fff;
+            border: 4px solid #3e2723;
+            padding: 20px;
+            margin: 20px 10px;
+            border-radius: 15px;
+            font-size: 22px;
+            font-weight: 900;
+            transform: rotate(-1deg);
+        }
+
+        /* Экраны - жесткое переключение */
+        .screen { display: block; padding: 20px; box-sizing: border-box; }
+        .hidden { display: none !important; }
+
+        #status { padding: 40px; font-size: 24px; font-weight: bold; }
+
+        /* Стиль для твоей гифки */
+        .funny-gif {
+            width: 85%;
+            max-width: 400px;
+            border: 6px solid #3e2723;
+            border-radius: 20px;
+            box-shadow: 15px 15px 0 rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <div id="join-ui">
-        <h2>ВХОД В ИГРУ</h2>
-        <input type="text" id="name" placeholder="ТВОЁ ИМЯ"><br>
-        <input type="text" id="code" placeholder="КОД ИЗ 4 БУКВ"><br>
-        <button class="btn" onclick="join()">ВОЙТИ</button>
+    <div class="top-bar">КОМНАТА: <span id="room-display">...</span></div>
+    
+    <div id="status" class="screen">ПОДКЛЮЧЕНИЕ...</div>
+
+    <!-- ЭКРАН 1: ВЫБОР ЭМОДЗИ -->
+    <div id="emoji-ui" class="screen hidden">
+        <h2>КТО ТЫ СЕГОДНЯ?</h2>
+        <div id="grid" class="emoji-grid"></div>
     </div>
 
-    <div id="wait-ui" class="hidden">
-        <h1>ТЫ В ИГРЕ!</h1>
-        <p>Жди начала раунда на большом экране...</p>
+    <!-- ЭКРАН 2: ОЖИДАНИЕ (С ГИФКОЙ И ТЕКСТОМ) -->
+    <div id="wait-ui" class="screen hidden">
+        <h2 id="wait-text" style="font-family: 'Montserrat', sans-serif;">Твой ответ на экране хоста!</h2>
+        <!-- Файл cat.gif должен лежать в корне GitHub -->
+        <img src="cat.gif" alt="Ожидание" class="funny-gif">
     </div>
 
-    <div id="answer-ui" class="hidden">
-        <h3 id="qText" style="color:#fbc02d"></h3>
-        <input type="text" id="ansInput" placeholder="ТВОЯ ШУТКА..."><br>
-        <button class="btn" onclick="sendAns()">ОТПРАВИТЬ</button>
+    <!-- ЭКРАН 3: ВВОД ОТВЕТА -->
+    <div id="answer-ui" class="screen hidden">
+        <div id="qText" class="q-display"></div>
+        <div id="inp-area"></div>
+        <button class="btn" onclick="sendAns()" style="background:#4caf50; box-shadow: 0 6px 0 #2e7d32;">ОТПРАВИТЬ</button>
     </div>
 
-    <div id="vote-ui" class="hidden">
-        <h3>КТО СМЕШНЕЕ?</h3>
-        <button id="b1" class="btn" onclick="vote(1)" style="margin-bottom:10px"></button>
-        <button id="b2" class="btn" onclick="vote(2)" style="background:#2196f3"></button>
+    <!-- ЭКРАН 4: ГОЛОСОВАНИЕ -->
+    <div id="vote-ui" class="screen hidden">
+        <h2 style="text-transform:uppercase; font-family: 'Montserrat', sans-serif;">КТО СМЕШНЕЕ?</h2>
+        <button id="b1" class="btn"></button>
+        <button id="b2" class="btn" style="background:#42a5f5; box-shadow: 0 6px 0 #1565c0;"></button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let myName = "";
-        let roomCode = "";
+        const params = new URLSearchParams(window.location.search);
+        let name = params.get('name'), code = params.get('code')?.toUpperCase();
+        
+        const emojis = ['🤡','👽','🤖','👻','🐙','🐸','🐱','🍌','💩','🦄','🐼','🦊','🐷','🐧','🦖','🍦','🍔','🍕','🎸','🚀','💎','🎲','🍄','🧶','🦷'];
 
-        function join() {
-            myName = document.getElementById('name').value;
-            roomCode = document.getElementById('code').value.toUpperCase();
-            if(!myName || !roomCode) return alert("Заполни поля!");
-            socket.emit('join-room', { code: roomCode, name: myName });
+        if (!name || !code) { location.href = 'index.html'; }
+        document.getElementById('room-display').innerText = code;
+
+        // Умное переключение экранов (без наложений)
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
         }
 
-        socket.on('joined-success', () => {
-            document.getElementById('join-ui').classList.add('hidden');
-            document.getElementById('wait-ui').classList.remove('hidden');
+        socket.emit('join-room', { code, name });
+
+        socket.on('joined-success', (data) => {
+            showScreen('emoji-ui');
+            
+            const g = document.getElementById('grid');
+            g.innerHTML = "";
+            emojis.forEach(e => {
+                const d = document.createElement('div');
+                d.className = 'emoji-item';
+                d.innerText = e;
+                d.onclick = () => {
+                    socket.emit('select-emoji', { code, name, emoji: e });
+                    document.getElementById('wait-text').innerText = "Ждём начала игры!";
+                    showScreen('wait-ui');
+                };
+                g.appendChild(d);
+            });
         });
 
         socket.on('round-started', d => {
-            const isMyTurn = (myName === d.p1_name || myName === d.p2_name);
-            document.getElementById('wait-ui').classList.add('hidden');
-            document.getElementById('vote-ui').classList.add('hidden');
+            let myTurn = (name === d.p1_name || name === d.p2_name);
             
-            if (isMyTurn) {
-                document.getElementById('answer-ui').classList.remove('hidden');
+            if(myTurn) {
+                showScreen('answer-ui');
                 document.getElementById('qText').innerText = d.q;
+                const area = document.getElementById('inp-area');
+                if (d.round === 3) {
+                    area.innerHTML = '<input class="ansV" maxlength="40" placeholder="1..."><input class="ansV" maxlength="40" placeholder="2..."><input class="ansV" maxlength="40" placeholder="3...">';
+                } else {
+                    area.innerHTML = '<input class="ansV" maxlength="40" placeholder="Твой ответ...">';
+                }
             } else {
-                document.getElementById('answer-ui').classList.add('hidden');
-                document.body.innerHTML = "<h1>СМОТРИ НА ЭКРАН!</h1>";
+                document.getElementById('wait-text').innerText = "Смотри на экран хоста!";
+                showScreen('wait-ui');
             }
         });
 
         function sendAns() {
-            const answer = document.getElementById('ansInput').value;
-            socket.emit('submit-answer', { code: roomCode, name: myName, answer });
-            document.getElementById('answer-ui').classList.add('hidden');
-            document.body.innerHTML = "<h1>ПРИНЯТО! ЖДИ...</h1>";
+            const val = Array.from(document.querySelectorAll('.ansV')).map(i => i.value.trim()).filter(x => x !== "");
+            if(val.length === 0) return alert("Напиши хоть что-то!");
+            
+            socket.emit('submit-answer', { code, name, answer: val });
+            document.getElementById('wait-text').innerText = "Твой ответ на экране хоста!";
+            showScreen('wait-ui');
         }
 
         socket.on('show-voting', d => {
-            if (myName === d.p1 || myName === d.p2) return;
-            document.body.innerHTML = ""; // Очистка заглушки
-            document.body.appendChild(document.getElementById('vote-ui'));
-            document.getElementById('vote-ui').classList.remove('hidden');
-            document.getElementById('b1').innerText = d.ans1;
-            document.getElementById('b2').innerText = d.ans2;
+            let myTurnInPair = (name === d.p1_name || name === d.p2_name);
+            
+            if(myTurnInPair || d.isSolo) {
+                document.getElementById('wait-text').innerText = d.isSolo ? "ОДИНОЧНОЕ ВЫСТУПЛЕНИЕ" : "Твой ответ на экране!";
+                showScreen('wait-ui');
+                return;
+            }
+
+            showScreen('vote-ui');
+            
+            const btn1 = document.getElementById('b1');
+            const btn2 = document.getElementById('b2');
+
+            btn1.innerText = d.ans1;
+            btn1.onclick = () => { socket.emit('cast-vote', { code, voteNum: 1 }); document.getElementById('wait-text').innerText = "Голос учтён!"; showScreen('wait-ui'); };
+            
+            btn2.innerText = d.ans2;
+            btn2.onclick = () => { socket.emit('cast-vote', { code, voteNum: 2 }); document.getElementById('wait-text').innerText = "Голос учтён!"; showScreen('wait-ui'); };
         });
 
-        function vote(n) {
-            socket.emit('cast-vote', { code: roomCode, voteNum: n, name: myName });
-            document.body.innerHTML = "<h1>ГОЛОС УЧТЕН!</h1>";
-        }
-
-        socket.on('error-join', m => alert(m));
+        socket.on('go-to-menu', () => location.href = 'index.html');
+        socket.on('error-join', m => { alert(m); location.href = 'index.html'; });
     </script>
 </body>
 </html>
