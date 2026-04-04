@@ -8,7 +8,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { 
-    maxHttpBufferSize: 4e7, // 40MB для качественного звука и фото
+    maxHttpBufferSize: 4e7, // 40MB для тяжелых рисунков и аудио
     cors: { origin: "*" } 
 });
 
@@ -16,16 +16,13 @@ const genAI = new GoogleGenerativeAI("AIzaSyCibKfIWK9szQ0bzJi8ZJ3YNaHZ99F8x64");
 const aiModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 app.use(express.static(__dirname));
-
 app.get('/', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
-app.get('/host', (req, res) => res.sendFile(path.resolve(__dirname, 'host.html')));
-app.get('/player', (req, res) => res.sendFile(path.resolve(__dirname, 'player.html')));
 
 const prompts = {
     ru: {
         classic: ["Почему Ванга лысый?", "Секрет Димы Модерасса", "За что Ванга любит перфоратор?"],
         draw: ["Нарисуй: Пьяный кактус", "Нарисуй: Лицо Димы в 3 утра", "Нарисуй: Лысина Ванги"],
-        voice: ["Издай звук: Крик чайки под солями", "Звук: Перфоратор в 7 утра", "Звук: Дима дает бан"]
+        voice: ["Издай звук: Крик чайки", "Звук: Перфоратор Ванги", "Звук: Дима дает бан"]
     }
 };
 
@@ -39,7 +36,7 @@ io.on('connection', (socket) => {
             rooms[code] = { 
                 host: socket.id, players: [], round: 1, currentPairIndex: 0, pairs: [], 
                 gameStarted: false, allJokes: [], mode: 'classic',
-                settings: { timer: 30, voice: 'male', hellMode: false, bonusX2: true } 
+                settings: { timer: 30, voice: 'male', hellMode: false, bonusX2: true, eighteenPlus: false } 
             };
         } else rooms[code].host = socket.id;
         socket.join(code);
@@ -85,8 +82,10 @@ io.on('connection', (socket) => {
 
     function sendPair(code) {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
-        if (!pair) return io.to(code).emit('show-scores', { players: room.players, round: room.round, time: 10 });
-        
+        if (!pair) {
+            io.to(code).emit('show-scores', { players: room.players, round: room.round, time: 10 });
+            return;
+        }
         io.to(code).emit('round-started', { mode: room.mode, round: room.round, q: pair.q, p1_name: pair.p1.name, p2_name: pair.p2?.name, time: room.settings.timer });
         if(timers[code]) clearTimeout(timers[code]);
         timers[code] = setTimeout(() => forceSubmit(code), (room.settings.timer + 2) * 1000);
@@ -108,7 +107,8 @@ io.on('connection', (socket) => {
     });
 
     function showVoting(code, pair, mode) {
-        io.to(code).emit('show-voting', { type: mode, ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2, p1_name: pair.p1.name, p2_name: pair.p2?.name, time: 20 });
+        const isBothEmpty = (pair.ans1 === "EMPTY" && pair.ans2 === "EMPTY");
+        io.to(code).emit('show-voting', { type: mode, ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2, bothEmpty: isBothEmpty, p1_name: pair.p1.name, p2_name: pair.p2?.name, time: 20 });
     }
 
     socket.on('cast-vote', ({ code, voteNum }) => {
@@ -124,8 +124,11 @@ io.on('connection', (socket) => {
         let v1 = pair.votes.filter(v => v.voteNum === 1).length, v2 = pair.votes.filter(v => v.voteNum === 2).length;
         let p1Points = !pair.p2 ? 100 : v1 * 100;
         let p2Points = v2 * 100;
-        pair.p1.score += p1Points; if (pair.p2) pair.p2.score += p2Points;
         
+        if (pair.ans1 && pair.ans1 !== "EMPTY") room.allJokes.push({ text: room.mode === 'classic' ? pair.ans1 : `[${room.mode}]`, author: pair.p1.name, votes: v1, emoji: pair.p1.emoji });
+        if (pair.p2 && pair.ans2 !== "EMPTY") room.allJokes.push({ text: room.mode === 'classic' ? pair.ans2 : `[${room.mode}]`, author: pair.p2.name, votes: v2, emoji: pair.p2.emoji });
+
+        pair.p1.score += p1Points; if (pair.p2) pair.p2.score += p2Points;
         io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, v1, v2, p1Points, p2Points });
         setTimeout(() => { if (rooms[code]) { rooms[code].currentPairIndex++; sendPair(code); } }, 8000);
     }
@@ -134,7 +137,17 @@ io.on('connection', (socket) => {
         const p = rooms[code]?.players.find(pl => pl.name === name);
         if (p) { p.emoji = emoji; io.to(code).emit('player-list-update', rooms[code].players); }
     });
-    
+
+    socket.on('next-after-scores', (code) => {
+        const room = rooms[code];
+        if (room.round < 3) startRound(code, room.round + 1);
+        else {
+            const best = [...room.allJokes].sort((a,b) => b.votes - a.votes).slice(0, 5);
+            const worst = room.allJokes.filter(j => j.votes === 0).slice(0, 5);
+            io.to(code).emit('final-results', { players: room.players.sort((a,b)=>b.score-a.score), best, worst });
+        }
+    });
+
     socket.on('finish-credits', (code) => { io.to(code).emit('go-to-menu'); delete rooms[code]; });
 });
 
