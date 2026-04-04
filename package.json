@@ -1,7 +1,7 @@
 {
   "name": "greho-smeh",
   "version": "1.0.0",
-  "description": "Игра Грехо-Смех",
+  "description": "Оригинальная пати-игра с AI диктором",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
