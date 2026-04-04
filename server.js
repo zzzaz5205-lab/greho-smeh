@@ -7,24 +7,38 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 2e7, cors: { origin: "*" } });
+const io = new Server(server, { 
+    maxHttpBufferSize: 2e7, 
+    cors: { origin: "*" } 
+});
 
+// Настройка ИИ Gemini
 const API_KEY = "AIzaSyCibKfIWK9szQ0bzJi8ZJ3YNaHZ99F8x64"; 
 const genAI = new GoogleGenerativeAI(API_KEY);
 const aiModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
+// --- ГЛАВНЫЙ ФИКС ПУТЕЙ ---
+// Сначала разрешаем серверу видеть файлы прямо в корне проекта
 app.use(express.static(__dirname));
 
-function serveHTML(res, name) {
-    const p = path.join(__dirname, name);
-    if (fs.existsSync(p)) res.sendFile(p);
-    else res.status(404).send(`Файл ${name} не найден!`);
-}
+// Принудительные маршруты (явно указываем путь к файлам в корне)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
-app.get('/', (req, res) => serveHTML(res, 'index.html'));
-app.get('/host', (req, res) => serveHTML(res, 'host.html'));
-app.get('/player', (req, res) => serveHTML(res, 'player.html'));
+app.get('/host', (req, res) => {
+    res.sendFile(path.join(__dirname, 'host.html'));
+});
 
+app.get('/player', (req, res) => {
+    res.sendFile(path.join(__dirname, 'player.html'));
+});
+
+app.get('/mod', (req, res) => {
+    res.sendFile(path.join(__dirname, 'mod.html'));
+});
+
+// --- БАЗА ИЗ 50 ВОПРОСОВ ---
 const prompts = {
     ru: {
         classic: [
@@ -35,7 +49,7 @@ const prompts = {
             "Что инопланетяне думают о ТикТоке?", "Если бы чипсы умели кричать, какой бы это был звук?",
             "Самая бесполезная суперспособность.", "Название для рок-группы бухгалтеров.",
             "Что внутри черных дыр (версия Димы)?", "Оправдание для опоздания на работу на 4 часа.",
-            "Почему пингвины не летают?", "Худшее место для первого свидания у Ванги.",
+            "Почему пингвинов не летают?", "Худшее место для первого свидания у Ванги.",
             "Название приложения, которое только тратит деньги.", "Что Дед Мороз делает летом?",
             "Девиз города, где запрещено улыбаться.", "Новый вид спорта для Олимпийских игр.",
             "Шоколадка со вкусом бекона и носков.", "Что ты скажешь себе из будущего в туалете?",
@@ -64,14 +78,32 @@ const prompts = {
 const rooms = {};
 let timers = {};
 
-async function getUniqueQuestion(room, isFinal = false) {
+async function getAIQuestion(room, isFinal = false) {
     const type = isFinal ? "final" : "classic";
     room.usedQuestions = room.usedQuestions || [];
+    if (Math.random() < 0.8) {
+        try {
+            const prompt = `Придумай один вопрос для игры Грехо-Смех на русском. Юмор: мемный. Только текст.`;
+            const result = await aiModel.generateContent(prompt);
+            let q = result.response.text().trim().replace(/[*"']/g, "");
+            if (q && !room.usedQuestions.includes(q)) {
+                room.usedQuestions.push(q);
+                return q;
+            }
+        } catch (e) {}
+    }
     let available = prompts.ru[type].filter(q => !room.usedQuestions.includes(q));
     if (available.length === 0) { room.usedQuestions = []; available = prompts.ru[type]; }
     const q = available[Math.floor(Math.random() * available.length)];
     room.usedQuestions.push(q);
     return q;
+}
+
+async function getAIComment(q, a1, a2) {
+    try {
+        const result = await aiModel.generateContent(`Вопрос: "${q}". Ответы: "${a1}" и "${a2}". Напиши короткую едкую реакцию (5 слов).`);
+        return result.response.text().trim().replace(/[*"']/g, "");
+    } catch (e) { return "Ну и кринж!"; }
 }
 
 io.on('connection', (socket) => {
@@ -85,15 +117,15 @@ io.on('connection', (socket) => {
     });
 
     socket.on('join-room', ({ code, name }) => {
-        const c = code?.trim().toUpperCase();
-        const r = rooms[c];
-        if (!r) return socket.emit('error-join', 'Комната не найдена!');
-        r.players = r.players.filter(p => p.name.toLowerCase() !== name.toLowerCase());
+        const cleanCode = code?.trim().toUpperCase();
+        const room = rooms[cleanCode];
+        if (!room) return socket.emit('error-join', 'Комната не найдена!');
+        room.players = room.players.filter(p => p.name.toLowerCase() !== name.toLowerCase());
         const p = { id: socket.id, name, emoji: '❓', score: 0, lastPoints: 0 };
-        r.players.push(p);
-        socket.join(c);
-        socket.emit('joined-success', { code: c });
-        io.to(r.host).emit('player-list-update', r.players);
+        room.players.push(p);
+        socket.join(cleanCode);
+        socket.emit('joined-success', { code: cleanCode });
+        io.to(room.host).emit('player-list-update', room.players);
     });
 
     socket.on('start-game', (code) => {
@@ -107,7 +139,7 @@ io.on('connection', (socket) => {
         let shuf = [...room.players].sort(() => 0.5 - Math.random());
         room.pairs = [];
         for (let i = 0; i < shuf.length; i += 2) {
-            let q = await getUniqueQuestion(room, roundNum === 3);
+            let q = await getAIQuestion(room, roundNum === 3);
             room.pairs.push({ p1: shuf[i], p2: shuf[i+1] || null, q, ans1: null, ans2: null, votes: [], finished: false });
         }
         sendPair(code);
@@ -169,7 +201,8 @@ io.on('connection', (socket) => {
         let mult = room.round * 100;
         let p1Points = !pair.p2 ? 100 : v1 * mult, p2Points = v2 * mult;
         pair.p1.score += p1Points; if (pair.p2) pair.p2.score += p2Points;
-        io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, v1, v2, p1Points, p2Points });
+        const comment = await getAIComment(pair.q, pair.ans1, pair.ans2 || "");
+        io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, v1, v2, p1Points, p2Points, aiComment: comment });
         setTimeout(() => { if (rooms[code]) { rooms[code].currentPairIndex++; sendPair(code); } }, 8000);
     }
     
@@ -180,4 +213,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('OK'));
+server.listen(PORT, () => console.log('Ready on ' + PORT));
