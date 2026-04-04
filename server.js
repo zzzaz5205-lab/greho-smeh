@@ -9,7 +9,8 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-// База оригинальных вопросов
+const rooms = {};
+
 const questions = [
     "Самое странное название для туалетной бумаги?",
     "Что на самом деле шепчут кошки, когда мы спим?",
@@ -30,139 +31,136 @@ const questions = [
     "Если бы собаки могли голосовать, за что бы они боролись?",
     "Худшее место для первого свидания?",
     "Придумай название для приложения, которое ничего не делает.",
-    "Что Дед Мороз делает летом на самом деле?",
-    "Самый глупый способ потратить миллиард долларов?",
-    "Если бы у тебя был робот-слуга, какая была бы его первая поломка?",
-    "Как звучит девиз города, в котором запрещены улыбки?",
-    "Какой новый вид спорта нужно добавить в Олимпийские игры?",
-    "Название для шоколадки со вкусом бекона и рыбы.",
-    "Что ты скажешь, если встретишь самого себя из будущего?",
-    "Почему у пингвинов нет коленей? (Твой вариант)",
-    "Лучшая работа для ленивого привидения?",
-    "Какое имя нельзя давать ребенку ни в коем случае?",
-    "Если бы деревья могли ходить, куда бы они все пошли?"
+    "Что Дед Мороз делает летом на самом деле?"
 ];
 
-const rooms = {};
-
-// Простая фильтрация (заглушка)
-const filterText = (text) => {
-    const forbidden = ['мат1', 'мат2']; // Добавьте список слов
-    let filtered = text;
-    forbidden.forEach(word => {
-        const reg = new RegExp(word, 'gi');
-        filtered = filtered.replace(reg, '***');
-    });
-    return filtered;
-};
-
-// Заглушка для ИИ
-const getAIQuestion = async () => {
-    return new Promise((res) => {
-        setTimeout(() => res("Бонусный вопрос от ИИ: О чем думает кирпич?"), 500);
-    });
-};
+function generateCode() {
+    return Math.random().toString(36).substring(2, 6).toUpperCase();
+}
 
 io.on('connection', (socket) => {
-    // Создание комнаты
+    // Создание комнаты хостом
     socket.on('create-room', () => {
-        const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const code = generateCode();
         rooms[code] = {
             host: socket.id,
             players: [],
             gameState: 'LOBBY',
             round: 0,
+            pairs: [],
             answers: {},
-            votes: []
+            currentPairIndex: 0
         };
         socket.join(code);
         socket.emit('room-created', code);
     });
 
-    // Присоединение игрока
+    // Вход игрока
     socket.on('join-room', ({ code, name }) => {
         const room = rooms[code];
         if (room && room.gameState === 'LOBBY') {
             const player = { id: socket.id, name, score: 0 };
             room.players.push(player);
             socket.join(code);
-            socket.emit('joined-success');
-            io.to(room.host).emit('player-update', room.players);
+            socket.emit('joined-success', { name });
+            io.to(room.host).emit('update-players', room.players);
         } else {
-            socket.emit('error', 'Комната не найдена или игра уже началась');
+            socket.emit('error-msg', 'Комната не найдена или игра уже идет');
         }
     });
 
-    // Старт игры
+    // Начало игры
     socket.on('start-game', (code) => {
         const room = rooms[code];
-        if (room && room.players.length >= 2) { // Для теста 2, просили 3
-            nextRound(code);
+        if (room && room.players.length >= 3) {
+            startRound(code);
+        } else {
+            socket.emit('error-msg', 'Нужно минимум 3 игрока');
         }
     });
 
-    function nextRound(code) {
+    function startRound(code) {
         const room = rooms[code];
         room.round++;
         room.gameState = 'ANSWERING';
         room.answers = {};
-        room.votes = [];
         
-        const question = questions[Math.floor(Math.random() * questions.length)];
-        io.to(code).emit('round-start', { question, round: room.round });
+        // Логика Quiplash: каждый игрок получает 2 вопроса, каждый вопрос делят 2 игрока
+        // Упрощенная версия для примера: создаем цепочку пар
+        room.pairs = [];
+        const n = room.players.length;
+        for (let i = 0; i < n; i++) {
+            const q = questions[Math.floor(Math.random() * questions.length)];
+            room.pairs.push({
+                question: q,
+                p1: room.players[i],
+                p2: room.players[(i + 1) % n],
+                results: []
+            });
+        }
+
+        io.to(code).emit('round-started', { 
+            round: room.round, 
+            pairs: room.pairs.map(p => ({ question: p.question, p1: p.p1.id, p2: p.p2.id }))
+        });
     }
 
-    // Получение ответа
-    socket.on('submit-answer', ({ code, answer }) => {
+    socket.on('submit-answer', ({ code, question, answer }) => {
         const room = rooms[code];
-        if (room && room.gameState === 'ANSWERING') {
-            room.answers[socket.id] = filterText(answer);
-            
-            if (Object.keys(room.answers).length === room.players.length) {
-                room.gameState = 'VOTING';
-                const answersList = room.players.map(p => ({
-                    playerId: p.id,
-                    text: room.answers[p.id]
-                }));
-                io.to(code).emit('start-voting', answersList);
-            }
+        if (!room.answers[question]) room.answers[question] = [];
+        room.answers[question].push({ playerId: socket.id, text: answer });
+
+        // Если все ответили на все вопросы
+        const totalExpected = room.players.length * 2;
+        let count = 0;
+        Object.values(room.answers).forEach(a => count += a.length);
+
+        if (count >= totalExpected) {
+            showNextVotingPair(code);
         }
     });
 
-    // Голосование
-    socket.on('cast-vote', ({ code, targetId }) => {
+    function showNextVotingPair(code) {
         const room = rooms[code];
-        if (room && room.gameState === 'VOTING') {
-            room.votes.push({ voter: socket.id, target: targetId });
+        if (room.currentPairIndex < room.pairs.length) {
+            const pair = room.pairs[room.currentPairIndex];
+            const pairAnswers = room.answers[pair.question].filter(a => 
+                a.playerId === pair.p1.id || a.playerId === pair.p2.id
+            );
             
-            if (room.votes.length === room.players.length) {
-                // Считаем очки
-                room.votes.forEach(v => {
-                    const player = room.players.find(p => p.id === v.target);
-                    if (player) player.score += 100;
-                });
-                
-                room.gameState = 'RESULTS';
-                io.to(code).emit('results', room.players);
-                
-                // Через 5 секунд следующий раунд или финал
-                setTimeout(() => {
-                    if (room.round < 3) nextRound(code);
-                    else {
-                        room.gameState = 'FINAL';
-                        io.to(code).emit('final-scores', room.players);
-                    }
-                }, 5000);
-            }
+            room.gameState = 'VOTING';
+            io.to(code).emit('start-voting', {
+                question: pair.question,
+                answers: pairAnswers,
+                p1: pair.p1.id,
+                p2: pair.p2.id
+            });
+            room.currentPairIndex++;
+        } else {
+            room.currentPairIndex = 0;
+            io.to(code).emit('round-results', room.players);
+            // Авто-старт следующего раунда или финал
+            setTimeout(() => {
+                if (room.round < 2) startRound(code);
+                else io.to(code).emit('game-over', room.players);
+            }, 7000);
         }
-    });
+    }
 
-    socket.on('disconnect', () => {
-        // Здесь можно добавить логику удаления игроков из комнат
+    socket.on('cast-vote', ({ code, targetPlayerId }) => {
+        const room = rooms[code];
+        const player = room.players.find(p => p.id === targetPlayerId);
+        if (player) player.score += 100;
+
+        // Проверка завершения голосования (все кроме двоих участников)
+        const roomVotes = room.pairs[room.currentPairIndex - 1].results;
+        roomVotes.push(socket.id);
+        
+        if (roomVotes.length >= room.players.length - 2) {
+            setTimeout(() => showNextVotingPair(code), 3000);
+        }
     });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Сервер запущен на порту ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
