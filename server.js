@@ -7,24 +7,59 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 2e7, cors: { origin: "*" } });
+const io = new Server(server, { 
+    maxHttpBufferSize: 2e7, 
+    cors: { origin: "*" } 
+});
 
+// --- ИИ GEMINI ---
 const API_KEY = "AIzaSyCibKfIWK9szQ0bzJi8ZJ3YNaHZ99F8x64"; 
 const genAI = new GoogleGenerativeAI(API_KEY);
 const aiModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
-app.use(express.static(__dirname));
+// --- ДЕБАГ: ПОИСК ФАЙЛОВ ---
+console.log("--- СИСТЕМА ПОИСКА ФАЙЛОВ ЗАПУЩЕНА ---");
+const currentDir = __dirname;
+console.log("Я нахожусь в:", currentDir);
 
-function serveHTML(res, name) {
-    const p = path.join(__dirname, name);
-    if (fs.existsSync(p)) res.sendFile(p);
-    else res.status(404).send(`Файл ${name} не найден!`);
+function findFile(name) {
+    const root = path.join(currentDir, name);
+    const pub = path.join(currentDir, 'public', name);
+    const src = path.join(currentDir, 'src', name);
+    if (fs.existsSync(root)) return root;
+    if (fs.existsSync(pub)) return pub;
+    if (fs.existsSync(src)) return src;
+    return null;
 }
 
-app.get('/', (req, res) => serveHTML(res, 'index.html'));
-app.get('/host', (req, res) => serveHTML(res, 'host.html'));
-app.get('/player', (req, res) => serveHTML(res, 'player.html'));
+// Вывод списка файлов в лог для тебя
+try {
+    console.log("Файлы в корне:", fs.readdirSync(currentDir));
+} catch(e) {}
 
+// --- МАРШРУТЫ ---
+app.use(express.static(currentDir));
+app.use(express.static(path.join(currentDir, 'public')));
+
+app.get('/', (req, res) => {
+    const p = findFile('index.html');
+    if (p) res.sendFile(p);
+    else res.status(404).send("ОШИБКА: index.html не найден! Вытащи файлы из папок на GitHub.");
+});
+
+app.get('/host', (req, res) => {
+    const p = findFile('host.html');
+    if (p) res.sendFile(p);
+    else res.status(404).send("Файл host.html не найден!");
+});
+
+app.get('/player', (req, res) => {
+    const p = findFile('player.html');
+    if (p) res.sendFile(p);
+    else res.status(404).send("Файл player.html не найден!");
+});
+
+// --- ЛОГИКА ИГРЫ (50 ВОПРОСОВ + ИИ) ---
 const prompts = {
     ru: {
         classic: [
@@ -58,38 +93,26 @@ const prompts = {
 const rooms = {};
 let timers = {};
 
-// ГЕНЕРАТОР ВОПРОСОВ (БЕЗ ПОВТОРОВ)
-async function getUniqueQuestion(room, isFinal = false) {
-    const type = isFinal ? "final" : "classic";
-    room.usedQuestions = room.usedQuestions || [];
-    
-    // Пытаемся получить ИИ вопрос
-    if (Math.random() < 0.8) {
-        try {
-            const prompt = `Ты ведущий игры "Грехо-Смех". Придумай один ${isFinal ? "вопрос на 3 ответа" : "смешной вопрос"} на русском. Юмор: Jackbox style, мемный. Про Вангу или Диму. Только текст.`;
-            const result = await aiModel.generateContent(prompt);
-            let q = result.response.text().trim().replace(/[*"']/g, "");
-            if (q && !room.usedQuestions.includes(q)) {
-                room.usedQuestions.push(q);
-                return q;
-            }
-        } catch (e) {}
-    }
+async function getAIQuestion(isFinal = false) {
+    try {
+        const prompt = `Придумай один вопрос для игры "Грехо-Смех". Юмор: мемный. Только текст.`;
+        const result = await aiModel.generateContent(prompt);
+        return result.response.text().trim().replace(/[*"']/g, "");
+    } catch (e) { return prompts.ru.classic[0]; }
+}
 
-    // Запасной вариант из списка
-    let available = prompts.ru[type].filter(q => !room.usedQuestions.includes(q));
-    if (available.length === 0) { room.usedQuestions = []; available = prompts.ru[type]; }
-    
-    const q = available[Math.floor(Math.random() * available.length)];
-    room.usedQuestions.push(q);
-    return q;
+async function getAIComment(q, a1, a2) {
+    try {
+        const result = await aiModel.generateContent(`Вопрос: "${q}". Ответы: "${a1}" и "${a2}". Напиши едкую реакцию (5 слов).`);
+        return result.response.text().trim().replace(/[*"']/g, "");
+    } catch (e) { return "Ну и кринж вы выдали!"; }
 }
 
 io.on('connection', (socket) => {
     socket.on('create-room', (oldCode) => {
         let code = (oldCode && rooms[oldCode]) ? oldCode : Math.random().toString(36).substring(2, 6).toUpperCase();
         if (!rooms[code]) {
-            rooms[code] = { host: socket.id, players: [], round: 1, currentPairIndex: 0, pairs: [], gameStarted: false, usedQuestions: [], settings: { timer: 30 } };
+            rooms[code] = { host: socket.id, players: [], round: 1, currentPairIndex: 0, pairs: [], gameStarted: false, settings: { timer: 30 } };
         } else rooms[code].host = socket.id;
         socket.join(code);
         socket.emit('room-created', code);
@@ -118,7 +141,7 @@ io.on('connection', (socket) => {
         let shuf = [...room.players].sort(() => 0.5 - Math.random());
         room.pairs = [];
         for (let i = 0; i < shuf.length; i += 2) {
-            let q = await getUniqueQuestion(room, roundNum === 3);
+            let q = (Math.random() < 0.8) ? await getAIQuestion(roundNum === 3) : prompts.ru.classic[0];
             room.pairs.push({ p1: shuf[i], p2: shuf[i+1] || null, q, ans1: null, ans2: null, votes: [], finished: false });
         }
         sendPair(code);
@@ -128,23 +151,9 @@ io.on('connection', (socket) => {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair) {
             io.to(code).emit('show-scores', { players: room.players, round: room.round, time: 15 });
-            if (timers[code]) clearTimeout(timers[code]);
-            timers[code] = setTimeout(() => {
-                if (room.round < 3) startRound(code, room.round + 1);
-                else io.to(code).emit('final-results', { players: room.players.sort((a,b)=>b.score-a.score) });
-            }, 16000);
             return;
         }
         io.to(code).emit('round-started', { round: room.round, q: pair.q, p1_name: pair.p1.name, p2_name: pair.p2 ? pair.p2.name : null, time: 30 });
-        if(timers[code]) clearTimeout(timers[code]);
-        timers[code] = setTimeout(() => forceSubmit(code), 32000);
-    }
-
-    function forceSubmit(code) {
-        const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
-        if (!pair || pair.finished) return;
-        if (!pair.ans1) pair.ans1 = "..."; if (pair.p2 && !pair.ans2) pair.ans2 = "...";
-        showVoting(code, pair);
     }
 
     socket.on('submit-answer', ({ code, name, answer }) => {
@@ -152,20 +161,16 @@ io.on('connection', (socket) => {
         const txt = Array.isArray(answer) ? answer.filter(x => x).join(' | ') : answer;
         if (pair.p1.name === name) pair.ans1 = txt;
         if (pair.p2 && pair.p2.name === name) pair.ans2 = txt;
-        if (pair.ans1 && (!pair.p2 || pair.ans2)) { clearTimeout(timers[code]); showVoting(code, pair); }
+        if (pair.ans1 && (!pair.p2 || pair.ans2)) {
+            io.to(code).emit('show-voting', { ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2, p1_name: pair.p1.name, p2_name: pair.p2 ? pair.p2.name : null, time: 20 });
+        }
     });
-
-    function showVoting(code, pair) {
-        io.to(code).emit('show-voting', { ans1: pair.ans1, ans2: pair.ans2, isSolo: !pair.p2, p1_name: pair.p1.name, p2_name: pair.p2 ? pair.p2.name : null, time: 20 });
-        if(timers[code]) clearTimeout(timers[code]);
-        timers[code] = setTimeout(() => finishPair(code), 22000);
-    }
 
     socket.on('cast-vote', ({ code, voteNum }) => {
         const room = rooms[code]; const pair = room.pairs[room.currentPairIndex];
         if (!pair || pair.finished) return;
         pair.votes.push({ voter: socket.id, voteNum });
-        if (pair.votes.length >= (room.players.length - (pair.p2 ? 2 : 1))) { clearTimeout(timers[code]); finishPair(code); }
+        if (pair.votes.length >= (room.players.length - (pair.p2 ? 2 : 1))) finishPair(code);
     });
 
     async function finishPair(code) {
@@ -175,16 +180,11 @@ io.on('connection', (socket) => {
         let mult = room.round * 100;
         let p1Points = !pair.p2 ? 100 : v1 * mult, p2Points = v2 * mult;
         pair.p1.score += p1Points; if (pair.p2) pair.p2.score += p2Points;
-        
-        io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, v1, v2, p1Points, p2Points });
+        const comment = await getAIComment(pair.q, pair.ans1, pair.ans2 || "");
+        io.to(code).emit('voting-results', { p1: pair.p1, p2: pair.p2, isSolo: !pair.p2, v1, v2, p1Points, p2Points, aiComment: comment });
         setTimeout(() => { if (rooms[code]) { rooms[code].currentPairIndex++; sendPair(code); } }, 8000);
     }
-    
-    socket.on('select-emoji', ({ code, name, emoji }) => {
-        const p = rooms[code]?.players.find(pl => pl.name === name);
-        if (p) { p.emoji = emoji; io.to(code).emit('player-list-update', rooms[code].players); }
-    });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Live on ' + PORT));
+server.listen(PORT, () => console.log('Ready!'));
