@@ -11,10 +11,9 @@
         @keyframes rotateSpiral { 100% { transform: rotate(360deg); } }
         
         #digital-timer { position: absolute; top: 20px; left: 30px; font-size: 85px; font-family: 'Roboto Mono'; font-weight: 900; text-shadow: 6px 6px 0 #000; color: #fff; z-index: 1000; display: none; transform: rotate(-5deg); }
-        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; }
+        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; transition: 0.5s; }
 
-        /* НАСТРОЙКИ */
-        #settings-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center; }
+        #settings-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); z-index: 10000; align-items: center; justify-content: center; }
         .modal { background: #fff; border: 8px solid #3e2723; border-radius: 30px; width: 800px; height: 380px !important; display: flex; overflow: hidden; }
         .modal-sidebar { width: 30%; background: #3e2723; padding: 15px; display: flex; flex-direction: column; gap: 5px; }
         .tab-btn { padding: 12px; background: none; border: none; color: #fff; font-weight: 900; font-size: 16px; text-align: left; cursor: pointer; border-radius: 10px; }
@@ -23,27 +22,25 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* КАРТОЧКИ - СТАЛИ МЕНЬШЕ (38%) */
-        .bubble { 
-            background: #fff; border: 8px solid #3e2723; border-radius: 25px; 
-            padding: 20px; width: 38%; min-height: 180px; 
-            font-size: 50px; /* ШРИФТ СТАЛ БОЛЬШЕ */
-            font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); 
-            position: absolute; top: 50%; transition: all 0.8s; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        }
-        
-        /* ЦВЕТ ДЛЯ БАНА */
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px dashed #ddd; padding-bottom: 5px; }
+        .bubble { background: #fff; border: 8px solid #3e2723; border-radius: 25px; padding: 25px; width: 38%; min-height: 180px; font-size: 50px; font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); position: absolute; top: 50%; transition: all 0.8s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .blocked-style { color: #f44336 !important; text-decoration: line-through; }
-
         #card1 { left: 5%; transform: translateY(-50%) rotate(-3deg); }
         #card2 { right: 5%; transform: translateY(-50%) rotate(3deg); }
         .solo-center { left: 50% !important; transform: translate(-50%, -50%) scale(1.1) !important; }
         .kicked-out { transform: translate(150%, -50%) rotate(40deg) !important; opacity: 0; }
-        .exit-zoom { transform: translate(-50%, 1000px) scale(0.5) !important; opacity: 0 !important; }
+        @keyframes flyDown { 0% { opacity: 1; } 100% { transform: translate(0, 1000px) scale(0.5); opacity: 0; } }
+        .exit-zoom { animation: flyDown 1s forwards ease-in !important; left: 50% !important; margin-left: -19% !important; }
 
-        .btn-open-settings { position: absolute; top: 20px; left: 20px; padding: 12px 25px; background: #3e2723; color: #fff; border-radius: 10px; font-weight: 900; cursor: pointer; }
-        .player-node { width: 130px; height: 130px; background: #fff; border: 6px solid #3e2723; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 5px; font-weight: bold; }
+        .points-badge { position: absolute; top: -25px; right: -25px; background: #ef5350; color: #fff; border: 5px solid #3e2723; width: 85px; height: 85px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 30px; animation: popBadge 0.4s forwards; z-index: 10; }
+        @keyframes popBadge { from { transform: scale(0); } to { transform: scale(1); } }
+        #qText { font-size: 50px; background:#fff; padding:15px 40px; border:6px solid #3e2723; transform:rotate(-1deg); transition: 0.4s; max-width: 80%; margin-top: -120px; }
+        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; animation: slideUp 0.5s forwards; }
+        .btn-open-settings { position: absolute; top: 20px; left: 20px; padding: 12px 25px; background: #3e2723; color: #fff; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; }
+        #credits-screen { background: #000 !important; color: #fff !important; display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9000; overflow: hidden; flex-direction: column; align-items: center; }
+        .credits-wrap { position: absolute; width: 100%; top: 100%; animation: scrollCredits 25s linear forwards; }
+        @keyframes scrollCredits { from { top: 100%; } to { top: -350%; } }
+        .joke-card { background: #1a1a1a; border-left: 8px solid #fbc02d; padding: 20px; margin: 20px auto; width: 65%; text-align: left; font-size: 24px; color: #fff; }
     </style>
 </head>
 <body onclick="startAudio()">
@@ -53,28 +50,30 @@
     <div id="settings-modal-overlay">
         <div class="modal">
             <div class="modal-sidebar">
-                <button class="tab-btn active" onclick="uiTab(event, 't-modes')">РЕЖИМЫ</button>
-                <button class="tab-btn" onclick="uiTab(event, 't-events')">СОБЫТИЯ</button>
-                <button class="tab-btn" onclick="uiTab(event, 't-mod')">МОДЕРАЦИЯ</button>
+                <button class="tab-btn active" onclick="openTab(event, 'tab-events')">СОБЫТИЯ</button>
+                <button class="tab-btn" onclick="openTab(event, 'tab-sounds')">ЗВУКИ</button>
+                <button class="tab-btn" onclick="openTab(event, 'tab-general')">ОБЩЕЕ</button>
                 <div style="flex-grow:1"></div>
-                <button onclick="saveSettings()" style="background:#4caf50; color:#fff; padding:12px; border-radius:10px; font-weight:900; border:none; cursor:pointer;">ОК</button>
+                <button onclick="saveSettings()" style="background:#4caf50; color:#fff; padding:12px; border-radius:12px; font-weight:900; border:none; cursor:pointer;">ОК</button>
             </div>
             <div class="modal-body">
-                <div id="t-modes" class="tab-content active">
-                    <h2>РЕЖИМЫ</h2>
-                    <label><input type="radio" name="m" value="classic" checked> ГРЕХО-СМЕХ (Текст)</label><br><br>
-                    <label><input type="radio" name="m" value="draw"> ГРЕХ-РИСУНКОВ</label><br><br>
-                    <label><input type="radio" name="m" value="voice"> ГРЕХ-ВОКАЛА</label>
-                </div>
-                <div id="t-events" class="tab-content">
+                <div id="tab-events" class="tab-content active">
                     <h2>СОБЫТИЯ</h2>
-                    <label>Адский режим: <input type="checkbox" id="hellMode"></label><br><br>
-                    <label>Бонус X2: <input type="checkbox" id="bonus2" checked></label>
+                    <div class="setting-row"><label>АДСКИЙ РЕЖИМ</label> <input type="checkbox" id="hellMode"></div>
+                    <div class="setting-row"><label>18+ РЕЖИМ</label> <input type="checkbox" id="plus18"></div>
+                    <div class="setting-row"><label>БОНУС X2</label> <input type="checkbox" id="bonus2" checked></div>
                 </div>
-                <div id="t-mod" class="tab-content">
-                    <h2>МОДЕРАЦИЯ</h2>
-                    <label>Включить: <input type="checkbox" id="modToggle" onchange="document.getElementById('mB').style.display=this.checked?'block':'none'"></label>
-                    <button id="mB" onclick="copyM()" style="display:none; margin-top:20px; padding:10px; background:#2196f3; color:#fff; border:none; border-radius:5px; cursor:pointer;">СКОПИРОВАТЬ ССЫЛКУ</button>
+                <div id="tab-sounds" class="tab-content">
+                    <h2>ЗВУКИ</h2>
+                    <div class="setting-row"><label>ДИКТОР:</label> 
+                        <select id="voiceType"><option value="male">МУЖСКОЙ</option><option value="female">ЖЕНСКИЙ</option></select>
+                    </div>
+                </div>
+                <div id="tab-general" class="tab-content">
+                    <h2>ОБЩЕЕ</h2>
+                    <div class="setting-row"><label>ТАЙМЕР (СЕК):</label> <input type="number" id="timerVal" value="30"></div>
+                    <div class="setting-row"><label>МОДЕРАЦИЯ:</label> <input type="checkbox" id="modToggle" onchange="document.getElementById('mB').style.display=this.checked?'block':'none'"></div>
+                    <button id="mB" onclick="copyM()" style="display:none; width:100%; background:#2196f3; color:#fff; padding:10px; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">СКОПИРОВАТЬ ССЫЛКУ</button>
                 </div>
             </div>
         </div>
@@ -89,19 +88,17 @@
     </div>
 
     <div id="game" class="screen">
-        <h2 id="qText" style="font-size:50px; background:#fff; padding:20px; border:6px solid #3e2723;"></h2>
-        <div id="voting" style="height:400px; width:100%; position:relative;">
-            <div id="card1" class="bubble"><div id="ans-text-1"></div><div id="badge-1" style="position:absolute; top:-20px; right:-20px; background:#ef5350; color:#fff; width:70px; height:70px; border-radius:50%; display:none; align-items:center; justify-content:center; font-size:24px; border:4px solid #3e2723;"></div></div>
-            <div id="card2" class="bubble"><div id="ans-text-2"></div><div id="badge-2" style="position:absolute; top:-20px; right:-20px; background:#ef5350; color:#fff; width:70px; height:70px; border-radius:50%; display:none; align-items:center; justify-content:center; font-size:24px; border:4px solid #3e2723;"></div></div>
+        <h2 id="qText"></h2>
+        <div id="voting">
+            <div id="card1" class="bubble"><div id="ans-text-1"></div><div id="badge-1" class="points-badge"></div></div>
+            <div id="card2" class="bubble"><div id="ans-text-2"></div><div id="badge-2" class="points-badge"></div></div>
         </div>
     </div>
 
     <div id="scores" class="screen"><h1>ТЕКУЩИЙ СЧЁТ</h1><div id="scoreList"></div></div>
     <div id="final" class="screen"><h1>ПОБЕДИТЕЛЬ</h1><div id="winner" style="font-size:120px; color:#ef5350"></div></div>
 
-    <div id="credits-screen">
-        <div class="credits-wrap" id="credits-content" style="position:absolute; width:100%; top:100%; animation: scrl 22s linear forwards;"></div>
-    </div>
+    <div id="credits-screen"><div class="credits-wrap" id="credits-content"></div></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -110,27 +107,25 @@
     const music = { lobby: new Audio('lobby.mp3'), game: new Audio('game.mp3'), final: new Audio('final.mp3') };
 
     function toggleSet() { const o = document.getElementById('settings-modal-overlay'); o.style.display = (o.style.display === 'flex') ? 'none' : 'flex'; }
-    function uiTab(e, t) { document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.getElementById(t).classList.add('active'); e.currentTarget.classList.add('active'); }
+    function openTab(e, t) { document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.getElementById(t).classList.add('active'); e.currentTarget.classList.add('active'); }
     
     function saveSettings() {
-        const mode = document.querySelector('input[name="m"]:checked').value;
         gameSettings.timer = parseInt(document.getElementById('timerVal').value);
         gameSettings.voice = document.getElementById('voiceType').value;
         gameSettings.hellMode = document.getElementById('hellMode').checked;
         gameSettings.bonus2 = document.getElementById('bonus2').checked;
         gameSettings.eighteenPlus = document.getElementById('plus18').checked;
         gameSettings.moderation = document.getElementById('modToggle').checked;
-        socket.emit('update-settings', { code: curCode, settings: gameSettings, mode });
+        socket.emit('update-settings', { code: curCode, settings: gameSettings });
         toggleSet();
     }
-
     function copyM() { const link = window.location.origin + "/mod?code=" + curCode; navigator.clipboard.writeText(link); alert("Ссылка скопирована!"); }
     function playM(t) { Object.values(music).forEach(m=>{m.pause();m.currentTime=0;}); music[t].loop=true; music[t].volume=0.1; music[t].play(); }
     function startAudio() { if(!window.ai){ playM('lobby'); window.ai=true; } }
 
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
     socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; });
-    socket.on('player-list-update', players => { document.getElementById('playerList').innerHTML = players.map(p => `<div class="player-node"><span>${p.emoji}</span>${p.name}</div>`).join(''); });
+    socket.on('player-list-update', players => { document.getElementById('playerList').innerHTML = players.map(p => `<div style="background:#fff; border:4px solid #3e2723; border-radius:15px; padding:10px 20px; margin:5px; font-weight:bold;">${p.emoji} ${p.name}</div>`).join(''); });
 
     function speak(t, cb) {
         window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
@@ -139,11 +134,17 @@
         m.pitch = 0.45; m.rate = 0.9; m.onend = cb; window.speechSynthesis.speak(m);
     }
 
+    function runTimer(sec) {
+        let tl = sec; const tEl = document.getElementById('digital-timer'); tEl.style.display = 'block'; tEl.innerText = tl;
+        clearInterval(cdnInt); cdnInt = setInterval(() => { tl--; tEl.innerText = tl; if(tl <= 0) { clearInterval(cdnInt); tEl.style.display = 'none'; } }, 1000);
+    }
+
     socket.on('round-started', d => {
         document.getElementById('lobby').style.display="none"; document.getElementById('scores').style.display="none";
-        document.getElementById('game').style.display='flex'; document.getElementById('game').className='screen';
+        document.getElementById('game').style.display='flex'; document.getElementById('game').classList.remove('exit-zoom');
         document.getElementById('voting').style.display = 'none';
-        document.getElementById('qText').innerText = d.q;
+        const q = document.getElementById('qText'); q.innerText = d.q; q.style.opacity = "1";
+        speak(d.q); runTimer(d.time); playM('game');
     });
 
     socket.on('show-voting', d => {
@@ -151,42 +152,43 @@
         const c1 = document.getElementById('card1'), c2 = document.getElementById('card2');
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
         c1.className = 'bubble'; c2.className = 'bubble'; b1.style.display = 'none'; b2.style.display = 'none';
-        
-        const rend = (val, card) => {
-            if(d.type === 'draw') {
-                card.innerHTML = `<img src="${val}" style="max-height:160px; width:auto;">`;
-                card.classList.remove('blocked-style');
-            } else {
-                const text = Array.isArray(val) ? val.join('\n') : val;
-                card.innerText = text;
-                // ПРОВЕРКА НА КРАСНЫЙ БАН
-                if (text === "ЗАБЛОКИРОВАНО") { card.classList.add('blocked-style'); }
-                else { card.classList.remove('blocked-style'); }
-                
-                // Уменьшаем шрифт если это 3 раунд (Трихлыст)
-                card.style.fontSize = Array.isArray(val) ? '32px' : '50px';
-            }
+        const format = (v, c) => {
+            const text = Array.isArray(v) ? v.join('\n') : v;
+            c.innerText = text === "EMPTY" ? "..." : text;
+            if(text === "ЗАБЛОКИРОВАНО") c.classList.add('blocked-style'); else c.classList.remove('blocked-style');
+            c.style.fontSize = Array.isArray(v) ? '32px' : '50px';
         };
-
-        rend(d.ans1, c1);
+        format(d.ans1, c1);
         if(d.isSolo) { c2.innerText = "Я отказываюсь отвечать!"; c2.classList.add('refusal'); setTimeout(() => { c2.classList.add('kicked-out'); c1.classList.add('solo-center'); }, 1500); }
-        else { rend(d.ans2, c2); }
+        else { format(d.ans2, c2); speak("Чей ответ лучше?"); }
+        runTimer(20);
     });
 
     socket.on('voting-results', d => {
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
         b1.innerText = "+" + d.p1Points; b1.style.display = 'flex';
         if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; b2.style.display = 'flex'; }
-        setTimeout(() => { document.getElementById('card1').className+=' exit-zoom'; document.getElementById('card2').className+=' exit-zoom'; }, 3000);
+        setTimeout(() => { 
+            document.getElementById('card1').classList.add('exit-zoom'); 
+            document.getElementById('card2').classList.add('exit-zoom'); 
+            document.getElementById('qText').style.opacity = "0";
+        }, 3000);
     });
 
-    socket.on('show-scores', d => { document.getElementById('game').style.display='none'; document.getElementById('scores').style.display='flex'; document.getElementById('scoreList').innerHTML = d.players.map(p=>`<h2>${p.name}: ${p.score}</h2>`).join(''); });
-    
+    socket.on('show-scores', d => {
+        document.getElementById('game').style.display='none'; document.getElementById('scores').style.display='flex';
+        document.getElementById('scoreList').innerHTML = d.players.sort((a,b)=>b.score-a.score).map((p,i)=>`
+            <div class="score-bar"><span>${i+1}. ${p.emoji} ${p.name}</span><b>${p.score}</b></div>
+        `).join('');
+        runTimer(10);
+    });
+
     socket.on('final-results', d => {
-        document.getElementById('scores').style.display='none'; document.getElementById('final').style.display='flex'; 
+        playM('final'); document.getElementById('scores').style.display='none'; document.getElementById('final').style.display='flex'; 
         document.getElementById('winner').innerText = d.players[0].name;
         let html = `<h1 style="font-size:80px; color:#fbc02d; margin-bottom:50px;">ГРЕХО-СМЕХ</h1><br><h3>ЗАЛ СЛАВЫ:</h3>`;
         d.best.forEach(j => { html += `<div class="joke-card">"${j.text}"<br><small>Автор: ${j.emoji} ${j.author} (${j.votes} гол.)</small></div>`; });
+        if(d.worst.length > 0) { html += `<br><h3>ЗАЛ ПОЗОРА:</h3>`; d.worst.forEach(j => { html += `<div class="joke-card" style="opacity:0.6; border-color:#888;">"${j.text}"<br><small>Автор: ${j.emoji} ${j.author}</small></div>`; }); }
         html += `<br><div style="font-size:40px; line-height:2;"><b style="color:#ef5350">АВТОРЫ:</b><br>Грексюр Поносович<br>Джемини Завозилов</div><br><h1>СПАСИБО!</h1>`;
         document.getElementById('credits-content').innerHTML = html;
         setTimeout(() => { document.getElementById('final').style.display='none'; document.getElementById('credits-screen').style.display='flex'; setTimeout(() => socket.emit('finish-credits', curCode), 22000); }, 6000);
