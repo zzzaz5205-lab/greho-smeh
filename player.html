@@ -13,55 +13,123 @@
         .btn { background: #ef5350; color: white; width: 95%; padding: 15px; margin: 10px auto; border: 4px solid #3e2723; border-radius: 12px; font-weight: 900; font-size: 20px; box-shadow: 0 4px 0 #3e2723; cursor: pointer; }
         .btn:active { transform: translateY(4px); box-shadow: 0 0 0; }
         input { width: 90%; padding: 12px; border: 3px solid #3e2723; border-radius: 10px; font-size: 18px; font-weight: bold; margin-bottom: 8px; outline: none; text-align: center; }
-        .funny-gif { width: 30%; max-width: 180px; border: 4px solid #3e2723; border-radius: 15px; margin-top: 15px; }
-        .emoji-item { font-size: 40px; padding: 10px; cursor: pointer; }
+        
+        /* ОГРОМНАЯ ГИФКА (В 2 РАЗА БОЛЬШЕ) */
+        .funny-gif { 
+            width: 70%; /* Увеличено с 30% */
+            max-width: 400px; 
+            border: 6px solid #3e2723; 
+            border-radius: 20px; 
+            margin-top: 20px; 
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.1);
+        }
+        
+        .emoji-item { font-size: 40px; padding: 10px; cursor: pointer; border: 2px solid transparent; }
         #p-timer { font-family: monospace; font-size: 24px; color: #ef5350; background: #fff; padding: 2px 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
-    <div class="top-bar"><span>ROOM: <span id="room-display">...</span></span><div id="p-timer" style="visibility: hidden;">00</div></div>
+    <div class="top-bar">
+        <span>ROOM: <span id="room-display">...</span></span>
+        <div id="p-timer" style="visibility: hidden;">00</div>
+    </div>
+    
     <div id="status" class="screen"><h2>ПОДКЛЮЧЕНИЕ...</h2></div>
-    <div id="emoji-ui" class="screen hidden"><h2>ВЫБЕРИ ГЕРОЯ</h2><div id="grid" style="display:flex; flex-wrap:wrap; justify-content:center;"></div></div>
-    <div id="wait-ui" class="screen hidden"><h2 id="status-msg">Смотри на экран!</h2><img src="cat.gif" class="funny-gif"></div>
-    <div id="answer-ui" class="screen hidden"><div id="qText" style="background:#fff; border:3px solid #3e2723; padding:10px; border-radius:10px; margin-bottom:15px; font-weight:bold; font-size:18px;"></div><div id="inp-area"></div><button class="btn" onclick="sendAns()" style="background:#4caf50;">ОТПРАВИТЬ</button></div>
-    <div id="vote-ui" class="screen hidden"><h2>ГОЛОСУЕМ!</h2><div id="vote-btns"></div></div>
+
+    <div id="emoji-ui" class="screen hidden">
+        <h2>ВЫБЕРИ ГЕРОЯ</h2>
+        <div id="grid" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
+    </div>
+
+    <div id="wait-ui" class="screen hidden">
+        <h2 id="status-msg">Смотри на экран!</h2>
+        <img src="cat.gif" class="funny-gif">
+    </div>
+
+    <div id="answer-ui" class="screen hidden">
+        <div id="qText" style="background:#fff; border:3px solid #3e2723; padding:10px; border-radius:10px; margin-bottom:15px; font-weight:bold; font-size:18px; transform: rotate(-1deg);"></div>
+        <div id="inp-area"></div>
+        <button class="btn" onclick="sendAns()" style="background:#4caf50; box-shadow: 0 4px 0 #2e7d32;">ОТПРАВИТЬ</button>
+    </div>
+
+    <div id="vote-ui" class="screen hidden">
+        <h2>ГОЛОСУЕМ!</h2>
+        <div id="vote-btns"></div>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io(); const params = new URLSearchParams(window.location.search);
-        let myName = params.get('name') || localStorage.getItem('pName'), myCode = (params.get('code') || localStorage.getItem('pCode'))?.toUpperCase();
-        if (!myName || !myCode) location.href = 'index.html';
+        const socket = io();
+        const params = new URLSearchParams(window.location.search);
+        let myName = params.get('name') || localStorage.getItem('pName');
+        let myCode = (params.get('code') || localStorage.getItem('pCode'))?.toUpperCase();
+
+        if (!myName || !myCode) { location.href = 'index.html'; }
         localStorage.setItem('pName', myName); localStorage.setItem('pCode', myCode);
         document.getElementById('room-display').innerText = myCode;
 
-        function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); if (id !== 'answer-ui' && id !== 'vote-ui') document.getElementById('p-timer').style.visibility = 'hidden'; }
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            if (id !== 'answer-ui' && id !== 'vote-ui') document.getElementById('p-timer').style.visibility = 'hidden';
+        }
+
         let ptInt;
-        function startTimer(sec) { clearInterval(ptInt); let tl = sec; const el = document.getElementById('p-timer'); el.style.visibility = 'visible'; ptInt = setInterval(() => { tl--; el.innerText = tl; if(tl <= 0) { clearInterval(ptInt); el.style.visibility = 'hidden'; } }, 1000); }
+        function startTimer(sec) {
+            clearInterval(ptInt);
+            let tl = sec;
+            const el = document.getElementById('p-timer');
+            el.style.visibility = 'visible';
+            ptInt = setInterval(() => {
+                tl--; el.innerText = tl;
+                if(tl <= 0) { clearInterval(ptInt); el.style.visibility = 'hidden'; }
+            }, 1000);
+        }
 
         socket.emit('join-room', { code: myCode, name: myName });
+
         socket.on('joined-success', () => {
-            showScreen('emoji-ui'); const g = document.getElementById('grid'); g.innerHTML = "";
-            const emojis = ['🤡','👽','🤖','👻','🐙','🐸','🐱','🍌','💩','🦄','🐼','🦊','🐷','🐧','🦖','🍔','🚀','💎'];
-            emojis.forEach(e => { const d = document.createElement('div'); d.className = 'emoji-item'; d.innerText = e; d.onclick = () => { socket.emit('select-emoji', { code: myCode, name: myName, emoji: e }); showScreen('wait-ui'); }; g.appendChild(d); });
+            showScreen('emoji-ui');
+            const g = document.getElementById('grid'); g.innerHTML = "";
+            const emojis = ['🤡','👽','🤖','👻','🐙','🐸','🐱','🍌','💩','🦄','🐼','🦊','🐷','🐧','🦖'];
+            emojis.forEach(e => {
+                const d = document.createElement('div'); d.className = 'emoji-item'; d.innerText = e;
+                d.onclick = () => {
+                    socket.emit('select-emoji', { code: myCode, name: myName, emoji: e });
+                    showScreen('wait-ui');
+                };
+                g.appendChild(d);
+            });
         });
 
         socket.on('round-started', d => {
             if(myName === d.p1_name || myName === d.p2_name) {
-                showScreen('answer-ui'); startTimer(d.time); document.getElementById('qText').innerText = d.q;
+                showScreen('answer-ui'); startTimer(d.time);
+                document.getElementById('qText').innerText = d.q;
                 const area = document.getElementById('inp-area');
-                area.innerHTML = d.round === 3 ? '<input class="ansV" maxlength="40" placeholder="1..."><input class="ansV" maxlength="40" placeholder="2..."><input class="ansV" maxlength="40" placeholder="3...">' : '<input class="ansV" maxlength="40" placeholder="Ответ...">';
-            } else showScreen('wait-ui');
+                area.innerHTML = d.round === 3 ? 
+                    '<input class="ansV" maxlength="40" placeholder="1..."><input class="ansV" maxlength="40" placeholder="2..."><input class="ansV" maxlength="40" placeholder="3...">' : 
+                    '<input class="ansV" maxlength="40" placeholder="Твой ответ...">';
+            } else { showScreen('wait-ui'); }
         });
 
-        function sendAns() { const val = Array.from(document.querySelectorAll('.ansV')).map(i => i.value.trim()); socket.emit('submit-answer', { code: myCode, name: myName, answer: val }); showScreen('wait-ui'); }
+        function sendAns() {
+            const val = Array.from(document.querySelectorAll('.ansV')).map(i => i.value.trim());
+            socket.emit('submit-answer', { code: myCode, name: myName, answer: val });
+            showScreen('wait-ui');
+        }
 
         socket.on('show-voting', d => {
             if(myName === d.p1_name || myName === d.p2_name || d.isSolo || d.bothEmpty) { showScreen('wait-ui'); return; }
             showScreen('vote-ui'); startTimer(d.time);
             const format = (a) => Array.isArray(a) ? `<div style="display:flex;flex-direction:column;gap:4px;">${a.map(x=>`<span>${x}</span>`).join('')}</div>` : a;
-            document.getElementById('vote-btns').innerHTML = `<button class="btn" onclick="v(1)">${format(d.ans1)}</button><button class="btn" onclick="v(2)" style="background:#42a5f5">${format(d.ans2)}</button>`;
+            document.getElementById('vote-btns').innerHTML = `
+                <button class="btn" onclick="vote(1)">${format(d.ans1)}</button>
+                <button class="btn" onclick="vote(2)" style="background:#42a5f5">${format(d.ans2)}</button>
+            `;
         });
-        function v(n) { socket.emit('cast-vote', { code: myCode, voteNum: n }); showScreen('wait-ui'); }
+
+        function vote(n) { socket.emit('cast-vote', { code: myCode, voteNum: n }); showScreen('wait-ui'); }
         socket.on('go-to-menu', () => { localStorage.clear(); location.href = 'index.html'; });
     </script>
 </body>
