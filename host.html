@@ -13,93 +13,44 @@
         #digital-timer { position: absolute; top: 20px; left: 30px; font-size: 85px; font-family: 'Roboto Mono'; font-weight: 900; text-shadow: 6px 6px 0 #000; color: #fff; z-index: 1000; display: none; transform: rotate(-5deg); }
         .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; transition: 0.5s; }
         
-        /* КАРТОЧКИ - ЕЩЕ ЧУТЬ МЕНЬШЕ И НИЖЕ */
         .bubble { 
             background: #fff; border: 8px solid #3e2723; border-radius: 25px; 
-            padding: 20px; width: 36%; min-height: 160px; font-size: 32px; 
+            padding: 25px; width: 40%; min-height: 180px; font-size: 38px; 
             font-weight: 900; box-shadow: 15px 15px 0 rgba(0,0,0,0.1); 
-            position: absolute; top: 55%; /* Опустил пониже */
-            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2;
+            position: absolute; top: 50%; transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        #card1 { left: 8%; transform: translateY(-50%) rotate(-3deg); }
-        #card2 { right: 8%; transform: translateY(-50%) rotate(3deg); }
-        .bubble.refusal { background: #bbb !important; color: #666 !important; border-color: #666 !important; }
+        #card1 { left: 5%; transform: translateY(-50%) rotate(-3deg); }
+        #card2 { right: 5%; transform: translateY(-50%) rotate(3deg); }
+        .bubble.refusal { background: #bbb !important; color: #666 !important; border-color: #666 !important; font-size: 24px; z-index: 1; }
         
-        /* АНИМАЦИЯ УЛЕТАНИЯ */
-        @keyframes flyDownFinal {
-            0% { opacity: 1; transform: translate(0, -50%) scale(1); }
-            100% { transform: translate(0, 1000px) scale(0.5); opacity: 0; }
-        }
-        .exit-zoom { animation: flyDownFinal 1s forwards ease-in !important; left: 50% !important; margin-left: -18% !important; }
+        @keyframes flyDown { 0% { opacity: 1; } 100% { transform: translate(-50%, 1000px) scale(0.5); opacity: 0; } }
+        .exit-zoom { animation: flyDown 0.8s forwards ease-in !important; left: 50% !important; margin-left: -19% !important; }
 
         .solo-center { left: 50% !important; transform: translate(-50%, -50%) rotate(0deg) scale(1.1) !important; z-index: 100; }
         .kicked-out { transform: translate(150%, -50%) rotate(40deg) !important; opacity: 0; }
 
-        /* ВОПРОС - ТЕПЕРЬ ВЫШЕ */
-        #qText { font-size: 45px; background:#fff; padding:15px 40px; border:6px solid #3e2723; transform:rotate(-1deg); transition: 0.4s; max-width: 85%; position: absolute; top: 12%; }
-        .q-vanish { opacity: 0; transform: scale(0.7) !important; }
-
         .points-badge { position: absolute; top: -25px; right: -25px; background: #ef5350; color: #fff; border: 5px solid #3e2723; width: 85px; height: 85px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 30px; animation: popBadge 0.4s forwards; z-index: 10; }
         @keyframes popBadge { from { transform: scale(0); } to { transform: scale(1); } }
-        
-        .score-bar { background: #3e2723; color: #fff; font-size: 40px; padding: 12px 40px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 10px; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); animation: slideUp 0.5s forwards; }
-        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* НАСТРОЙКИ */
-        #settings-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center; }
-        .modal { background: #fff; border: 8px solid #3e2723; border-radius: 30px; width: 800px; height: 380px !important; display: flex; overflow: hidden; box-shadow: 30px 30px 0 rgba(0,0,0,0.2); text-align: left; }
-        .modal-sidebar { width: 30%; background: #3e2723; padding: 15px; display: flex; flex-direction: column; gap: 5px; }
-        .tab-btn { padding: 12px; background: none; border: none; color: #fff; font-weight: 900; font-size: 16px; text-align: left; cursor: pointer; border-radius: 10px; }
-        .tab-btn.active { background: #fbc02d; color: #3e2723; }
-        .modal-body { width: 70%; padding: 20px 40px; overflow-y: auto; background: #fff; }
+        #qText { font-size: 50px; background:#fff; padding:15px 40px; border:6px solid #3e2723; transform:rotate(-1deg); transition: 0.4s; max-width: 80%; margin-top: -120px; }
+        .q-vanish { opacity: 0; transform: scale(0.7) !important; }
         
-        .btn-open-settings { position: absolute; top: 20px; left: 20px; padding: 12px 25px; background: #3e2723; color: #fff; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; }
+        .score-bar { background: #3e2723; color: #fff; font-size: 45px; padding: 15px 45px; border-radius: 20px; width: 600px; display: flex; justify-content: space-between; border: 5px solid #fff; margin: 15px; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); animation: slideUp 0.5s forwards; }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
-        #credits-screen { background: #000 !important; color: #fff !important; display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9000; overflow: hidden; flex-direction: column; align-items: center; }
-        .credits-wrap { position: absolute; width: 100%; top: 100%; animation: scrollCredits 25s linear forwards; }
-        @keyframes scrollCredits { from { top: 100%; } to { top: -280%; } }
-        .joke-card { background: #1a1a1a; border-left: 8px solid #fbc02d; padding: 15px; margin: 15px auto; width: 65%; text-align: left; font-size: 22px; color: #fff; }
+        .player-node { width: 130px; height: 130px; background: #fff; border: 6px solid #3e2723; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px; font-weight: bold; }
     </style>
 </head>
 <body onclick="startAudio()">
     <div class="spiral"></div>
     <div id="digital-timer"></div>
     
-    <div id="settings-modal-overlay">
-        <div class="modal">
-            <div class="modal-sidebar">
-                <button class="tab-btn active" onclick="openTab(event, 'tab-modes')">РЕЖИМЫ</button>
-                <button class="tab-btn" onclick="openTab(event, 'tab-events')">СОБЫТИЯ</button>
-                <button class="tab-btn" onclick="openTab(event, 'tab-sounds')">ЗВУКИ</button>
-                <div style="flex-grow:1"></div>
-                <button onclick="saveSettings()" style="background:#4caf50; color:#fff; padding:15px; border-radius:10px; font-weight:900; border:none; cursor:pointer;">ОК</button>
-            </div>
-            <div class="modal-body">
-                <div id="tab-modes" class="tab-content active">
-                    <h2>РЕЖИМЫ</h2>
-                    <p>ГРЕХО-СМЕХ (Классика)</p>
-                </div>
-                <div id="tab-events" class="tab-content">
-                    <h2>СОБЫТИЯ</h2>
-                    <div style="display:flex; justify-content: space-between">Адский режим: <input type="checkbox" id="hellMode"></div><br>
-                    <div style="display:flex; justify-content: space-between">18+ Режим: <input type="checkbox" id="plus18"></div><br>
-                    <div style="display:flex; justify-content: space-between">Бонус X2: <input type="checkbox" id="bonus2" checked></div>
-                </div>
-                <div id="tab-sounds" class="tab-content">
-                    <h2>ЗВУКИ</h2>
-                    <div>Голос: <select id="voiceType"><option value="male">МУЖСКОЙ</option><option value="female">ЖЕНСКИЙ</option></select></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div id="lobby" class="screen" style="display:flex">
-        <button class="btn-open-settings" onclick="toggleSet()">Настройки игры</button>
-        <h1 style="font-size: 80px; text-shadow: 6px 6px 0 #fff; margin:0;">ГРЕХО-СМЕХ</h1>
-        <div style="background:#000; color:#ffeb3b; padding:15px 60px; border:8px solid #fff; font-size:100px; transform:rotate(-2deg); margin:20px;" id="bigCode">...</div>
-        <div id="playerList" style="display:flex; flex-wrap:wrap; justify-content:center; margin-top:20px;"></div>
-        <button onclick="socket.emit('start-game', curCode)" style="background:#4caf50; border:6px solid #3e2723; color:#fff; padding:20px 60px; font-size:35px; border-radius:100px; cursor:pointer; margin-top:30px; font-weight:900;">ПОГНАЛИ!</button>
+        <h1>ГРЕХО-СМЕХ</h1>
+        <div style="background:#000; color:#ffeb3b; padding:15px 60px; border:8px solid #fff; font-size:100px; transform:rotate(-2deg);" id="bigCode">...</div>
+        <div id="playerList" style="display:flex; flex-wrap:wrap; justify-content:center; margin-top:30px;"></div>
+        <button onclick="socket.emit('start-game', curCode)" style="background:#4caf50; border:6px solid #3e2723; color:#fff; padding:25px 70px; font-size:35px; border-radius:100px; cursor:pointer; margin-top:30px; font-weight:900;">ПОГНАЛИ!</button>
     </div>
 
     <div id="game" class="screen">
@@ -113,55 +64,25 @@
     <div id="scores" class="screen"><h1>ТЕКУЩИЙ СЧЁТ</h1><div id="scoreList"></div></div>
     <div id="final" class="screen"><h1>ПОБЕДИТЕЛЬ</h1><div id="winner" style="font-size:120px; color:#ef5350"></div></div>
 
-    <div id="credits-screen">
-        <div class="credits-wrap" id="credits-content"></div>
-    </div>
-
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io(); let curCode = "", cdnInt;
-    let gameSettings = { timer: 30, voice: 'male' };
-    const music = { lobby: new Audio('lobby.mp3'), game: new Audio('game.mp3'), final: new Audio('final.mp3') };
-
-    function toggleSet() { 
-        const overlay = document.getElementById('settings-modal-overlay');
-        overlay.style.display = (overlay.style.display === 'flex') ? 'none' : 'flex';
-    }
-
-    function openTab(e, t) { 
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(t).classList.add('active'); e.currentTarget.classList.add('active');
-    }
-
-    function saveSettings() {
-        gameSettings.timer = parseInt(document.getElementById('timerVal').value);
-        gameSettings.voice = document.getElementById('voiceType').value;
-        socket.emit('update-settings', { code: curCode, settings: gameSettings });
-        toggleSet();
-    }
-
-    function playM(t) { Object.values(music).forEach(m=>{m.pause();m.currentTime=0;}); music[t].loop=true; music[t].volume=0.1; music[t].play(); }
-    function startAudio() { if(!window.ai){ playM('lobby'); window.ai=true; } }
-
+    
     socket.emit('create-room', sessionStorage.getItem('lastCode'));
     socket.on('room-created', c => { curCode = c; sessionStorage.setItem('lastCode', c); document.getElementById('bigCode').innerText = c; });
     socket.on('player-list-update', players => {
-        document.getElementById('playerList').innerHTML = players.map(p => `<div style="background:#fff; border:4px solid #3e2723; border-radius:15px; padding:10px 20px; margin:5px; font-weight:bold;">${p.emoji} ${p.name}</div>`).join('');
+        document.getElementById('playerList').innerHTML = players.map(p => `<div class="player-node"><span>${p.emoji}</span>${p.name}</div>`).join('');
     });
-
-    function speak(t, cb) {
-        window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t);
-        const vs = window.speechSynthesis.getVoices();
-        m.voice = vs.find(v => v.lang.includes('ru') && (gameSettings.voice==='male' ? v.name.includes('David') : true)) || vs[0];
-        m.pitch = 0.45; m.rate = 0.9; m.onend = cb; window.speechSynthesis.speak(m);
-    }
 
     function runTimer(sec) {
         let tl = sec; const tEl = document.getElementById('digital-timer');
         tEl.style.display = 'block'; tEl.innerText = tl; tEl.style.color = "#fff";
         clearInterval(cdnInt);
-        cdnInt = setInterval(() => { tl--; tEl.innerText = tl; if(tl <= 5) tEl.style.color = "red"; if(tl <= 0) { clearInterval(cdnInt); tEl.style.display = 'none'; } }, 1000);
+        cdnInt = setInterval(() => {
+            tl--; tEl.innerText = tl;
+            if(tl <= 5) tEl.style.color = "red";
+            if(tl <= 0) { clearInterval(cdnInt); tEl.style.display = 'none'; }
+        }, 1000);
     }
 
     socket.on('round-started', d => {
@@ -169,7 +90,7 @@
         document.getElementById('game').style.display='flex'; document.getElementById('game').classList.remove('exit-zoom');
         document.getElementById('voting').style.display = 'none';
         const q = document.getElementById('qText'); q.innerText = d.q; q.classList.remove('q-vanish');
-        speak(d.q); runTimer(d.time); playM('game');
+        runTimer(d.time);
     });
 
     socket.on('show-voting', d => {
@@ -178,24 +99,30 @@
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
         c1.className = 'bubble'; c2.className = 'bubble'; b1.style.display = 'none'; b2.style.display = 'none';
         
-        const format = (a) => a === "EMPTY" ? "<i>Молчание...</i>" : (Array.isArray(a) ? a.join('<br>') : a);
-        document.getElementById('ans-text-1').innerHTML = format(d.ans1);
-        document.getElementById('ans-text-2').innerHTML = d.isSolo ? "Я отказываюсь на это отвечать!" : format(d.ans2);
+        const format = (a) => Array.isArray(a) ? a.join('<br>') : a;
 
-        if(d.isSolo || d.bothEmpty) {
+        if(d.isSolo) {
+            document.getElementById('ans-text-1').innerHTML = format(d.ans1);
+            document.getElementById('ans-text-2').innerText = "Я отказываюсь на это отвечать!";
             c2.classList.add('refusal');
-            if(!d.bothEmpty) setTimeout(() => { c2.classList.add('kicked-out'); c1.classList.add('solo-center'); }, 1500);
+            setTimeout(() => { c2.classList.add('kicked-out'); c1.classList.add('solo-center'); }, 1800);
+        } else {
+            document.getElementById('ans-text-1').innerHTML = format(d.ans1);
+            document.getElementById('ans-text-2').innerHTML = format(d.ans2);
         }
-        runTimer(d.isSolo || d.bothEmpty ? 5 : 20); speak("Чей ответ лучше?");
+        runTimer(20);
     });
 
     socket.on('voting-results', d => {
         const b1 = document.getElementById('badge-1'), b2 = document.getElementById('badge-2');
-        if(!d.bothEmpty) { b1.innerText = d.v1; b1.style.display = 'flex'; if(!d.isSolo) { b2.innerText = d.v2; b2.style.display = 'flex'; } }
+        b1.innerText = d.v1; b1.style.display = 'flex';
+        if(!d.isSolo) { b2.innerText = d.v2; b2.style.display = 'flex'; }
+        
         setTimeout(() => {
-            if(!d.bothEmpty) { b1.innerText = "+" + d.p1Points; b1.style.background = "#4caf50"; if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; } }
+            b1.innerText = "+" + d.p1Points; b1.style.background = "#4caf50";
+            if(!d.isSolo) { b2.innerText = "+" + d.p2Points; b2.style.background = "#4caf50"; }
             document.getElementById('qText').classList.add('q-vanish');
-            setTimeout(() => { document.getElementById('card1').classList.add('exit-zoom'); document.getElementById('card2').classList.add('exit-zoom'); }, 1200);
+            setTimeout(() => { document.getElementById('card1').classList.add('exit-zoom'); document.getElementById('card2').classList.add('exit-zoom'); }, 1500);
         }, 2000);
     });
 
@@ -204,19 +131,15 @@
         document.getElementById('scoreList').innerHTML = d.players.sort((a,b)=>b.score-a.score).map((p,i)=>`
             <div class="score-bar"><span>${i+1}. ${p.emoji} ${p.name}</span><b>${p.score}</b></div>
         `).join('');
-        runTimer(10); // Исправлено: теперь таймер виден на счете
+        runTimer(d.time);
     });
 
     socket.on('final-results', d => {
-        playM('final'); document.getElementById('scores').style.display='none'; document.getElementById('final').style.display='flex'; 
+        document.getElementById('scores').style.display='none';
+        document.getElementById('final').style.display='flex'; 
         document.getElementById('winner').innerText = d.players[0].name;
-        
-        let html = `<h1 style="font-size:80px; color:#fbc02d; margin-bottom:50px;">ГРЕХО-СМЕХ</h1><br><h3>ЗАЛ СЛАВЫ:</h3>`;
-        d.best.forEach(j => { html += `<div class="joke-card">"${j.text}"<br><small>Автор: ${j.emoji} ${j.author} (${j.votes} гол.)</small></div>`; });
-        html += `<br><div style="font-size:40px; line-height:2;"><b style="color:#ef5350">АВТОРЫ:</b><br>Грексюр Поносович<br>Джемини Завозилов</div><br><h1>СПАСИБО!</h1>`;
-        document.getElementById('credits-content').innerHTML = html;
-        setTimeout(() => { document.getElementById('final').style.display='none'; document.getElementById('credits-screen').style.display='flex'; setTimeout(() => socket.emit('finish-credits', curCode), 22000); }, 5000);
     });
+    function startAudio() {}
 </script>
 </body>
 </html>
