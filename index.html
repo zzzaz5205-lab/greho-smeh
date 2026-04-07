@@ -2,55 +2,271 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ГРЕХО-СМЕХ | ВХОД</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ГРЕХО-СМЕХ | ВАНГА</title>
     <link rel="icon" href="https://fav.farm/🎮" />
     <style>
-        body { margin: 0; padding: 0; background: #fbc02d; font-family: sans-serif; color: #3e2723; text-align: center; }
-        .burger-btn { position: fixed; top: 20px; left: 20px; font-size: 40px; cursor: pointer; z-index: 2000; background: #3e2723; color: #fff; padding: 10px; border-radius: 10px; line-height: 0.5; }
-        #side-panel { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background: #fff; border-right: 6px solid #3e2723; z-index: 1999; transition: 0.4s; padding: 20px; text-align: left; }
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
+        
+        :root {
+            --yellow: #fbc02d;
+            --dark: #3e2723;
+            --red: #ef5350;
+            --green: #4caf50;
+            --white: #ffffff;
+        }
+
+        body { 
+            margin: 0; padding: 0;
+            background: var(--yellow);
+            background-image: radial-gradient(#f9a825 20%, transparent 20%), radial-gradient(#f9a825 20%, transparent 20%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            font-family: 'Segoe UI', sans-serif; 
+            color: var(--dark); 
+            text-align: center;
+            overflow-x: hidden;
+        }
+
+        /* КНОПКА БУРГЕР / КРЕСТИК */
+        #menu-toggle {
+            position: fixed; top: 20px; left: 20px;
+            width: 50px; height: 50px;
+            background: var(--dark);
+            border: 3px solid var(--white);
+            border-radius: 12px;
+            cursor: pointer;
+            z-index: 3000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: 0.3s;
+        }
+        .bar { width: 30px; height: 4px; background: var(--white); margin: 3px; transition: 0.3s; border-radius: 2px; }
+        
+        /* Анимация превращения в крестик */
+        #menu-toggle.open .bar:nth-child(1) { transform: rotate(45deg) translate(7px, 7px); }
+        #menu-toggle.open .bar:nth-child(2) { opacity: 0; }
+        #menu-toggle.open .bar:nth-child(3) { transform: rotate(-45deg) translate(7px, -7px); }
+
+        /* БОКОВАЯ ПАНЕЛЬ */
+        #side-panel {
+            position: fixed; top: 0; left: -350px;
+            width: 320px; height: 100vh;
+            background: var(--white);
+            border-right: 8px solid var(--dark);
+            z-index: 2500;
+            transition: 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            padding: 80px 20px 20px 20px;
+            text-align: left;
+            box-shadow: 20px 0 50px rgba(0,0,0,0.3);
+        }
         #side-panel.active { left: 0; }
-        .card { background: #fff; padding: 40px; display: inline-block; margin-top: 120px; border: 6px solid #3e2723; border-radius: 20px; width: 350px; }
-        .btn { width: 100%; padding: 18px; border: 3px solid #3e2723; border-radius: 12px; background: #ef5350; color: white; font-weight: bold; font-size: 22px; cursor: pointer; margin-top: 10px; }
-        .google-btn { background: #fff; color: #000; border: 2px solid #ddd; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+        /* ПРОФИЛЬ GOOGLE */
+        .user-card {
+            background: #f5f5f5;
+            border: 4px solid var(--dark);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex; align-items: center; gap: 15px;
+        }
+        .user-card img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--dark); }
+        .user-name { font-weight: 900; font-size: 18px; }
+
+        /* ЛИДЕРБОРД */
+        .top-btn {
+            background: var(--yellow);
+            border: 4px solid var(--dark);
+            padding: 15px;
+            width: 100%;
+            font-family: 'Montserrat';
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 10px;
+            box-shadow: 4px 4px 0 var(--dark);
+            margin-bottom: 20px;
+        }
+        #leaderboard-content {
+            display: none;
+            background: var(--dark);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .top-entry { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #6d4c41; }
+
+        /* ЦЕНТРАЛЬНАЯ КАРТОЧКА */
+        .main-card {
+            background: var(--white);
+            padding: 40px;
+            display: inline-block;
+            margin-top: 80px;
+            border: 6px solid var(--dark);
+            border-radius: 30px;
+            box-shadow: 15px 15px 0 var(--dark);
+            width: 90%; max-width: 400px;
+            transform: rotate(-1deg);
+        }
+
+        h1 { font-family: 'Montserrat', sans-serif; font-size: 48px; color: var(--dark); margin: 0 0 20px 0; text-transform: uppercase; }
+
+        /* ИНПУТЫ */
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { font-weight: 900; font-size: 14px; margin-left: 5px; text-transform: uppercase; }
+        input {
+            width: 100%;
+            padding: 18px;
+            margin-top: 5px;
+            border: 4px solid var(--dark);
+            border-radius: 15px;
+            font-size: 22px;
+            font-weight: bold;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.2s;
+        }
+        input:focus { background: #fffde7; transform: scale(1.02); }
+
+        /* КНОПКИ */
+        .btn {
+            width: 100%;
+            padding: 20px;
+            border: 4px solid var(--dark);
+            border-radius: 15px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+        .btn-green { background: var(--green); color: white; box-shadow: 0 6px 0 #2e7d32; }
+        .btn-red { background: var(--red); color: white; box-shadow: 0 6px 0 #b71c1c; }
+        .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--dark); }
+
+        /* ВАНГА */
+        .vanga-float {
+            position: absolute; top: 20px; right: 20px;
+            text-decoration: none; transition: 0.3s;
+        }
+        .vanga-float:hover { transform: rotate(5deg) scale(1.1); }
+        .vanga-avatar { width: 90px; height: 90px; border-radius: 50%; border: 5px solid var(--dark); background: url('vanga.png') center/cover; box-shadow: 5px 5px 0 rgba(0,0,0,0.2); }
+
+        .hidden { display: none !important; }
     </style>
 </head>
-<body>
-    <div class="burger-btn" onclick="document.getElementById('side-panel').classList.toggle('active')">≡</div>
+<body onclick="playMusic()">
+
+    <audio id="bg-music" src="menu.mp3" loop></audio>
+
+    <!-- КНОПКА МЕНЮ -->
+    <div id="menu-toggle" onclick="toggleMenu()">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+    </div>
+
+    <!-- ВЫЕЗДНАЯ ПАНЕЛЬ -->
     <div id="side-panel">
-        <h2>МЕНЮ</h2>
-        <div id="auth-section">
-            <button class="google-btn" onclick="location.href='/auth/google'">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20"> Войти через Google
+        <div id="auth-ui">
+            <button class="btn" style="background:#fff; color:#000; font-size:16px; padding:12px; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="location.href='/auth/google'">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20">
+                ВОЙТИ ЧЕРЕЗ GOOGLE
             </button>
         </div>
-        <div id="user-info" style="display:none"><p>Привет, <b id="user-name-display"></b>!</p></div>
-        <hr>
-        <h3>ТОП ЛИДЕРОВ</h3><div id="top-list">...</div>
+
+        <div id="user-ui" class="hidden">
+            <div class="user-card">
+                <img id="user-pic" src="">
+                <div>
+                    <div class="user-name" id="user-name">Игрок</div>
+                    <a href="/logout" style="font-size:12px; color: var(--red);">Выйти</a>
+                </div>
+            </div>
+        </div>
+
+        <button class="top-btn" onclick="toggleLeaderboard()">🏆 ТАБЛИЦА ЛИДЕРОВ</button>
+        <div id="leaderboard-content">
+            <!-- Сюда придут данные -->
+        </div>
     </div>
-    <div class="card">
+
+    <a href="https://www.twitch.tv/vangavgav" target="_blank" class="vanga-float">
+        <div class="vanga-avatar"></div>
+    </a>
+
+    <div class="main-card">
         <h1>ГРЕХО-СМЕХ</h1>
-        <button class="btn" onclick="location.href='host.html'" style="background:#4caf50;">СОЗДАТЬ ИГРУ</button>
-        <input type="text" id="name" placeholder="ТВОЕ ИМЯ">
-        <input type="text" id="code" placeholder="КОД">
-        <button class="btn" onclick="join()">ВОЙТИ</button>
+        
+        <button class="btn btn-green" onclick="location.href='host.html'">СОЗДАТЬ ИГРУ</button>
+        
+        <div style="margin: 25px 0; border-top: 4px dashed var(--dark);"></div>
+
+        <div class="input-group">
+            <label>Твоё имя</label>
+            <input type="text" id="name-input" placeholder="НАПРИМЕР: GREXUR" maxlength="12">
+        </div>
+
+        <div class="input-group">
+            <label>Код комнаты</label>
+            <input type="text" id="code-input" placeholder="XXXX" maxlength="4">
+        </div>
+
+        <button class="btn btn-red" onclick="joinGame()">ВОЙТИ В ИГРУ</button>
     </div>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    const socket = io(); let googleId = null;
-    fetch('/api/me').then(res => res.json()).then(user => {
-        if(user) {
-            googleId = user.id;
-            document.getElementById('auth-section').style.display = 'none';
-            document.getElementById('user-info').style.display = 'block';
-            document.getElementById('user-name-display').innerText = user.displayName;
-            document.getElementById('name').value = user.displayName;
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let mPlaying = false;
+        let googleUser = null;
+
+        function playMusic() { if(!mPlaying) { document.getElementById('bg-music').volume=0.2; document.getElementById('bg-music').play(); mPlaying=true; } }
+
+        function toggleMenu() {
+            document.getElementById('menu-toggle').classList.toggle('open');
+            document.getElementById('side-panel').classList.toggle('active');
         }
-    });
-    socket.on('global-top-update', top => {
-        document.getElementById('top-list').innerHTML = top.map((p,i) => `<div>${i+1}. ${p.emoji} ${p.name}: ${p.score}</div>`).join('');
-    });
-    function join() {
-        const n = document.getElementById('name').value, c = document.getElementById('code').value.toUpperCase();
-        location.href=`player.html?name=${encodeURIComponent(n)}&code=${c}${googleId ? '&googleId='+googleId : ''}`;
-    }
-</script></body></html>
+
+        function toggleLeaderboard() {
+            const content = document.getElementById('leaderboard-content');
+            content.style.display = (content.style.display === 'block') ? 'none' : 'block';
+        }
+
+        // Проверка авторизации
+        fetch('/api/me').then(res => res.json()).then(user => {
+            if(user) {
+                googleUser = user;
+                document.getElementById('auth-ui').classList.add('hidden');
+                document.getElementById('user-ui').classList.remove('hidden');
+                document.getElementById('user-name').innerText = user.displayName;
+                document.getElementById('user-pic').src = user.photos[0].value;
+                document.getElementById('name-input').value = user.displayName;
+            }
+        });
+
+        socket.on('global-top-update', top => {
+            document.getElementById('leaderboard-content').innerHTML = top.map((p, i) => `
+                <div class="top-entry">
+                    <span>${i+1}. ${p.emoji} ${p.name}</span>
+                    <b>${p.score}</b>
+                </div>
+            `).join('');
+        });
+
+        function joinGame() {
+            const name = document.getElementById('name-input').value.trim();
+            const code = document.getElementById('code-input').value.toUpperCase().trim();
+            if(!name || !code) return alert("Заполни все поля!");
+            
+            const url = `player.html?name=${encodeURIComponent(name)}&code=${code}${googleUser ? '&googleId='+googleUser.id : ''}`;
+            location.href = url;
+        }
+
+        socket.on('error-join', m => alert(m));
+    </script>
+</body>
+</html>
