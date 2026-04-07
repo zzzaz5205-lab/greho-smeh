@@ -3,234 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ГРЕХО-СМЕХ | ВХОД</title>
-    <link rel="icon" href="https://fav.farm/🎮" />
+    <title>ГРЕХО-СМЕХ | ВАНГА</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
-        
-        :root {
-            --yellow: #fbc02d;
-            --dark: #3e2723;
-            --red: #ef5350;
-            --green: #4caf50;
-            --white: #ffffff;
-            --blue: #2196f3;
-        }
+        :root { --yellow: #fbc02d; --dark: #3e2723; --red: #ef5350; --green: #4caf50; --blue: #2196f3; }
+        body { margin: 0; padding: 0; background: var(--yellow); font-family: 'Segoe UI', sans-serif; color: var(--dark); text-align: center; overflow: hidden; }
 
-        body { 
-            margin: 0; padding: 0;
-            background: var(--yellow);
-            background-image: radial-gradient(#f9a825 20%, transparent 20%), radial-gradient(#f9a825 20%, transparent 20%);
-            background-size: 60px 60px;
-            background-position: 0 0, 30px 30px;
-            font-family: 'Segoe UI', sans-serif; 
-            color: var(--dark); 
-            text-align: center;
-            overflow-x: hidden;
-        }
-
-        /* КНОПКА МЕНЮ (БУРГЕР) БЕЗ ЛИНИЙ */
-        #menu-toggle {
-            position: fixed; top: 25px; left: 25px;
-            width: 50px; height: 40px;
-            cursor: pointer; z-index: 3000;
-            display: flex; flex-direction: column; justify-content: space-between;
-        }
+        /* БУРГЕР */
+        #menu-toggle { position: fixed; top: 25px; left: 25px; width: 50px; height: 40px; cursor: pointer; z-index: 3000; display: flex; flex-direction: column; justify-content: space-between; }
         .bar { width: 100%; height: 6px; background: var(--dark); border-radius: 4px; transition: 0.3s; }
         #menu-toggle.open .bar:nth-child(1) { transform: translateY(17px) rotate(45deg); }
         #menu-toggle.open .bar:nth-child(2) { opacity: 0; }
         #menu-toggle.open .bar:nth-child(3) { transform: translateY(-17px) rotate(-45deg); }
 
-        /* БОКОВАЯ ПАНЕЛЬ */
-        #side-panel {
-            position: fixed; top: 0; left: -340px;
-            width: 320px; height: 100vh;
-            background: var(--white);
-            border-right: 8px solid var(--dark);
-            z-index: 2500;
-            transition: 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            padding: 100px 20px 20px 20px;
-            text-align: left;
-            box-sizing: border-box;
-            box-shadow: 20px 0 50px rgba(0,0,0,0.3);
-        }
+        #side-panel { position: fixed; top: 0; left: -340px; width: 320px; height: 100vh; background: #fff; border-right: 8px solid var(--dark); z-index: 2500; transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); padding: 100px 20px 20px 20px; text-align: left; box-sizing: border-box; }
         #side-panel.active { left: 0; }
 
-        /* БЛОК АВТОРИЗАЦИИ В МЕНЮ */
-        .auth-container {
-            background: #f5f5f5;
-            border: 4px solid var(--dark);
-            border-radius: 20px; padding: 20px; margin-bottom: 30px;
-        }
-        .user-profile { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
-        .user-profile img { width: 50px; height: 50px; border-radius: 50%; border: 3px solid var(--dark); }
+        .auth-block { background: #f5f5f5; border: 4px solid var(--dark); border-radius: 20px; padding: 20px; margin-bottom: 30px; }
+        .user-info-box { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .user-info-box img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--dark); }
 
-        .google-btn {
-            background: #fff; border: 3px solid var(--dark); padding: 12px;
-            width: 100%; border-radius: 12px; cursor: pointer;
-            font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 10px;
-            box-shadow: 0 4px 0 var(--dark); text-decoration: none; color: var(--dark); font-family: 'Montserrat';
-        }
+        /* ЦЕНТРАЛЬНАЯ КАРТОЧКА - ТЕПЕРЬ ТУТ НИЧЕГО НЕ НАЛЕЗАЕТ */
+        .main-card { background: #fff; padding: 40px; display: inline-block; margin-top: 100px; border: 6px solid var(--dark); border-radius: 30px; box-shadow: 15px 15px 0 var(--dark); width: 90%; max-width: 400px; transform: rotate(-1deg); }
+        h1 { font-family: 'Montserrat'; font-size: 48px; margin: 0 0 20px 0; }
+        input { width: 100%; padding: 18px; margin: 10px 0; border: 4px solid var(--dark); border-radius: 15px; font-size: 20px; font-weight: bold; box-sizing: border-box; outline: none; }
+        input:disabled { background: #eee; color: #888; }
 
-        /* ЦЕНТРАЛЬНАЯ КАРТОЧКА (ТЕПЕРЬ ЧИСТАЯ) */
-        .main-card {
-            background: var(--white);
-            padding: 40px;
-            display: inline-block;
-            margin-top: 100px;
-            border: 6px solid var(--dark);
-            border-radius: 30px;
-            box-shadow: 15px 15px 0 var(--dark);
-            width: 90%; max-width: 400px;
-            transform: rotate(-1deg);
-        }
-
-        h1 { font-family: 'Montserrat', sans-serif; font-size: 48px; color: var(--dark); margin: 0 0 20px 0; text-transform: uppercase; }
-
-        input {
-            width: 100%; padding: 18px; margin: 10px 0;
-            border: 4px solid var(--dark); border-radius: 15px;
-            font-size: 20px; font-weight: bold; box-sizing: border-box; outline: none;
-        }
-        input:disabled { background: #eee; color: #888; cursor: not-allowed; }
-
-        .btn {
-            width: 100%; padding: 18px; border: 4px solid var(--dark);
-            border-radius: 15px; font-family: 'Montserrat'; font-size: 22px;
-            font-weight: 900; cursor: pointer; text-transform: uppercase; margin-top: 10px;
-        }
-        .btn-green { background: var(--green); color: white; box-shadow: 0 6px 0 #2e7d32; }
-        .btn-red { background: var(--red); color: white; box-shadow: 0 6px 0 #b71c1c; }
-        .btn-blue { background: var(--blue); color: white; box-shadow: 0 6px 0 #1565c0; }
+        .btn { width: 100%; padding: 20px; border: 4px solid var(--dark); border-radius: 15px; font-family: 'Montserrat'; font-size: 24px; cursor: pointer; box-shadow: 0 6px 0 var(--dark); text-transform: uppercase; }
+        .btn-green { background: var(--green); color: white; margin-bottom: 20px; }
+        .btn-red { background: var(--red); color: white; }
+        .btn-blue { background: var(--blue); color: white; }
         .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--dark); }
 
-        /* МОДАЛКА ВЫХОДА */
-        #logout-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); z-index: 5000; align-items: center; justify-content: center;
-        }
-
+        #logout-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; align-items: center; justify-content: center; }
         .hidden { display: none !important; }
     </style>
 </head>
-<body onclick="playMusic()">
-
-    <audio id="bg-music" src="menu.mp3" loop></audio>
+<body onclick="playM()">
+    <audio id="m-audio" src="menu.mp3" loop></audio>
 
     <div id="menu-toggle" onclick="toggleMenu()">
         <div class="bar"></div><div class="bar"></div><div class="bar"></div>
     </div>
 
-    <!-- БОКОВОЕ МЕНЮ -->
     <div id="side-panel">
-        <div class="auth-container">
-            <h3 style="margin-top:0">Аккаунт</h3>
-            
-            <!-- Если гость -->
+        <div class="auth-block">
             <div id="auth-guest">
-                <a href="/auth/google" class="google-btn">
-                    <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-                    Войти с Google
-                </a>
-                <p style="font-size:10px; opacity:0.5; text-align:center; margin-top:10px;">Вскоре новые способы входа...</p>
+                <button class="btn" style="background:#fff; color:#000; font-size:16px; padding:12px; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 3px 0 var(--dark)" onclick="location.href='/auth/google'">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20"> ЧЕРЕЗ GOOGLE
+                </button>
             </div>
-
-            <!-- Если вошел -->
             <div id="auth-user" class="hidden">
-                <div class="user-profile">
-                    <img id="u-avatar" src="">
-                    <div>
-                        <span style="font-size:12px; opacity:0.6;">Вы вошли как</span><br>
-                        <b id="u-name">...</b>
-                    </div>
+                <div class="user-info-box">
+                    <img id="u-img" src="">
+                    <b id="u-name">...</b>
                 </div>
-                <button class="btn btn-red" style="font-size:14px; padding:10px;" onclick="showLogout()">Выйти из Google</button>
+                <button class="btn btn-red" style="font-size:14px; padding:10px; box-shadow:0 3px 0 var(--dark)" onclick="confirmLogout()">ВЫЙТИ ИЗ GOOGLE</button>
             </div>
         </div>
-
-        <button class="btn" style="background:var(--yellow); font-size:16px; box-shadow:0 4px 0 var(--dark)" onclick="toggleTop()">🏆 ТАБЛИЦА ЛИДЕРОВ</button>
-        <div id="top-area" class="hidden" style="background:var(--dark); color:#fff; padding:15px; border-radius:15px; margin-top:10px;"></div>
+        <button class="btn" style="background:var(--yellow); font-size:16px;" onclick="toggleBoard()">🏆 ТАБЛИЦА ЛИДЕРОВ</button>
+        <div id="board-area" class="hidden" style="background:var(--dark); color:#fff; padding:15px; border-radius:10px; margin-top:10px;"></div>
     </div>
 
-    <!-- ЦЕНТРАЛЬНАЯ КАРТОЧКА -->
     <div class="main-card">
         <h1>ГРЕХО-СМЕХ</h1>
-        
         <button class="btn btn-green" onclick="location.href='host.html'">СОЗДАТЬ ИГРУ</button>
-        
-        <div style="margin: 25px 0; border-top: 4px dashed var(--dark);"></div>
-
-        <input type="text" id="name-input" maxlength="12">
-        <input type="text" id="code-input" placeholder="КОД КОМНАТЫ" maxlength="4">
-        
-        <button id="action-btn" class="btn btn-red" onclick="join()">Войти</button>
+        <div style="border-top: 4px dashed var(--dark); margin: 20px 0;"></div>
+        <input type="text" id="p-name">
+        <input type="text" id="p-code" placeholder="КОД XXXX" maxlength="4">
+        <button id="join-btn" class="btn btn-red" onclick="join()">ВОЙТИ</button>
     </div>
 
-    <!-- Подтверждение выхода -->
     <div id="logout-modal">
-        <div class="main-card" style="margin-top:0; transform:rotate(0deg);">
-            <h3 style="margin-top:0">Вы точно хотите выйти из Google?</h3>
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-green" onclick="location.href='/logout'">ДА</button>
-                <button class="btn btn-red" onclick="showLogout()">НЕТ</button>
-            </div>
+        <div class="main-card" style="margin-top:0">
+            <h3>Вы точно хотите выйти из Google?</h3>
+            <button class="btn btn-green" onclick="location.href='/logout'">ДА</button>
+            <button class="btn btn-red" onclick="confirmLogout()">НЕТ</button>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let mPlaying = false;
         let googleId = null;
 
         function toggleMenu() { document.getElementById('menu-toggle').classList.toggle('open'); document.getElementById('side-panel').classList.toggle('active'); }
-        function showLogout() { const m = document.getElementById('logout-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; }
-        function toggleTop() { document.getElementById('top-area').classList.toggle('hidden'); }
-        function playMusic() { if(!mPlaying) { document.getElementById('bg-music').volume=0.2; document.getElementById('bg-music').play(); mPlaying=true; } }
+        function confirmLogout() { const m = document.getElementById('logout-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; }
+        function toggleBoard() { document.getElementById('board-area').classList.toggle('hidden'); }
+        function playM() { const a = document.getElementById('m-audio'); if(a.paused) { a.volume=0.2; a.play(); } }
 
         window.onload = () => {
-            // Генерируем случайный ник
             const r = Math.floor(1000 + Math.random() * 9000);
-            document.getElementById('name-input').placeholder = `Например: КлёвыйГрех${r}`;
-
-            // Проверяем "Перезайти"
-            if(localStorage.getItem('lastCode')) {
-                const b = document.getElementById('action-btn');
+            document.getElementById('p-name').placeholder = `Например: КлёвыйГрех${r}`;
+            
+            // ПРОВЕРКА ПЕРЕЗАХОДА
+            if(localStorage.getItem('pCode')) {
+                const b = document.getElementById('join-btn');
                 b.innerText = "Перезайти";
                 b.className = "btn btn-blue";
-                document.getElementById('code-input').value = localStorage.getItem('lastCode');
+                document.getElementById('p-code').value = localStorage.getItem('pCode');
             }
 
-            // Проверка Google
             fetch('/api/me').then(res => res.json()).then(user => {
                 if(user) {
                     googleId = user.id;
                     document.getElementById('auth-guest').classList.add('hidden');
                     document.getElementById('auth-user').classList.remove('hidden');
                     document.getElementById('u-name').innerText = user.displayName;
-                    document.getElementById('u-avatar').src = user.photos[0].value;
-                    
-                    const ni = document.getElementById('name-input');
-                    ni.value = user.displayName;
-                    ni.disabled = true;
+                    document.getElementById('u-img').src = user.photos[0].value;
+                    const inp = document.getElementById('p-name');
+                    inp.value = user.displayName;
+                    inp.disabled = true;
                 }
             });
         };
 
         function join() {
-            const n = document.getElementById('name-input').value.trim();
-            const c = document.getElementById('code-input').value.toUpperCase().trim();
-            if(!n || !c) return alert("Заполни поля!");
-            localStorage.setItem('lastCode', c);
+            const n = document.getElementById('p-name').value;
+            const c = document.getElementById('p-code').value.toUpperCase();
+            localStorage.setItem('pName', n); localStorage.setItem('pCode', c);
             location.href = `player.html?name=${encodeURIComponent(n)}&code=${c}${googleId ? '&googleId='+googleId : ''}`;
         }
 
         socket.on('global-top-update', top => {
-            document.getElementById('top-area').innerHTML = top.map((p,i)=>`
-                <div style="display:flex; justify-content:space-between; font-size:14px; border-bottom:1px solid #555; padding:5px 0;">
-                    <span>${i+1}. ${p.emoji} ${p.name}</span><b>${p.score}</b>
-                </div>
-            `).join('');
+            document.getElementById('board-area').innerHTML = top.map((p,i)=>`<div>${i+1}. ${p.emoji} ${p.name}: ${p.score}</div>`).join('');
         });
     </script>
 </body>
