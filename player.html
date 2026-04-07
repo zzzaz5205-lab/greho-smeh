@@ -4,198 +4,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ГРЕХО-СМЕХ | ИГРОК</title>
-    <link rel="icon" href="https://fav.farm/🎮" />
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
-        :root { --yellow: #fbc02d; --dark: #3e2723; --red: #ef5350; --green: #4caf50; --blue: #42a5f5; }
-        body { margin: 0; padding: 0; background: var(--yellow); font-family: 'Segoe UI', sans-serif; color: var(--dark); text-align: center; }
-        
-        .screen { display: none; padding: 20px; box-sizing: border-box; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; }
-        .screen.active { display: flex; }
-
-        .card { background: #fff; padding: 30px; border-radius: 25px; border: 5px solid var(--dark); box-shadow: 10px 10px 0 var(--dark); width: 90%; max-width: 400px; }
-        
-        /* КНОПКИ */
-        .btn { width: 100%; padding: 18px; border: 4px solid var(--dark); border-radius: 15px; font-weight: 900; font-size: 20px; cursor: pointer; text-transform: uppercase; margin-top: 10px; box-shadow: 0 5px 0 var(--dark); }
-        .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--dark); }
-        .btn-google { background: #fff; color: #000; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-logout { background: var(--red); color: #fff; font-size: 14px; padding: 10px; width: auto; display: inline-block; }
-        .btn-rejoin { background: var(--blue) !important; color: #fff; }
-
-        input { width: 100%; padding: 15px; border: 3px solid var(--dark); border-radius: 12px; font-size: 18px; font-weight: bold; box-sizing: border-box; margin: 10px 0; outline: none; }
-        input:disabled { background: #eee; cursor: not-allowed; }
-
-        /* МОДАЛКА ВЫХОДА */
-        #logout-confirm { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; }
-
-        .emoji-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
-        .emoji-item { font-size: 35px; background: #eee; border: 2px solid var(--dark); border-radius: 10px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        body { font-family: sans-serif; background: #fbc02d; color: #3e2723; text-align: center; margin: 0; overflow: hidden; touch-action: manipulation; }
+        .screen { display: none; padding: 20px; box-sizing: border-box; height: 100vh; flex-direction: column; align-items: center; justify-content: center; }
+        .active { display: flex; }
+        .hidden { display: none !important; }
+        .btn { background: #ef5350; color: white; width: 95%; padding: 15px; margin: 10px auto; border: 4px solid #3e2723; border-radius: 12px; font-weight: 900; font-size: 20px; box-shadow: 0 4px 0 #3e2723; cursor: pointer; }
+        input { width: 90%; padding: 12px; border: 3px solid #3e2723; border-radius: 10px; font-size: 18px; font-weight: bold; margin-bottom: 8px; outline: none; }
+        .funny-gif { width: 50%; max-width: 200px; border: 4px solid #3e2723; border-radius: 15px; }
     </style>
 </head>
 <body>
-
-    <!-- ЭКРАН 1: ВХОД -->
-    <div id="screen-auth" class="screen active">
-        <div class="card">
-            <h1>ГРЕХО-СМЕХ</h1>
-            
-            <!-- Блок Google -->
-            <div id="google-area">
-                <button class="btn btn-google" onclick="location.href='/auth/google'">
-                    <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-                    Войти с Google
-                </button>
-            </div>
-            <div id="user-info" style="display:none; margin-bottom: 20px;">
-                <p>Вы вошли как <b id="display-name">...</b></p>
-                <button class="btn btn-logout" onclick="showLogoutConfirm()">Выйти</button>
-            </div>
-
-            <hr style="margin: 20px 0; border: 1px dashed #ccc;">
-            
-            <input type="text" id="name-input" placeholder="Твое имя">
-            <input type="text" id="code-input" placeholder="Код комнаты" maxlength="4">
-            
-            <button id="join-btn" class="btn" style="background: var(--red); color:#fff;" onclick="handleJoin()">Войти</button>
-        </div>
+    <!-- ЭКРАН ОЖИДАНИЯ/ЛОББИ -->
+    <div id="screen-wait" class="screen active">
+        <h2>ТЫ В ИГРЕ!</h2>
+        <p>Выбери персонажа на большом экране...</p>
+        <div id="emoji-grid" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
+        <img src="cat.gif" class="funny-gif" style="margin-top:20px">
     </div>
 
-    <!-- ЭКРАН 2: ЛОББИ ОЖИДАНИЯ -->
-    <div id="screen-lobby" class="screen">
-        <div class="card">
-            <h2>ВЫБЕРИ ГЕРОЯ</h2>
-            <div class="emoji-grid" id="grid"></div>
-            <p id="lobby-status" style="font-weight:bold; margin-top:20px;">Ждем начала...</p>
-        </div>
+    <!-- ЭКРАН ОТВЕТА -->
+    <div id="screen-answer" class="screen">
+        <div id="qText" style="background:#fff; border:3px solid #3e2723; padding:10px; border-radius:10px; margin-bottom:15px; font-weight:bold;"></div>
+        <div id="inp-area"></div>
+        <button class="btn" onclick="sendAns()" style="background:#4caf50;">ОТПРАВИТЬ</button>
     </div>
 
-    <!-- ЭКРАН 3: ИГРА -->
-    <div id="screen-game" class="screen">
-        <div class="card">
-            <h3 id="q-text">Вопрос подгружается...</h3>
-            <div id="answer-inputs"></div>
-            <button class="btn" style="background: var(--green); color:#fff;" onclick="sendAnswer()">ОТПРАВИТЬ</button>
-        </div>
-    </div>
-
-    <!-- МОДАЛКА ПОДТВЕРЖДЕНИЯ ВЫХОДА -->
-    <div id="logout-confirm">
-        <div class="card">
-            <h3>Вы точно хотите выйти из аккаунта Google?</h3>
-            <div style="display:flex; gap:10px;">
-                <button class="btn" style="background:var(--green); color:#fff;" onclick="location.href='/logout'">ДА</button>
-                <button class="btn" style="background:var(--red); color:#fff;" onclick="hideLogoutConfirm()">НЕТ</button>
-            </div>
-        </div>
+    <!-- ЭКРАН ГОЛОСОВАНИЯ -->
+    <div id="screen-vote" class="screen">
+        <h2>ГОЛОСУЕМ!</h2>
+        <div id="vote-btns"></div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let myName = "";
-        let myCode = "";
-        let isGoogle = false;
+        const params = new URLSearchParams(window.location.search);
+        let myName = params.get('name') || localStorage.getItem('pName');
+        let myCode = (params.get('code') || localStorage.getItem('pCode'))?.toUpperCase();
+        const googleId = params.get('googleId');
 
-        // Предупреждение об обновлении
-        window.onbeforeunload = function() {
-            return "Данные могут не сохраниться. Вы уверены?";
-        };
+        window.onbeforeunload = () => "Игра прервется!";
 
-        // Инициализация при загрузке
-        fetch('/api/me').then(res => res.json()).then(user => {
-            if(user) {
-                isGoogle = true;
-                myName = user.displayName;
-                document.getElementById('google-area').style.display = 'none';
-                document.getElementById('user-info').style.display = 'block';
-                document.getElementById('display-name').innerText = user.displayName;
-                const nameInp = document.getElementById('name-input');
-                nameInp.value = user.displayName;
-                nameInp.disabled = true; // Запрет смены ника
-            }
-            checkReconnection();
-        });
+        function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 
-        function checkReconnection() {
-            const lastCode = localStorage.getItem('lastCode');
-            if(lastCode) {
-                const btn = document.getElementById('join-btn');
-                btn.innerText = "Перезайти";
-                btn.classList.add('btn-rejoin');
-                document.getElementById('code-input').value = lastCode;
-            }
-        }
+        socket.emit('join-room', { code: myCode, name: myName, googleId });
 
-        function showLogoutConfirm() { document.getElementById('logout-confirm').style.display = 'flex'; }
-        function hideLogoutConfirm() { document.getElementById('logout-confirm').style.display = 'none'; }
-
-        function switchScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
-
-        function handleJoin() {
-            const name = document.getElementById('name-input').value.trim();
-            const code = document.getElementById('code-input').value.toUpperCase().trim();
-            if(!name || !code) return alert("Заполни поля!");
-            
-            myName = name;
-            myCode = code;
-            localStorage.setItem('lastCode', code);
-            localStorage.setItem('lastName', name);
-
-            socket.emit('join-room', { code, name });
-        }
-
-        socket.on('joined-success', (data) => {
-            if(data.gameStarted) {
-                switchScreen('screen-game');
-            } else {
-                switchScreen('screen-lobby');
-                renderEmojiGrid();
-            }
-        });
-
-        function renderEmojiGrid() {
-            const grid = document.getElementById('grid');
-            grid.innerHTML = "";
+        socket.on('joined-success', d => {
+            const g = document.getElementById('emoji-grid');
+            g.innerHTML = "";
             ['🤡','👽','🤖','👻','🐙','🐸','🐷','🍔','🚀','💎'].forEach(e => {
-                const d = document.createElement('div');
-                d.className = 'emoji-item'; d.innerText = e;
-                d.onclick = () => {
-                    socket.emit('select-emoji', { code: myCode, name: myName, emoji: e });
-                    document.getElementById('lobby-status').innerText = "ТЫ ГОТОВ! ЖДЕМ ХОСТА...";
-                    grid.style.opacity = "0.3";
-                    grid.style.pointerEvents = "none";
-                };
-                grid.appendChild(d);
+                const d = document.createElement('div'); d.style.fontSize="40px"; d.style.padding="10px"; d.innerText = e;
+                d.onclick = () => { socket.emit('select-emoji', { code: myCode, name: myName, emoji: e }); g.innerHTML="<h3>ГОТОВ!</h3>"; };
+                g.appendChild(d);
             });
-        }
-
-        socket.on('game-started-signal', () => {
-            switchScreen('screen-game');
+            if(d.gameStarted) showScreen('screen-wait');
         });
 
         socket.on('round-started', d => {
-            switchScreen('screen-game');
-            document.getElementById('q-text').innerText = d.q;
-            const area = document.getElementById('answer-inputs');
-            area.innerHTML = d.round === 3 ? 
-                '<input class="ansV" placeholder="Ответ 1"><input class="ansV" placeholder="Ответ 2"><input class="ansV" placeholder="Ответ 3">' :
-                '<input class="ansV" placeholder="Твой смешной ответ">';
+            if(myName === d.p1_name || myName === d.p2_name) {
+                showScreen('screen-answer');
+                document.getElementById('qText').innerText = d.q;
+                const area = document.getElementById('inp-area');
+                area.innerHTML = d.round === 3 ? '<input class="ansV"><input class="ansV"><input class="ansV">' : '<input class="ansV">';
+            } else { showScreen('screen-wait'); }
         });
 
-        function sendAnswer() {
-            const vals = Array.from(document.querySelectorAll('.ansV')).map(i => i.value);
-            socket.emit('submit-answer', { code: myCode, name: myName, answer: vals });
-            document.getElementById('screen-game').innerHTML = "<h1>ОТПРАВЛЕНО! СМОТРИ НА ЭКРАН</h1>";
+        function sendAns() {
+            const v = Array.from(document.querySelectorAll('.ansV')).map(i => i.value.trim());
+            socket.emit('submit-answer', { code: myCode, name: myName, answer: v });
+            showScreen('screen-wait');
         }
 
-        socket.on('error-join', m => {
-            alert(m);
-            localStorage.clear();
-            location.reload();
+        socket.on('show-voting', d => {
+            if(myName === d.p1_name || myName === d.p2_name || d.isSolo) { showScreen('screen-wait'); return; }
+            showScreen('screen-vote');
+            const format = (a) => Array.isArray(a) ? a.join(' / ') : a;
+            document.getElementById('vote-btns').innerHTML = `
+                <button class="btn" onclick="v(1)">${format(d.ans1)}</button>
+                <button class="btn" onclick="v(2)" style="background:#42a5f5">${format(d.ans2)}</button>
+            `;
         });
+
+        function v(n) { socket.emit('cast-vote', { code: myCode, voteNum: n }); showScreen('screen-wait'); }
+        socket.on('go-to-menu', () => location.href = 'index.html');
     </script>
 </body>
 </html>
