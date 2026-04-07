@@ -10,23 +10,22 @@
         :root { --yellow: #fbc02d; --dark: #3e2723; --red: #ef5350; --green: #4caf50; --white: #ffffff; }
         body { margin: 0; padding: 0; background: var(--yellow); background-image: radial-gradient(#f9a825 20%, transparent 20%), radial-gradient(#f9a825 20%, transparent 20%); background-size: 60px 60px; background-position: 0 0, 30px 30px; font-family: 'Segoe UI', sans-serif; color: var(--dark); text-align: center; overflow-x: hidden; }
 
-        /* БУРГЕР (КРЕСТИК) */
+        /* БУРГЕР */
         #menu-toggle { position: fixed; top: 25px; left: 25px; width: 50px; height: 40px; cursor: pointer; z-index: 3000; display: flex; flex-direction: column; justify-content: space-between; }
         .bar { width: 100%; height: 6px; background: var(--dark); border-radius: 4px; transition: 0.3s; }
         #menu-toggle.open .bar:nth-child(1) { transform: translateY(17px) rotate(45deg); }
         #menu-toggle.open .bar:nth-child(2) { opacity: 0; }
         #menu-toggle.open .bar:nth-child(3) { transform: translateY(-17px) rotate(-45deg); }
 
-        #side-panel { position: fixed; top: 0; left: -340px; width: 320px; height: 100vh; background: #fff; border-right: 8px solid var(--dark); z-index: 2500; transition: 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); padding: 100px 20px 20px 20px; text-align: left; box-sizing: border-box; }
+        #side-panel { position: fixed; top: 0; left: -340px; width: 320px; height: 100vh; background: #fff; border-right: 8px solid var(--dark); z-index: 2500; transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); padding: 100px 20px 20px 20px; text-align: left; box-sizing: border-box; }
         #side-panel.active { left: 0; }
 
         .auth-block { background: #f5f5f5; border: 4px solid var(--dark); border-radius: 20px; padding: 20px; margin-bottom: 30px; }
         .user-info-box { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
         .user-info-box img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--dark); }
-        .google-btn { background: #fff; border: 3px solid var(--dark); padding: 12px; width: 100%; border-radius: 10px; cursor: pointer; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 0 var(--dark); }
 
         /* ЦЕНТРАЛЬНАЯ КАРТА */
-        .main-card { background: #fff; padding: 40px; display: inline-block; margin-top: 80px; border: 6px solid var(--dark); border-radius: 30px; box-shadow: 15px 15px 0 var(--dark); width: 90%; max-width: 400px; transform: rotate(-1deg); }
+        .main-card { background: #fff; padding: 40px; display: inline-block; margin-top: 100px; border: 6px solid var(--dark); border-radius: 30px; box-shadow: 15px 15px 0 var(--dark); width: 90%; max-width: 400px; transform: rotate(-1deg); }
         h1 { font-family: 'Montserrat'; font-size: 48px; margin: 0 0 20px 0; }
         input { width: 100%; padding: 18px; margin: 10px 0; border: 4px solid var(--dark); border-radius: 15px; font-size: 20px; font-weight: bold; box-sizing: border-box; outline: none; }
         input:disabled { background: #eee; color: #888; }
@@ -36,9 +35,7 @@
         .btn-red { background: var(--red); color: white; }
         .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--dark); }
 
-        /* МОДАЛКА ВЫХОДА */
         #logout-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; align-items: center; justify-content: center; }
-
         .hidden { display: none !important; }
     </style>
 </head>
@@ -49,20 +46,24 @@
         <div class="bar"></div><div class="bar"></div><div class="bar"></div>
     </div>
 
+    <!-- Боковое меню: теперь авторизация здесь -->
     <div id="side-panel">
         <div class="auth-block">
             <div id="auth-guest">
-                <button class="google-btn" onclick="location.href='/auth/google'">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20"> ВОЙТИ ЧЕРЕЗ GOOGLE
+                <button class="btn" style="background:#fff; color:#000; font-size:16px; border-width:2px; padding:12px; box-shadow: 0 3px 0 var(--dark);" onclick="location.href='/auth/google'">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20" style="vertical-align:middle; margin-right:10px;"> 
+                    ВОЙТИ ЧЕРЕЗ GOOGLE
                 </button>
-                <div style="font-size:10px; text-align:center; margin-top:5px; opacity:0.6;">Вскоре новые входы...</div>
             </div>
             <div id="auth-user" class="hidden">
                 <div class="user-info-box">
                     <img id="u-img" src="">
-                    <b id="u-name">...</b>
+                    <div style="display:flex; flex-direction:column">
+                        <span style="font-size:12px; opacity:0.6">Вы вошли как</span>
+                        <b id="u-name">...</b>
+                    </div>
                 </div>
-                <button class="btn btn-red" style="font-size:14px; padding:10px; box-shadow:0 3px 0 var(--dark)" onclick="confirmLogout()">ВЫЙТИ ИЗ GOOGLE</button>
+                <button class="btn btn-red" style="font-size:14px; padding:10px; box-shadow:0 3px 0 var(--dark)" onclick="confirmLogout()">ВЫЙТИ ИЗ АККАУНТА</button>
             </div>
         </div>
         <button class="btn" style="background:var(--yellow); font-size:16px;" onclick="toggleBoard()">🏆 ТАБЛИЦА ЛИДЕРОВ</button>
@@ -73,16 +74,16 @@
         <h1>ГРЕХО-СМЕХ</h1>
         <button class="btn btn-green" onclick="location.href='host.html'">СОЗДАТЬ ИГРУ</button>
         <div style="border-top: 4px dashed var(--dark); margin: 20px 0;"></div>
-        <input type="text" id="p-name">
-        <input type="text" id="p-code" placeholder="КОД XXXX" maxlength="4">
+        <input type="text" id="p-name" placeholder="ТВОЕ ИМЯ">
+        <input type="text" id="p-code" placeholder="КОД КОМНАТЫ" maxlength="4">
         <button id="join-btn" class="btn btn-red" onclick="join()">ВОЙТИ</button>
     </div>
 
     <div id="logout-modal">
         <div class="main-card" style="margin-top:0">
-            <h3>Вы точно хотите выйти из Google?</h3>
-            <button class="btn btn-green" onclick="location.href='/logout'">ДА</button>
-            <button class="btn btn-red" onclick="confirmLogout()">НЕТ</button>
+            <h3>Вы точно хотите выйти?</h3>
+            <button class="btn btn-green" onclick="location.href='/logout'">ДА, ВЫЙТИ</button>
+            <button class="btn btn-red" onclick="confirmLogout()">НЕТ, ОСТАТЬСЯ</button>
         </div>
     </div>
 
@@ -97,9 +98,6 @@
         function playM() { const a = document.getElementById('m-audio'); if(a.paused) { a.volume=0.2; a.play(); } }
 
         window.onload = () => {
-            const r = Math.floor(1000 + Math.random() * 9000);
-            document.getElementById('p-name').placeholder = `Например: КлёвыйГрех${r}`;
-            
             fetch('/api/me').then(res => res.json()).then(user => {
                 if(user) {
                     googleId = user.id;
@@ -117,6 +115,7 @@
         function join() {
             const n = document.getElementById('p-name').value;
             const c = document.getElementById('p-code').value.toUpperCase();
+            if(!n || !c) return alert("Заполни поля!");
             location.href = `player.html?name=${encodeURIComponent(n)}&code=${c}${googleId ? '&googleId='+googleId : ''}`;
         }
 
