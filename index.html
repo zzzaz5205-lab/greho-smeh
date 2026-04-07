@@ -2,73 +2,55 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ГРЕХО-СМЕХ</title>
+    <title>ГРЕХО-СМЕХ | ВХОД</title>
+    <link rel="icon" href="https://fav.farm/🎮" />
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
-        body { margin: 0; background: #fbc02d; font-family: 'Segoe UI', sans-serif; text-align: center; }
-        
-        /* БУРГЕР МЕНЮ */
-        #burger { position: fixed; top: 20px; left: 20px; font-size: 40px; cursor: pointer; z-index: 2000; }
-        #side-menu { 
-            position: fixed; top: 0; left: -350px; width: 300px; height: 100%; 
-            background: #3e2723; color: #fff; transition: 0.4s; z-index: 1999; padding: 80px 20px 20px; 
-        }
-        #side-menu.open { left: 0; }
-        .twitch-btn { background: #6441a5; color: #fff; padding: 15px; border-radius: 10px; border: none; font-weight: 900; cursor: pointer; width: 100%; }
-
-        .card { background: #fff; padding: 40px; display: inline-block; margin-top: 100px; border: 6px solid #3e2723; border-radius: 20px; width: 350px; }
-        .hidden { display: none; }
+        body { margin: 0; padding: 0; background: #fbc02d; font-family: sans-serif; color: #3e2723; text-align: center; }
+        .burger-btn { position: fixed; top: 20px; left: 20px; font-size: 40px; cursor: pointer; z-index: 2000; background: #3e2723; color: #fff; padding: 10px; border-radius: 10px; line-height: 0.5; }
+        #side-panel { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background: #fff; border-right: 6px solid #3e2723; z-index: 1999; transition: 0.4s; padding: 20px; text-align: left; }
+        #side-panel.active { left: 0; }
+        .card { background: #fff; padding: 40px; display: inline-block; margin-top: 120px; border: 6px solid #3e2723; border-radius: 20px; width: 350px; }
+        .btn { width: 100%; padding: 18px; border: 3px solid #3e2723; border-radius: 12px; background: #ef5350; color: white; font-weight: bold; font-size: 22px; cursor: pointer; margin-top: 10px; }
+        .google-btn { background: #fff; color: #000; border: 2px solid #ddd; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; }
     </style>
 </head>
 <body>
-    <div id="burger" onclick="document.getElementById('side-menu').classList.toggle('open')">☰</div>
-    
-    <div id="side-menu">
+    <div class="burger-btn" onclick="document.getElementById('side-panel').classList.toggle('active')">≡</div>
+    <div id="side-panel">
+        <h2>МЕНЮ</h2>
         <div id="auth-section">
-            <button class="twitch-btn" onclick="location.href='/auth/twitch'">ЛОГИН ЧЕРЕЗ TWITCH</button>
+            <button class="google-btn" onclick="location.href='/auth/google'">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20"> Войти через Google
+            </button>
         </div>
-        <div id="user-logged" class="hidden">
-            <h3 id="user-name"></h3>
-            <p style="color: #4caf50">Авторизован (Очки начисляются)</p>
-        </div>
+        <div id="user-info" style="display:none"><p>Привет, <b id="user-name-display"></b>!</p></div>
         <hr>
-        <h4>🏆 ТАБЛИЦА ЛИДЕРОВ</h4>
-        <div id="leaderboard">Загрузка...</div>
+        <h3>ТОП ЛИДЕРОВ</h3><div id="top-list">...</div>
     </div>
-
     <div class="card">
         <h1>ГРЕХО-СМЕХ</h1>
-        <button class="btn" onclick="location.href='host.html'" style="background: #4caf50; width: 100%; padding: 15px; border-radius: 10px; color: #fff; font-weight: 900; border: 3px solid #3e2723; cursor: pointer;">СОЗДАТЬ</button>
-        <hr>
-        <input type="text" id="name" placeholder="ИМЯ" style="width: 80%; padding: 10px; margin-bottom: 10px;">
-        <input type="text" id="code" placeholder="КОД" style="width: 80%; padding: 10px;">
-        <button onclick="join()" style="background: #ef5350; width: 100%; padding: 15px; margin-top: 10px; color: #fff; border-radius: 10px; border: 3px solid #3e2723; cursor: pointer;">ВОЙТИ</button>
+        <button class="btn" onclick="location.href='host.html'" style="background:#4caf50;">СОЗДАТЬ ИГРУ</button>
+        <input type="text" id="name" placeholder="ТВОЕ ИМЯ">
+        <input type="text" id="code" placeholder="КОД">
+        <button class="btn" onclick="join()">ВОЙТИ</button>
     </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        let isTwitch = false;
-
-        fetch('/api/me').then(r => r.json()).then(user => {
-            if(user) {
-                isTwitch = true;
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('user-logged').classList.remove('hidden');
-                document.getElementById('user-name').innerText = user.display_name;
-                document.getElementById('name').value = user.display_name;
-            }
-        });
-
-        socket.on('global-top-update', top => {
-            document.getElementById('leaderboard').innerHTML = top.map(e => `<div>${e[0]}: ${e[1].score}</div>`).join('');
-        });
-
-        function join() {
-            const n = document.getElementById('name').value;
-            const c = document.getElementById('code').value.toUpperCase();
-            location.href = `player.html?name=${n}&code=${c}&isTwitch=${isTwitch}`;
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io(); let googleId = null;
+    fetch('/api/me').then(res => res.json()).then(user => {
+        if(user) {
+            googleId = user.id;
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('user-info').style.display = 'block';
+            document.getElementById('user-name-display').innerText = user.displayName;
+            document.getElementById('name').value = user.displayName;
         }
-    </script>
-</body>
-</html>
+    });
+    socket.on('global-top-update', top => {
+        document.getElementById('top-list').innerHTML = top.map((p,i) => `<div>${i+1}. ${p.emoji} ${p.name}: ${p.score}</div>`).join('');
+    });
+    function join() {
+        const n = document.getElementById('name').value, c = document.getElementById('code').value.toUpperCase();
+        location.href=`player.html?name=${encodeURIComponent(n)}&code=${c}${googleId ? '&googleId='+googleId : ''}`;
+    }
+</script></body></html>
